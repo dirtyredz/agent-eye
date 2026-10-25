@@ -1,0 +1,6 @@
+.tmp/
+local.properties
+.gradle/
+build/
+*.apk
+snapshots/
