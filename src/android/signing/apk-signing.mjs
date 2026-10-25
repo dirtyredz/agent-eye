@@ -1,8 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { identity, requireThat } from '../releases/artifacts/contract.mjs';
+import { identity, requireThat, PASS_ENV, assertJarUnsigned } from '../releases/artifacts/contract.mjs';
 
-export const PASS_ENV = 'AGENT_EYE_KEY_PASSWORD';
 export function parseBadging(text) {
   const attr = name => text.match(new RegExp(`${name}='([^']*)'`))?.[1];
   return { applicationId: attr('name'), versionCode: Number(attr('versionCode')), versionName: attr('versionName'), minSdk: Number(text.match(/(?:^|\n)(?:minSdkVersion|sdkVersion):'(\d+)'/)?.[1]), targetSdk: Number(text.match(/targetSdkVersion:'(\d+)'/)?.[1]), compileSdk: Number(attr('compileSdkVersion') ?? attr('platformBuildVersionCode')), debuggable: /application-debuggable/.test(text) };
@@ -33,7 +32,7 @@ export function apkTools(buildTools, run) {
       const bytes = await readFile(path);
       requireThat(!bytes.includes(Buffer.from('APK Sig Block 42')), 'Signed APK input refused');
       const entries = (await run('jar', ['tf', path])).stdout;
-      requireThat(!/^META-INF\/[^\r\n]+\.(SF|RSA|DSA|EC)$/im.test(entries), 'JAR-signed APK input refused');
+      assertJarUnsigned(entries, 'JAR-signed APK input refused');
       const result = await run('java', ['-jar', join(buildTools, 'lib/apksigner.jar'), 'verify', path], { allowed: [1] });
       requireThat(/DOES NOT VERIFY/.test(result.stderr + result.stdout), 'Unexpected unsigned APK verification result');
     },

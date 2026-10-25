@@ -4,8 +4,8 @@ import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { run, onTermination } from '../tooling/process.mjs';
-import { tooling } from '../releases/cli/commands.mjs';
-import { readVersion } from '../releases/artifacts/contract.mjs';
+import { tooling } from '../tooling/android-tools.mjs';
+import { readVersion, PASS_ENV } from '../releases/artifacts/contract.mjs';
 import { keyCertificate } from './key-provisioning.mjs';
 import { main } from '../releases/cli/cli.mjs';
 
@@ -17,7 +17,7 @@ const removeCleanup = onTermination(cleanup);
 try {
   const password = randomBytes(32).toString('hex');
   const key = { path: join(dir, 'throwaway.p12'), password };
-  await run('keytool', ['-genkeypair', '-alias', 'agent-eye', '-keyalg', 'RSA', '-keysize', '4096', '-validity', '10950', '-dname', 'CN=Agent Eye DISPOSABLE TEST ONLY', '-storetype', 'PKCS12', '-keystore', key.path, '-storepass:env', 'AGENT_EYE_KEY_PASSWORD'], { env: { AGENT_EYE_KEY_PASSWORD: password }, secrets: [password] });
+  await run('keytool', ['-genkeypair', '-alias', 'agent-eye', '-keyalg', 'RSA', '-keysize', '4096', '-validity', '10950', '-dname', 'CN=Agent Eye DISPOSABLE TEST ONLY', '-storetype', 'PKCS12', '-keystore', key.path, '-storepass:env', PASS_ENV], { env: { [PASS_ENV]: password }, secrets: [password] });
   const pin = { alias: 'agent-eye', sha256: await keyCertificate(run, key.path, password) };
   const version = readVersion(await readFile('android/version.properties', 'utf8'));
   const { apk, bundle } = tooling(root);

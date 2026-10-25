@@ -3,6 +3,23 @@ export const APPLICATION_ID = 'local.agenteye';
 export const SDK = Object.freeze({ minSdk: 24, targetSdk: 36, compileSdk: 36 });
 export const UNSIGNED = ['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', 'mapping.txt'];
 export const FINAL = ['agent-eye.apk', 'agent-eye.aab', 'mapping.txt'];
+export const UNSIGNED_MANIFEST = 'release-unsigned.json';
+export const finalNames = [...FINAL, 'release.json', 'SHA256SUMS'];
+export const PASS_ENV = 'AGENT_EYE_KEY_PASSWORD';
+// CI and signing retries may have partial sets; only the cleaned final set is exact.
+export function assertAssetSet(assets, phase) {
+  const allowed = phase === 'ci' ? [...UNSIGNED, UNSIGNED_MANIFEST]
+    : phase === 'draft' ? [...UNSIGNED, UNSIGNED_MANIFEST, ...finalNames]
+      : phase === 'final' ? finalNames : null;
+  requireThat(allowed, 'Unknown asset phase');
+  requireThat(assets.every(a => allowed.includes(a.name)), phase === 'ci'
+    ? 'Signing already started; CI cannot modify this draft' : 'Unexpected or duplicate draft assets');
+  requireThat(new Set(assets.map(a => a.name)).size === assets.length, 'Unexpected or duplicate draft assets');
+  if (phase === 'final') requireThat(assets.length === finalNames.length, 'Incomplete final asset set');
+}
+export function assertJarUnsigned(entries, message = 'Signed JAR input refused') {
+  requireThat(!/^META-INF\/[^\r\n]+\.(SF|RSA|DSA|EC)$/im.test(entries), message);
+}
 export const WORKFLOW = '.github/workflows/android-release.yml';
 export const hex = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 export function requireThat(condition, message) {
