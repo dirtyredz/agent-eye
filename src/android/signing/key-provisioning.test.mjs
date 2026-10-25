@@ -13,7 +13,7 @@ test('existing certificate refuses provisioning before vault or subprocess', asy
 test('recovery requires one RSA-4096 private key and correct alias', async () => {
   const text = `Your keystore contains 1 entry\nAlias name: agent-eye\nEntry type: PrivateKeyEntry\n4096-bit RSA key\nSHA256: ${'AA:'.repeat(31)}AA`;
   assert.equal(await keyCertificate(async () => ({ stdout: text }), 'key', 'secret'), 'a'.repeat(64));
-  for (const changed of [text.replace('1 entry', '2 entries'), text.replace('agent-eye', 'other'), text.replace('4096', '2048'), text.replace('PrivateKeyEntry', 'trustedCertEntry')]) await assert.rejects(keyCertificate(async () => ({ stdout: changed }), 'key', 'secret'), /Unexpected key/);
+  for (const changed of [text.replace('1 entry', '2 entries'), text.replace('agent-eye', 'other'), text.replace('agent-eye', 'agent-eye-extra'), text.replace('4096', '2048'), text.replace('PrivateKeyEntry', 'trustedCertEntry')]) await assert.rejects(keyCertificate(async () => ({ stdout: changed }), 'key', 'secret'), /Unexpected key/);
 });
 function provisioningFixture(failRecovery = false) {
   const events = [];
@@ -29,7 +29,7 @@ function provisioningFixture(failRecovery = false) {
     vault: async () => ({ assertAbsent: async () => { events.push('absent'); }, store: async () => { events.push('store'); }, recover: async () => { events.push('recover'); if (failRecovery) throw new Error('failed'); return { bytes: Buffer.from('test-key'), password: 'test' }; } }),
     run: async (_file, args) => {
       events.push(args[0]);
-      return { stdout: `Your keystore contains 1 entry\nAlias name: agent-eye\nPrivateKeyEntry\n4096-bit RSA\nSHA256: ${'AA:'.repeat(31)}AA` };
+      return { stdout: `Your keystore contains 1 entry\nAlias name: agent-eye\nEntry type: PrivateKeyEntry\n4096-bit RSA\nSHA256: ${'AA:'.repeat(31)}AA` };
     },
   };
   return { deps, events };
