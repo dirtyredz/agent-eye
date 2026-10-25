@@ -10,7 +10,11 @@ class SessionToken {
     fun accepts(header: String?): Boolean {
         val current = secret
         return current.isNotEmpty() && header != null && MessageDigest.isEqual(
-            "Bearer $current".toByteArray(Charsets.US_ASCII), header.toByteArray(Charsets.US_ASCII))
+            "Bearer $current".toByteArray(Charsets.US_ASCII),
+            header.toByteArray(Charsets.US_ASCII)
+        )
     }
-    fun clear() { secret = "" }
+    fun clear() {
+        secret = ""
+    }
 }
