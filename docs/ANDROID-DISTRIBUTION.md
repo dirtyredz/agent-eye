@@ -190,6 +190,22 @@ sideload key. See [Android signing](https://developer.android.com/studio/publish
 
 ## Acceptance record
 
+Structure-review verification on 2026-10-25 (`review-fixes`, implementation `437e4f0`):
+
+| Command/check | Observed result |
+|---|---|
+| `npm ci --offline --no-audit --cache .tmp/npm-cache` | Passed; 2 packages installed from existing machine-cache records copied into the worktree. No downloads. The initial empty-cache attempt reported `ENOTCACHED`. |
+| `node --test` | 90 passed, 0 failed, 0 skipped; includes CI draft creation/resume/failures and shared asset/JAR rules. |
+| `.\android\gradlew.bat -p android assembleRelease bundleRelease releaseTools --offline --no-daemon` | `BUILD SUCCESSFUL in 5m 51s`; 57 tasks executed. Built missing smoke inputs using the existing SDK/Gradle caches. |
+| `node src/android/signing/signing-smoke.mjs` | Passed real unsigned inspection, APK/AAB signing/verification, bundled privacy equality and side-effect-free dry-run. Disposable key removed. |
+| Owner dry-runs listed above | Setup, generate-key, verify-key, and release-sign with publication for both example versions passed, using numeric draft IDs 1 and 2. |
+| Workflow YAML parse | Both workflows passed parsing with unique-key checks, read-only default permissions and local module-path checks. Actionlint was unavailable; this is a parse check, not actionlint or remote execution. |
+| `.\android\gradlew.bat --stop` | `No Gradle daemons are running.` |
+
+The module split preserves the signing/retry contract. CI now checks duplicate names through
+the shared asset-set validator before uploading; the upload adapter still independently
+rejects duplicates. No real owner keys or GitHub mutations were exercised.
+
 Local verification on 2026-10-25 (implementation through `95f60fa`):
 
 | Command/check | Observed result |
