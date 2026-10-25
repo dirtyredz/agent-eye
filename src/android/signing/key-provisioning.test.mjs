@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { provision, keyCertificate } from './key-provisioning.mjs';
+import { provision, keyCertificate, recoverKey } from './key-provisioning.mjs';
 test('existing certificate refuses provisioning before vault or subprocess', async () => {
   await mkdir('.tmp', { recursive: true }); const dir = await mkdtemp('.tmp/key-test-'); const path = join(dir, 'pin.json');
   try {
@@ -49,4 +49,9 @@ test('existing vault item prevents generating another key', async () => {
   const f = provisioningFixture(); f.deps.vault = async () => ({ assertAbsent: async () => { throw new Error('already exists'); } });
   await assert.rejects(provision(f.deps, { pinPath: 'pin', firstVersionCode: 1 }), /already exists/);
   assert.equal(f.events.includes('-genkeypair'), false);
+});
+test('changed recovered certificate prevents signing and cleans key material', async () => {
+  const f = provisioningFixture();
+  await assert.rejects(recoverKey(f.deps, { applicationId: 'local.agenteye', alias: 'agent-eye', sha256: 'b'.repeat(64), firstVersionCode: 1 }, () => assert.fail('must not sign')), /does not match public pin/);
+  assert.equal(f.events.at(-1), 'cleanup');
 });

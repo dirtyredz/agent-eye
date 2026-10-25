@@ -20,3 +20,14 @@
 - Capturing an image does not authorize any physical/device-control action. Consumer workflows
   must preserve their own owner-presence and authorization requirements.
 - Before targeting SDK 37+, implement the local-network runtime permission and denial flow.
+- Debug-to-release migration needs a deliberate uninstall because the certificates differ.
+  Subsequent release updates must retain package/certificate and increase versionCode without uninstalling.
+- AAB upload signing is not Play app signing. Different Play/GitHub app-signing keys create
+  incompatible update tracks. Never replace the sideload key after a Play upload-key reset.
+- After forced signer termination, verify its PID is gone before removing the stale local lock
+  or its exact protected temp-key directory. Preserve the public `.tmp/releases/` transaction
+  cache until publication to resume partial uploads without clobbering signatures.
+- Expired Actions artifacts, missing historical release metadata or conflicting assets stop
+  signing. A checksum beside a draft download alone is not trusted build provenance.
+- Privacy/Data safety disclosures must include off-device LAN transfers and plain HTTP.
+  Local-only does not imply encrypted transport or automatically imply no Play-defined collection.

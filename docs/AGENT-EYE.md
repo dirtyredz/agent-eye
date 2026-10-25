@@ -24,14 +24,16 @@ Set-Content android/local.properties "sdk.dir=$sdkPath"
 # Use the owner's authorized normal user cache.
 $env:GRADLE_USER_HOME = "$env:USERPROFILE\.gradle"
 Push-Location android
-try { .\gradlew.bat assembleDebug testDebugUnitTest }
+try { .\gradlew.bat ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest lintRelease releaseTools }
 finally { .\gradlew.bat --stop; Pop-Location }
-node --test src/camera/client.test.mjs src/camera/snapshot-store.test.mjs
+npm ci
+node --test
+node src/android/releases/signing-smoke.mjs
 dk check
 ```
 
 On a shell supporting the Unix wrapper, the equivalent Android gate is
-`./gradlew assembleDebug testDebugUnitTest` in `android/`.
+`./gradlew ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest lintRelease releaseTools` in `android/`.
 Before starting Gradle, inspect `Get-CimInstance Win32_Process` for another Gradle/Java build;
 only one heavyweight build runs at a time. Do not install system-wide tools. Use `--offline`
 when all required dependencies are already cached. The wrapper pins the published Gradle ZIP SHA-256.
@@ -69,6 +71,11 @@ The gate tests policy/server/client behavior; it cannot establish CameraX hardwa
   the build and JVM tests cannot establish screen-off camera availability.
 
 ## Sideload and operate
+
+For owner-published releases, use [GitHub Releases](https://github.com/dirtyredz/agent-eye/releases/latest)
+and install `agent-eye.apk` from the phone browser. See [distribution](ANDROID-DISTRIBUTION.md)
+for owner signing and the two-version acceptance procedure. The commands below install a
+development debug APK; migrating from it to the release signer requires uninstalling once.
 
 ```powershell
 $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
