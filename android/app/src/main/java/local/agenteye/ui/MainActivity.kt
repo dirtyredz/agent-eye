@@ -46,6 +46,10 @@ class MainActivity : Activity() {
         buttons.addView(Button(this).apply { text = "Start"; setOnClickListener { requestStart() } })
         buttons.addView(Button(this).apply { text = "Stop"; setOnClickListener { service?.stopSession(); refresh() } })
         layout.addView(buttons)
+        layout.addView(Button(this).apply {
+            setText(local.agenteye.R.string.privacy_policy)
+            setOnClickListener { PrivacyPolicyDialog.show(this@MainActivity) }
+        })
         status = TextView(this).apply { textSize = 16f; setTextIsSelectable(true) }
         layout.addView(ScrollView(this).apply { addView(status) }, LinearLayout.LayoutParams(-1, 260))
         layout.addView(TextView(this).apply { text = "Trusted Wi-Fi only. Keep plugged in for screen-off use. Stop when finished." })

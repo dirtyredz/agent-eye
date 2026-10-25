@@ -1,1 +1,5 @@
-<resources><string name="app_name">Agent Eye</string></resources>
+<resources>
+    <string name="app_name">Agent Eye</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="close">Close</string>
+</resources>

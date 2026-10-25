@@ -4,6 +4,11 @@
 
 - `android/` — native Android camera app and its official Gradle wrapper.
 - `src/camera/` — Node PC client for fetching and managing transient photographs.
+- `src/android/releases/` — release contract, artifact verification, GitHub transaction and owner CLI.
+- `src/android/signing/` — attended DesktopAuth, key provisioning and Windows key isolation.
+- `src/android/tooling/` — bounded, secret-redacting subprocess execution.
+- `.github/workflows/` — read-only verification/builds and separately privileged draft creation.
+- `docs/ANDROID-DISTRIBUTION.md`, `docs/PRIVACY.md`, `docs/PLAY-LISTING.md` — owner distribution, bundled privacy and future Play checklist.
 - `docs/AGENT-EYE.md` — build, operation, API and physical acceptance runbook.
 - `docs/plans/` — original implementation specification; its superseded-naming note applies.
 - `docs/items/` — Docket work items, edited through `dk` only.

@@ -6,7 +6,13 @@ project-specific (TVs etc.) belongs here; consumers live in their own repos.
 ## Rules
 - Local only is a hard requirement: no cloud endpoints, analytics, crash reporters, ads or
   third-party SDKs. Accept clients from the private LAN subnet only.
-- Sideload builds only (no Play Store). Debug-signed is fine for now.
+- CI builds unsigned, minified APK/AAB artifacts into draft releases. The owner signs
+  locally through attended 1Password DesktopAuth and publishes only verified assets.
+  Play submission is future work; no signing credentials or unattended signing in CI.
+- Fast gate: `npm ci`, `node --test`, then
+  `.\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest`.
+  Release tooling also requires `lintRelease releaseTools`; stop Gradle afterward.
+  See `docs/ANDROID-DISTRIBUTION.md` for the disposable-key smoke and owner operations.
 - Plan of record: `docs/plans/agent-eye-app.md` (written as "TV Eye" inside tv-tuneup; names and
   paths are superseded by this repo — see the note at its top).
 
