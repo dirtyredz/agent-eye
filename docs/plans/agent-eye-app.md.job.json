@@ -1,0 +1,18 @@
+{
+  "accountId": "codex",
+  "label": "Lorelei",
+  "home": "C:\\Users\\dirty\\.codex",
+  "model": "gpt-6-astra",
+  "effort": "high",
+  "sandbox": "read-only",
+  "approval": "never",
+  "repo": "C:\\Users\\dirty\\projects\\tv-tuneup",
+  "outputFile": "C:\\Users\\dirty\\projects\\tv-tuneup\\docs\\plans\\tv-eye-app.md",
+  "lane": "creative",
+  "sessionId": "01a17417-bf0a-7bc3-a649-6b14fc1197c1",
+  "jobId": "32f5c73e-79ef-48e3-85d0-4509961ab669",
+  "attemptId": "b41b4597-3f6a-4fc7-b762-ced7eb1c5b0b",
+  "startedAt": "2026-10-25T17:24:35.260Z",
+  "exitCode": 0,
+  "finishedAt": "2026-10-25T17:30:16.945Z"
+}
