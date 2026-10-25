@@ -10,7 +10,7 @@
 - `src/android/releases/github/` — GitHub release assets, history and Actions provenance.
 - `src/android/releases/local/` — owner transaction ordering, checkout, verification, retry cache and lock.
 - `src/android/signing/` — APK/AAB signing, disposable smoke, attended DesktopAuth and key isolation.
-- `src/android/tooling/` — Android tool discovery and bounded, secret-redacting subprocess execution.
+- `src/android/tooling/` — Android tool discovery, bounded secret-redacting subprocess execution, and the workflow guard test (no bare `sdkmanager` in `.github/workflows/`).
 - `.github/workflows/` — read-only verification/builds and separately privileged draft creation.
 - `docs/ANDROID-DISTRIBUTION.md`, `docs/PRIVACY.md`, `docs/PLAY-LISTING.md` — owner distribution, bundled privacy and future Play checklist.
 - `docs/AGENT-EYE.md` — build, operation, API and physical acceptance runbook.
@@ -51,7 +51,8 @@ or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
 `checkout.mjs`, `draft-verification.mjs`, `retry-cache.mjs` and `release-lock.mjs`.
 `artifacts/contract.mjs` owns phase-specific asset sets and shared unsigned-JAR checks.
 APK and AAB verification remain separate under `signing/`; `tooling/android-tools.mjs`
-owns SDK discovery and the build-tools version used by both workflows and signing.
+owns SDK discovery and the build-tools version used by both workflows and signing;
+`tooling/workflows.test.mjs` guards both workflows against PATH-based `sdkmanager` calls.
 `signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 
