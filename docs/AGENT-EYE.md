@@ -9,7 +9,9 @@ dependencies beyond Android.
 
 Use JDK 21, Node 22 and Android SDK platform 36/build-tools 35.0.0. Dependencies are pinned in
 `android/build.gradle.kts` and `android/app/build.gradle.kts`. Use the wrapper only.
-The implementation environment prohibits downloading missing inputs without owner approval.
+The owner authorized build dependency downloads from services.gradle.org, Google Maven
+(dl.google.com / maven.google.com), Maven Central and plugins.gradle.org. Keep caches in the
+normal user Gradle directory. SDK installs require a missing required platform/build-tools version.
 
 From the repository root in PowerShell:
 
@@ -19,20 +21,20 @@ node --version
 # SDK location is machine-local and must stay ignored.
 $sdkPath = "$env:LOCALAPPDATA\Android\Sdk".Replace('\', '/')
 Set-Content android/local.properties "sdk.dir=$sdkPath"
-# Keep writable Gradle state inside this worktree. Seed caches from local inputs if offline.
-$env:GRADLE_USER_HOME = "$PWD\.tmp\gradle-home"
+# Use the owner's authorized normal user cache.
+$env:GRADLE_USER_HOME = "$env:USERPROFILE\.gradle"
 Push-Location android
-try { .\gradlew.bat --offline --no-daemon assembleDebug testDebugUnitTest }
+try { .\gradlew.bat assembleDebug testDebugUnitTest }
 finally { .\gradlew.bat --stop; Pop-Location }
 node --test src/camera/client.test.mjs src/camera/snapshot-store.test.mjs
 dk check
 ```
 
 On a shell supporting the Unix wrapper, the equivalent Android gate is
-`./gradlew --offline --no-daemon assembleDebug testDebugUnitTest` in `android/`.
+`./gradlew assembleDebug testDebugUnitTest` in `android/`.
 Before starting Gradle, inspect `Get-CimInstance Win32_Process` for another Gradle/Java build;
-only one heavyweight build runs at a time. Do not install system-wide tools. If required caches
-are absent, obtain owner permission before removing `--offline`.
+only one heavyweight build runs at a time. Do not install system-wide tools. Use `--offline`
+when all required dependencies are already cached. The wrapper pins the published Gradle ZIP SHA-256.
 
 APK output: `android/app/build/outputs/apk/debug/app-debug.apk`.
 JVM reports: `android/app/build/reports/tests/testDebugUnitTest/index.html`.
@@ -40,33 +42,31 @@ The gate tests policy/server/client behavior; it cannot establish CameraX hardwa
 
 ### Implementation verification record (2026-10-25)
 
-- `java -version`: OpenJDK 21.0.12.1; `node --version`: v22.20.0.
-- Wrapper generation from the already-installed Gradle 8.13 distribution, offline:
-  `BUILD SUCCESSFUL in 3m 51s`, `1 actionable task: 1 executed`.
-- `.\android\gradlew.bat -p android --offline --no-daemon assembleDebug testDebugUnitTest`:
-  **failed before compilation**, `BUILD FAILED in 1m 7s`. Relevant output verbatim:
+- JDK: OpenJDK 21.0.12.1; Node: v22.20.0. Existing SDK platform 36 and build-tools
+  35.0.0 were sufficient; no SDK packages were installed.
+- Owner-authorized dependency resolution succeeded with the original pins: AGP 8.13.2,
+  Gradle 8.13, Kotlin 2.3.10 and CameraX 1.5.3. Normal `~/.gradle` caches were used.
+- Published checksum obtained from `https://services.gradle.org/distributions/gradle-8.13-bin.zip.sha256`
+  and pinned as `20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78`.
+- Initial online gate failed (`BUILD FAILED in 2m 58s`) with this diagnostic:
 
   ```text
-  Plugin [id: 'org.jetbrains.kotlin.android', version: '2.3.10', apply: false] was not found in any of the following sources:
-
-  - Gradle Core Plugins (plugin is not in 'org.gradle' namespace)
-  - Included Builds (No included builds contain this plugin)
-  - Plugin Repositories (could not resolve plugin artifact 'org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:2.3.10')
+  Using 'jvmTarget: String' is an error. Please migrate to the compilerOptions DSL.
   ```
 
+  Migrated the app build script to typed `kotlin.compilerOptions`, retaining JVM target 17.
+  No application source changes were needed.
+- `.\android\gradlew.bat -p android assembleDebug testDebugUnitTest`:
+  `BUILD SUCCESSFUL in 4m 49s`, `43 actionable tasks: 43 executed`.
+  All 12 JVM tests passed with zero failures, errors or skips. Debug APK: 4,708,052 bytes.
 - `node --test src/camera/client.test.mjs src/camera/snapshot-store.test.mjs`:
   `# tests 17`, `# pass 17`, `# fail 0`, `# skipped 0`.
-- `dk check`: `1 item file(s), 0 error(s), 0 warning(s)`.
-- Android compilation/JVM tests, APK generation and device checks: **not completed**. No phone
-  is attached. The Android gate requires Kotlin 2.3.10 and CameraX 1.5.3, while local caches
-  contain 2.3.21 and 1.6.2. Required pins were preserved; no dependency downloads were performed.
-- The official wrapper scripts/JAR are present. Distribution SHA-256 pinning is **deferred**:
-  the original ZIP/checksum is not cached, and network download permission is pending. Obtain
-  the official Gradle 8.13 binary ZIP SHA-256 and add `distributionSha256Sum` to
-  `android/gradle/wrapper/gradle-wrapper.properties` before declaring the build complete.
-
-The Docket implementation item remains open until the pinned Android gate passes. No full test
-tiers or device/emulator suites were run.
+- `.\android\gradlew.bat --stop`: `No Gradle daemons are running.`
+- `dk check`: `1 item file(s), 0 error(s), 0 warning(s)`; implementation item closed.
+- Nonfatal build warnings: SDK XML version mismatch; CameraX native libraries packaged without
+  stripping symbols; deprecated legacy Android `Notification.Builder(Context)` constructor.
+- Full tiers and device/emulator suites: **not run**. Hardware acceptance remains separate;
+  the build and JVM tests cannot establish screen-off camera availability.
 
 ## Sideload and operate
 
