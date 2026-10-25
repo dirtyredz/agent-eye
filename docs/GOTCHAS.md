@@ -1,5 +1,10 @@
 # Gotchas
 
+- GitHub's Android SDK command-line tools are not necessarily on PATH. Workflows use
+  `"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"` and accept licenses before installation.
+  With Bash `pipefail`, use `(yes || true)` so the producer's SIGPIPE does not fail a successful
+  license check; SDK manager failures still propagate. The Node workflow guard rejects bare calls.
+
 - DHCP can change the URL. Wi-Fi loss/address/prefix changes close old connections. Read the
   current URL in the app and retry after reconnect. Client isolation can prevent same-LAN access.
 - Start requires a visible Activity with camera permission. Notification denial does not grant

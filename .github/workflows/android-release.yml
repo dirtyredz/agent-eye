@@ -67,7 +67,9 @@ jobs:
           java-version: '21'
       - run: |
           build_tools=$(node --input-type=module -e "import { BUILD_TOOLS_VERSION } from './src/android/tooling/android-tools.mjs'; console.log(BUILD_TOOLS_VERSION)")
-          sdkmanager 'platforms;android-36' "build-tools;$build_tools"
+          # Ignore yes's SIGPIPE under pipefail, but preserve SDK manager failures.
+          (yes || true) | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' "build-tools;$build_tools"
       - run: bash android/gradlew -p android assembleRelease bundleRelease lintRelease releaseTools --no-daemon
       - run: node src/android/releases/cli/cli.mjs stage --execute
       - id: artifact
