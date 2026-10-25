@@ -101,6 +101,31 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    codes, phone model/API and every device check. Every later published code must increase,
    including Play uploads; never reuse a code or derive it from a workflow counter.
 
+   For this implementation worktree, the commands are:
+
+   ```powershell
+   git switch release-pipeline
+   @('versionName=1.0.1', 'versionCode=2') | Set-Content -Encoding ascii android/version.properties
+   git add android/version.properties
+   git commit -m "Release Agent Eye 1.0.1"
+   node --test
+   .\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest lintRelease releaseTools
+   node src/android/releases/signing-smoke.mjs
+   .\android\gradlew.bat --stop
+   git push origin HEAD:main
+   git tag v1.0.1
+   git push origin v1.0.1
+   gh run list --repo dirtyredz/agent-eye --workflow android-release.yml
+   gh release view v1.0.1 --repo dirtyredz/agent-eye --json databaseId,isDraft,targetCommitish
+   git fetch origin main --tags
+   git switch --detach v1.0.1
+   npm run secrets -- release-sign --tag v1.0.1 --release-id SECOND_DRAFT_ID --dry-run --publish
+   npm run secrets -- release-sign --tag v1.0.1 --release-id SECOND_DRAFT_ID --execute --publish
+   ```
+
+   Substitute the second numeric draft ID, wait for CI success before signing, and respect
+   any branch protection/review requirements when updating main.
+
 ## Gate and artifact contract
 
 Inspect other Gradle processes before starting a build; serialize heavyweight builds. In the
