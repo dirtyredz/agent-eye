@@ -17,5 +17,9 @@ Release implementation adds deterministic versions, unsigned optimized APK/AAB b
 commit/run-bound draft workflows, attended local signing/provisioning commands, pinned certificate
 verification, retry-safe publication ordering and a bundled privacy policy. See
 [distribution](ANDROID-DISTRIBUTION.md) and [future Play checklist](PLAY-LISTING.md).
+Release verification on 2026-10-25: 71 Node tests and 12 JVM tests pass; ktlint, debug/release
+APK, release AAB and release lint pass (0 errors, 16 warnings). Real disposable-key signing
+verifies both artifacts and exact bundled privacy bytes. Both workflows pass actionlint locally.
+See the distribution runbook for commands, recovery fixtures and corrected initial failures.
 Real GitHub CI/draft creation, real key provisioning, public installation, minified CameraX
 device checks, offline policy display and a second in-place signed update remain **not exercised**.

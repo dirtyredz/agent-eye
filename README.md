@@ -5,7 +5,7 @@ JPEG snapshots over the home LAN (screen off, plugged in), and a small PC client
 agent can look at something physical — a TV screen, a device display — and act on it.
 
 - No cloud, no accounts, no ads, no third-party SDKs. LAN subnet only, per-session token.
-- Sideloaded APK (`android/`), PC client in Node (`src/`).
+- Sideloaded APK (`android/`), PC client in Node (`src/camera/`).
 
 Signed downloads will be available at [GitHub Releases](https://github.com/dirtyredz/agent-eye/releases/latest).
 On Android, download `agent-eye.apk`, allow installs from your browser when prompted, and install.

@@ -39,6 +39,9 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    public pin (package, alias, SHA-256 and first version code). Never commit the key/password.
    Existing items or a nonempty pin are refused. Partial provisioning is not permission to
    regenerate: inspect the items, recover the existing key and reconcile its public pin.
+   If the Document was never stored and no public pin/release exists, the owner may explicitly
+   remove the orphan password item before a new attempt. Never use that procedure to replace
+   an established signer. The tooling does not perform that recovery decision automatically.
 
 3. Review repository setup. It refuses any existing origin or repository, including ambiguous
    lookup failures. Execute once from the reviewed branch; it creates the public repository,
@@ -186,6 +189,36 @@ before enrollment if cross-channel updates matter. An upload-key reset must not 
 sideload key. See [Android signing](https://developer.android.com/studio/publish/app-signing).
 
 ## Acceptance record
+
+Local verification on 2026-10-25 (implementation through `95f60fa`):
+
+| Command/check | Observed result |
+|---|---|
+| `npm ci` | Passed; 2 packages added, 0 vulnerabilities. |
+| `node --test` | 71 passed, 0 failed, 0 skipped. Includes Windows ACL and termination cleanup fixtures. |
+| `.\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest lintRelease releaseTools` | `BUILD SUCCESSFUL in 4m 27s`; 115 tasks, 18 executed. 12 JVM tests, 0 failures/errors. Lint: 0 errors, 16 warnings. |
+| `node src/android/releases/signing-smoke.mjs` | Passed real unsigned inspection, alignment, APK/AAB signing and certificate verification with a disposable RSA-4096 key; both signed archives contain the exact source privacy policy. Dry-run never invoked execution. Temporary key removed. |
+| `npm run release -- setup --dry-run`; `npm run secrets -- generate-key --dry-run`; `npm run secrets -- verify-key --dry-run`; `npm run secrets -- release-sign --tag v1.0.0 --release-id 1 --dry-run --publish` | All passed without owner operations. |
+| `.\.tmp\actionlint\bin\actionlint.exe` (official v1.7.7, checksum verified) | Passed both workflows. Remote workflow execution is unexercised. |
+| Offline `stage --execute` fixture with child-only run ID/attempt 1, followed by `verifyFiles` | Passed schema and all hashes; fixture metadata is not evidence of a real CI run. |
+| `.\android\gradlew.bat --stop` | `No Gradle daemons are running.` |
+| `git diff --check`, `dk check` | Passed. |
+
+Outputs: unsigned APK 984,867 bytes; unsigned AAB 1,491,465 bytes; R8 mapping
+8,260,174 bytes. Inspected package/version/SDK identity is `local.agenteye`, `1.0.0` / `1`,
+min/target/compile SDK 24/36/36. R8 mapping identifies R8 8.13.19. No real key was created.
+
+Initial checks exposed issues that were fixed before the successful gate: ktlint reported
+`Wildcard import (cannot be auto-corrected)` and `Exceeded max line length (100) (cannot be auto-corrected)`;
+combining formatting/checking reported `Missing newline after "("` and `Missing newline before ")"`.
+The first release lint reported `[PropertyEscape]` for an unescaped Windows SDK drive colon;
+the local setup instructions now escape it. Real signing initially reported
+`Error: Artifact identity mismatch: minSdk` (aapt2 field spelling) and the bundle fixture reported
+`AAB signature verification failed` (JDK strict self-signed wording). Both have regression tests.
+The privacy smoke then exposed a missing `assets/PRIVACY.md`; an explicit pre-build dependency
+now packages the generated policy, verified in both signed artifacts. Initial failing regression
+tests also caught alias substitution, assets added during signing and termination during cleanup.
+No lint baseline or ignored failures were introduced.
 
 CI draft creation, real owner signing/publication, unauthenticated browser install, minified
 CameraX device procedure, offline policy display and 1.0.0-to-1.0.1 in-place update are **not yet

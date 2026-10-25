@@ -24,4 +24,10 @@ The PC CLI is `snapshot.mjs`; `client.mjs` owns direct HTTP validation;
 `snapshot-store.mjs` owns atomic replacement and cleanup. Tests are adjacent `.test.mjs` files.
 There is no device-control integration in this repository.
 
+Release `cli.mjs` parses flags without loading execution adapters on dry-run; `commands.mjs`
+binds the adapters. `release-sign.mjs` owns transaction ordering, while `local-release.mjs`
+owns checkout checks and the public retry cache. APK and AAB verification remain separate.
+`signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
+`android/version.properties` is the version source; only the public certificate pin is tracked.
+
 Structural review: 2026-10-25. No code file exceeds 800 lines.
