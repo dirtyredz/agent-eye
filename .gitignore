@@ -6,3 +6,5 @@ build/
 snapshots/
 .docket/
 .kotlin/
+.structure-review-pending*
+.structure-review-paused
