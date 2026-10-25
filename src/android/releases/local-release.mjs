@@ -24,6 +24,10 @@ export function localRelease({ root, run, gh, apk, bundle, vault, localVersion, 
   async function check(state) {
     requireThat(await checkout(run, root, state.tag) === state.manifest.commit, 'Checkout changed');
     assertDraft(await gh.release(state.id), state.tag, state.id);
+    const assets = await gh.assets(state.id);
+    const allowed = state.cleaned ? finalNames : [...UNSIGNED, 'release-unsigned.json', ...finalNames];
+    requireThat(assets.every(a => allowed.includes(a.name)) && new Set(assets.map(a => a.name)).size === assets.length, 'Unexpected or duplicate draft assets');
+    if (state.cleaned) requireThat(assets.length === finalNames.length, 'Incomplete final asset set');
     const tag = await gh.api(`git/ref/tags/${state.tag}`);
     let object = tag.object;
     if (object.type === 'tag') object = (await gh.api(`git/tags/${object.sha}`)).object;
@@ -124,7 +128,7 @@ export function localRelease({ root, run, gh, apk, bundle, vault, localVersion, 
       const checkDir = await fresh('uploaded-');
       for (const name of finalNames) requireThat(digest(await gh.download(state.tag, name, checkDir)).sha256 === digest(await readFile(join(dir, name))).sha256, `Uploaded hash mismatch: ${name}`);
     },
-    removeUnsigned: state => gh.removeUnsigned(state.id, state.tag),
+    async removeUnsigned(state) { await gh.removeUnsigned(state.id, state.tag); state.cleaned = true; },
     publish: state => gh.publish(state.id, state.tag),
   };
 }

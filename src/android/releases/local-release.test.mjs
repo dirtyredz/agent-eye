@@ -72,3 +72,12 @@ for (const changed of ['commit', 'run', 'hash']) test(`local ${changed} tamperin
     assert.equal(f.events.includes('vault'), false); assert.equal(f.events.includes('publish'), false);
   } finally { await f.cleanup(); }
 });
+test('unexpected assets added during signing prevent publication', async () => {
+  const f = await transactionFixture();
+  const verify = f.deps.verifyDownloads;
+  f.deps.verifyDownloads = async (...args) => { await verify(...args); f.files.set('unexpected.txt', Buffer.from('unexpected')); };
+  try {
+    await assert.rejects(releaseSign(f.deps, f.options), /Unexpected or duplicate draft assets/);
+    assert.equal(f.events.includes('publish'), false);
+  } finally { await f.cleanup(); }
+});
