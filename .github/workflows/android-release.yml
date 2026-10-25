@@ -75,7 +75,12 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ steps.artifact.outputs.name }}
-          path: .tmp/release-stage/*
+          include-hidden-files: true # The explicit public staging directory is under .tmp.
+          path: |
+            .tmp/release-stage/agent-eye-unsigned.apk
+            .tmp/release-stage/agent-eye-unsigned.aab
+            .tmp/release-stage/release-unsigned.json
+            .tmp/release-stage/mapping.txt
           if-no-files-found: error
           retention-days: 90
   draft:

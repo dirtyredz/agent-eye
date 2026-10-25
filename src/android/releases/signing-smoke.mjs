@@ -24,11 +24,17 @@ try {
   const unsignedApk = join(root, 'android/app/build/outputs/apk/release/app-release-unsigned.apk');
   const unsignedAab = join(root, 'android/app/build/outputs/bundle/release/app-release.aab');
   await apk.unsigned(unsignedApk, version); await bundle.unsigned(unsignedAab, version);
-  await apk.sign(unsignedApk, join(dir, 'agent-eye.apk'), key, pin, version);
-  await bundle.sign(unsignedAab, join(dir, 'agent-eye.aab'), key, pin, version);
+  const signedApk = join(dir, 'agent-eye.apk'), signedAab = join(dir, 'agent-eye.aab');
+  await apk.sign(unsignedApk, signedApk, key, pin, version);
+  await bundle.sign(unsignedAab, signedAab, key, pin, version);
+  const policy = await readFile(join(root, 'docs/PRIVACY.md'));
+  for (const [archive, entry] of [[signedApk, 'assets/PRIVACY.md'], [signedAab, 'base/assets/PRIVACY.md']]) {
+    await run('jar', ['xf', archive, entry], { cwd: dir });
+    const bundled = await readFile(join(dir, entry));
+    if (!bundled.equals(policy)) throw new Error(`Bundled privacy policy differs from source: ${entry}`);
+  }
   await main(['release-sign', '--tag', `v${version.versionName}`, '--release-id', '1', '--dry-run', '--publish'], { execute: () => { throw new Error('Dry-run attempted execution'); } });
-  console.log('PASS: real unsigned inspection, APK/AAB signing and verification with disposable RSA-4096 key; dry-run has no execution.');
+  console.log('PASS: real unsigned inspection, bundled privacy equality, APK/AAB signing and verification with disposable RSA-4096 key; dry-run has no execution.');
 } finally {
-  removeCleanup();
-  await cleanup();
+  try { await cleanup(); } finally { removeCleanup(); }
 }

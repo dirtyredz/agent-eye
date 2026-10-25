@@ -5,7 +5,7 @@ import { identity, requireThat } from './contract.mjs';
 export const PASS_ENV = 'AGENT_EYE_KEY_PASSWORD';
 export function parseBadging(text) {
   const attr = name => text.match(new RegExp(`${name}='([^']*)'`))?.[1];
-  return { applicationId: attr('name'), versionCode: Number(attr('versionCode')), versionName: attr('versionName'), minSdk: Number(text.match(/sdkVersion:'(\d+)'/)?.[1]), targetSdk: Number(text.match(/targetSdkVersion:'(\d+)'/)?.[1]), compileSdk: Number(attr('compileSdkVersion') ?? attr('platformBuildVersionCode')), debuggable: /application-debuggable/.test(text) };
+  return { applicationId: attr('name'), versionCode: Number(attr('versionCode')), versionName: attr('versionName'), minSdk: Number(text.match(/(?:^|\n)(?:minSdkVersion|sdkVersion):'(\d+)'/)?.[1]), targetSdk: Number(text.match(/targetSdkVersion:'(\d+)'/)?.[1]), compileSdk: Number(attr('compileSdkVersion') ?? attr('platformBuildVersionCode')), debuggable: /application-debuggable/.test(text) };
 }
 export function parseSigner(text) {
   const signers = [...text.matchAll(/^Signer #\d+ certificate SHA-256 digest: ([a-f0-9]{64})\s*$/gmi)];

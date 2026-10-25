@@ -24,10 +24,18 @@ export async function execute(options) {
   const gh = github(run);
   const tag = options.tag ?? process.env.RELEASE_TAG;
   if (options.command === 'setup') return setup(run);
-  if (options.command === 'generate-key') return provision({ root, run, vault }, { pinPath, firstVersionCode: localVersion.versionCode });
+  if (options.command === 'generate-key') {
+    const pin = await provision({ root, run, vault }, { pinPath, firstVersionCode: localVersion.versionCode });
+    console.log(`Vault recovery verified. Commit only this public certificate: ${JSON.stringify(pin)}`);
+    return pin;
+  }
   if (options.command === 'verify-key') return recoverKey({ root, run, vault }, certificate(JSON.parse(await readFile(pinPath, 'utf8'))), async () => console.log('Recovery verified against committed public certificate.'));
   const { apk, bundle } = tooling(root);
-  if (options.command === 'release-sign') return releaseSign(localRelease({ root, run, gh, apk, bundle, vault, localVersion, pin: JSON.parse(await readFile(pinPath, 'utf8')) }), options);
+  if (options.command === 'release-sign') {
+    const outputs = await releaseSign(localRelease({ root, run, gh, apk, bundle, vault, localVersion, pin: JSON.parse(await readFile(pinPath, 'utf8')) }), options);
+    console.log(`${options.publish ? 'Published' : 'Verified signed draft'} ${options.tag}, release ${options.releaseId}. Public retry cache: ${outputs}`);
+    return outputs;
+  }
   version(localVersion, tag);
   const commit = (await run('git', ['rev-parse', 'HEAD'])).stdout.trim();
   if (options.command === 'validate-tag') {
