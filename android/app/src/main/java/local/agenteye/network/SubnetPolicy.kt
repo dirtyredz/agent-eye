@@ -22,7 +22,11 @@ object SubnetPolicy {
         val local = number(phone)
         val remote = number(peer)
         // Reject prefixes extending outside this RFC1918 allocation too.
-        val minimum = when (phone.address[0].toInt() and 255) { 10 -> 8; 172 -> 12; else -> 16 }
+        val minimum = when (phone.address[0].toInt() and 255) {
+            10 -> 8
+            172 -> 12
+            else -> 16
+        }
         return prefix >= minimum && local != network && local != broadcast &&
             remote != network && remote != broadcast && (remote and mask) == network
     }

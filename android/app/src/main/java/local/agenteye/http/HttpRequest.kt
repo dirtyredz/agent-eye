@@ -19,18 +19,29 @@ data class HttpRequest(val path: String, val authorization: String?) {
             if (lines.any { line -> line.any { it.code < 32 } }) throw HttpFailure(400)
             val first = lines.first().split(' ')
             if (first.size != 3 || !first[0].matches(Regex("[A-Z]+")) ||
-                !first[1].matches(Regex("/[^\\s]*")) || first[2] != "HTTP/1.1") throw HttpFailure(400)
+                !first[1].matches(Regex("/[^\\s]*")) ||
+                first[2] != "HTTP/1.1"
+            ) {
+                throw HttpFailure(400)
+            }
             val headers = mutableMapOf<String, String>()
             for (line in lines.drop(1)) {
                 val colon = line.indexOf(':')
                 if (colon <= 0) throw HttpFailure(400)
                 val name = line.substring(0, colon)
                 if (!name.matches(Regex("[A-Za-z0-9!#$%&'*+.^_`|~-]+"))) throw HttpFailure(400)
-                if (headers.put(name.lowercase(), line.substring(colon + 1).trim()) != null) throw HttpFailure(400)
+                if (headers.put(name.lowercase(), line.substring(colon + 1).trim()) !=
+                    null
+                ) {
+                    throw HttpFailure(400)
+                }
             }
             if (headers["host"].isNullOrBlank() || "transfer-encoding" in headers ||
                 ("content-length" in headers && headers["content-length"] != "0") ||
-                "expect" in headers) throw HttpFailure(400)
+                "expect" in headers
+            ) {
+                throw HttpFailure(400)
+            }
             if (first[0] != "GET") throw HttpFailure(405)
             return HttpRequest(first[1], headers["authorization"])
         }
