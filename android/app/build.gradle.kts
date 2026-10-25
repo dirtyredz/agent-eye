@@ -7,6 +7,8 @@ plugins {
 val releaseVersion = Properties().apply {
     rootProject.file("version.properties").inputStream().use { load(it) }
 }
+require(Regex("(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)").matches(releaseVersion.getProperty("versionName")))
+require(releaseVersion.getProperty("versionCode").toInt() in 1..2100000000)
 val privacyAssets = tasks.register<Copy>("generatePrivacyAssets") {
     from(rootProject.file("../docs/PRIVACY.md"))
     into(layout.buildDirectory.dir("generated/privacyAssets"))

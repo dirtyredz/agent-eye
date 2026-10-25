@@ -7,6 +7,12 @@ agent can look at something physical — a TV screen, a device display — and a
 - No cloud, no accounts, no ads, no third-party SDKs. LAN subnet only, per-session token.
 - Sideloaded APK (`android/`), PC client in Node (`src/`).
 
+Signed downloads will be available at [GitHub Releases](https://github.com/dirtyredz/agent-eye/releases/latest).
+On Android, download `agent-eye.apk`, allow installs from your browser when prompted, and install.
+The public repository and first release are owner-run steps and are not yet published.
+See [Android distribution](docs/ANDROID-DISTRIBUTION.md) for signing, updates and recovery,
+and [Privacy](docs/PRIVACY.md) for LAN transfer and snapshot retention details.
+
 See [the Agent Eye runbook](docs/AGENT-EYE.md) for builds, sideloading, the HTTP contract,
 PC commands and the physical-device acceptance checklist. Component map: [STRUCTURE.md](STRUCTURE.md).
 

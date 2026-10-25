@@ -12,3 +12,10 @@ The Kotlin build script now uses typed compilerOptions with JVM target 17. See t
 Physical-device verification: **not run — no phone attached**. Orientation, real camera freshness,
 Activity recreation, screen-off availability, lock release and Wi-Fi reconnect require the device
 acceptance procedure in [AGENT-EYE.md](AGENT-EYE.md). No unattended availability promise is made.
+
+Release implementation adds deterministic versions, unsigned optimized APK/AAB builds, ktlint,
+commit/run-bound draft workflows, attended local signing/provisioning commands, pinned certificate
+verification, retry-safe publication ordering and a bundled privacy policy. See
+[distribution](ANDROID-DISTRIBUTION.md) and [future Play checklist](PLAY-LISTING.md).
+Real GitHub CI/draft creation, real key provisioning, public installation, minified CameraX
+device checks, offline policy display and a second in-place signed update remain **not exercised**.

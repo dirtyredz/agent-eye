@@ -28,3 +28,20 @@ are checked before an atomic sibling-file replacement of `.tmp/agent-eye/latest.
 Failed saves clean temporary files and report failure; an older `latest.jpg` can remain and must
 never be interpreted as a new capture. Cleanup touches only the client's names and rejects
 redirected snapshot directories.
+
+Release infrastructure is separate from that runtime. Version properties feed Gradle and the
+Node contract. CI checks formatting/tests, builds unsigned R8/resource-shrunk APK/AAB outputs,
+validates embedded identity and stages a commit/run-bound manifest. Only a separate job can
+write draft release assets; it cannot sign or publish.
+
+The owner CLI first validates a clean tagged checkout, remote main ancestry, draft identity,
+trusted Actions artifact provenance and all published version metadata. Only then may the
+lazy DesktopAuth adapter recover the pinned key. A Windows ACL is restricted and verified
+before key bytes are materialized. APK alignment precedes apksigner; AAB uses jarsigner.
+Complete public signed outputs persist for retry; key material does not. Uploads are downloaded
+and verified before exact unsigned assets are removed, and publication is the last mutation.
+The local signing lock and repeated remote checks prevent accidental overlapping transactions.
+
+`docs/PRIVACY.md` is copied into generated Android assets and displayed as text by a dedicated
+dialog. There is no policy fetch, WebView or added runtime dependency. Node's development-only
+1Password SDK is not part of the phone or camera client.

@@ -38,9 +38,9 @@ export async function provision(deps, { pinPath, firstVersionCode }) {
 }
 export async function recoverKey(deps, pin, action) {
   certificate(pin);
-  return withKeyDirectory(deps, async key => {
+  return (deps.withKeyDirectory ?? withKeyDirectory)(deps, async key => {
     const recovered = await (await deps.vault()).recover();
-    try { await writeFile(key.path, recovered.bytes, { flag: 'wx' }); }
+    try { await (deps.io?.writeFile ?? writeFile)(key.path, recovered.bytes, { flag: 'wx' }); }
     finally { recovered.bytes.fill(0); }
     requireThat(await keyCertificate(deps.run, key.path, recovered.password, pin.alias) === pin.sha256, 'Recovered certificate does not match public pin');
     return action({ ...key, password: recovered.password });
