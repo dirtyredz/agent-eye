@@ -8,3 +8,10 @@ snapshots/
 .kotlin/
 .structure-review-pending*
 .structure-review-paused
+node_modules/
+*.aab
+*.p12
+*.jks
+*.keystore
+android/signing.local.json
+.release-sign.lock
