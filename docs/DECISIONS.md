@@ -10,7 +10,8 @@
   Gradle 8.13's published binary ZIP SHA-256 is pinned in the wrapper properties.
   Kotlin uses the typed `compilerOptions` DSL to retain JVM 17 compatibility on Kotlin 2.3.10.
 - **Dependencies.** Kotlin and required AndroidX/CameraX are permitted platform components.
-  No cloud, advertising, analytics, crash reporting or unrelated SDKs. Sideload/debug signing only.
+  No cloud, advertising, analytics, crash reporting or unrelated runtime SDKs.
+  Unsigned CI artifacts, attended local signing and future Play preparation supersede debug-only distribution.
 - **Foreground service owns capture.** Activity recreation and preview loss do not own the
   still-capture lifecycle. No automatic restart after process death, force-stop or reboot.
 - **IPv4 Wi-Fi only.** Exact LinkProperties subnet, private phone and peer addresses, no VPN,
@@ -24,3 +25,14 @@
   no request bodies or keep-alive, and JVM tests for observable behavior.
 - **Transient images.** No phone archive or gallery writes, only on-demand JPEGs. One PC image,
   explicit cleanup after consumption; atomic replacement preserves the old image on failure.
+- **2026-10-25 — Distribution boundary.** CI produces unsigned R8/resource-shrunk APK/AAB
+  artifacts; only its draft-writing job has contents-write permission. Local DesktopAuth
+  retains key custody. APK uses zipalign then apksigner; AAB uses jarsigner. No debug-key fallback.
+- **Explicit versions.** `android/version.properties` owns semantic version and positive
+  monotonically increasing versionCode; tags are exactly `v<versionName>`. No timestamp/run codes.
+- **Formatting.** ktlint Gradle plugin 14.2.0 and engine 1.8.0; no baseline or ignored failures.
+- **Key continuity.** One dedicated RSA-4096 key initially signs sideload APKs and AAB uploads.
+  A different Play app-signing key cannot update GitHub installs. Decide cross-channel signing
+  before Play enrollment; an upload-key reset never changes the established sideload signer.
+- **Privacy source.** `docs/PRIVACY.md` is bundled at build time and displayed as local text.
+  Plain HTTP LAN transfer is disclosed and must be assessed explicitly in future Data safety forms.

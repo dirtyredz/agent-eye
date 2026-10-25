@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+val releaseVersion = Properties().apply {
+    rootProject.file("version.properties").inputStream().use { load(it) }
+}
+val privacyAssets = tasks.register<Copy>("generatePrivacyAssets") {
+    from(rootProject.file("../docs/PRIVACY.md"))
+    into(layout.buildDirectory.dir("generated/privacyAssets"))
 }
 android {
     namespace = "local.agenteye"
@@ -9,9 +18,17 @@ android {
         applicationId = "local.agenteye"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = releaseVersion.getProperty("versionCode").toInt()
+        versionName = releaseVersion.getProperty("versionName")
     }
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    sourceSets.getByName("main").assets.srcDir(privacyAssets)
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
