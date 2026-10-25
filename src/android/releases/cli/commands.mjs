@@ -1,16 +1,16 @@
 import { readFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { run } from '../tooling/process.mjs';
-import { readVersion, version, certificate, REPOSITORY, requireThat, UNSIGNED, manifest } from './contract.mjs';
-import { apkTools } from './apk-signing.mjs';
-import { bundleTools } from './bundle-signing.mjs';
-import { stage, verifyFiles } from './artifacts.mjs';
-import { github, assertDraft } from './github.mjs';
+import { run } from '../../tooling/process.mjs';
+import { readVersion, version, certificate, REPOSITORY, requireThat, UNSIGNED, manifest } from '../artifacts/contract.mjs';
+import { apkTools } from '../../signing/apk-signing.mjs';
+import { bundleTools } from '../../signing/bundle-signing.mjs';
+import { stage, verifyFiles } from '../artifacts/artifacts.mjs';
+import { github, assertDraft } from '../github/github.mjs';
 import { setup } from './owner-setup.mjs';
-import { releaseSign } from './release-sign.mjs';
-import { localRelease } from './local-release.mjs';
-import { openVault } from '../signing/vault.mjs';
-import { provision, recoverKey } from '../signing/key-provisioning.mjs';
+import { releaseSign } from '../local/release-sign.mjs';
+import { localRelease } from '../local/local-release.mjs';
+import { openVault } from '../../signing/vault.mjs';
+import { provision, recoverKey } from '../../signing/key-provisioning.mjs';
 
 export function tooling(root) {
   const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT ?? join(process.env.LOCALAPPDATA ?? '', 'Android/Sdk');

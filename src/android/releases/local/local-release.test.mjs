@@ -4,8 +4,8 @@ import { checkout, localRelease } from './local-release.mjs';
 import { releaseSign } from './release-sign.mjs';
 import { mkdir, mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { SDK, WORKFLOW, UNSIGNED } from './contract.mjs';
-import { digest } from './artifacts.mjs';
+import { SDK, WORKFLOW, UNSIGNED } from '../artifacts/contract.mjs';
+import { digest } from '../artifacts/artifacts.mjs';
 test('checkout preflight rejects changed commit, dirty files and wrong repository', async () => {
   for (const mode of ['dirty', 'origin', 'commit']) {
     await assert.rejects(checkout(async (_file, args) => {

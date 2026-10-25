@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-import { requireThat } from './contract.mjs';
+import { requireThat } from '../artifacts/contract.mjs';
 import { setupPlan } from './owner-setup.mjs';
 
 const plans = {

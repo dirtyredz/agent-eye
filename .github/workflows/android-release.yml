@@ -36,7 +36,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          node src/android/releases/cli.mjs validate-tag --execute
+          node src/android/releases/cli/cli.mjs validate-tag --execute
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
@@ -67,7 +67,7 @@ jobs:
           java-version: '21'
       - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
       - run: bash android/gradlew -p android assembleRelease bundleRelease lintRelease releaseTools --no-daemon
-      - run: node src/android/releases/cli.mjs stage --execute
+      - run: node src/android/releases/cli/cli.mjs stage --execute
       - id: artifact
         env:
           BUILD_COMMIT: ${{ needs.validate.outputs.commit }}
@@ -103,4 +103,4 @@ jobs:
         with:
           name: ${{ needs.build.outputs.artifact }}
           path: .tmp/release-stage
-      - run: node src/android/releases/cli.mjs draft --execute
+      - run: node src/android/releases/cli/cli.mjs draft --execute

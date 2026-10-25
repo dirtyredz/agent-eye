@@ -4,10 +4,10 @@ import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { run, onTermination } from '../tooling/process.mjs';
-import { tooling } from './commands.mjs';
-import { readVersion } from './contract.mjs';
-import { keyCertificate } from '../signing/key-provisioning.mjs';
-import { main } from './cli.mjs';
+import { tooling } from '../releases/cli/commands.mjs';
+import { readVersion } from '../releases/artifacts/contract.mjs';
+import { keyCertificate } from './key-provisioning.mjs';
+import { main } from '../releases/cli/cli.mjs';
 
 const root = resolve('.');
 await mkdir('.tmp', { recursive: true });

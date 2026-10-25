@@ -1,4 +1,4 @@
-import { requireThat } from '../releases/contract.mjs';
+import { requireThat } from '../releases/artifacts/contract.mjs';
 let clientPromise;
 let account;
 export async function openVault(config) {

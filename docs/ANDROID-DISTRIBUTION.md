@@ -113,7 +113,7 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    git commit -m "Release Agent Eye 1.0.1"
    node --test
    .\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest lintRelease releaseTools
-   node src/android/releases/signing-smoke.mjs
+   node src/android/signing/signing-smoke.mjs
    .\android\gradlew.bat --stop
    git push origin HEAD:main
    git tag v1.0.1
@@ -139,7 +139,7 @@ npm ci
 node --test
 .\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest
 .\android\gradlew.bat -p android lintRelease releaseTools
-node src/android/releases/signing-smoke.mjs
+node src/android/signing/signing-smoke.mjs
 .\android\gradlew.bat --stop
 dk check
 ```
@@ -197,7 +197,7 @@ Local verification on 2026-10-25 (implementation through `95f60fa`):
 | `npm ci` | Passed; 2 packages added, 0 vulnerabilities. |
 | `node --test` | 71 passed, 0 failed, 0 skipped. Includes Windows ACL and termination cleanup fixtures. |
 | `.\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest lintRelease releaseTools` | `BUILD SUCCESSFUL in 4m 27s`; 115 tasks, 18 executed. 12 JVM tests, 0 failures/errors. Lint: 0 errors, 16 warnings. |
-| `node src/android/releases/signing-smoke.mjs` | Passed real unsigned inspection, alignment, APK/AAB signing and certificate verification with a disposable RSA-4096 key; both signed archives contain the exact source privacy policy. Dry-run never invoked execution. Temporary key removed. |
+| `node src/android/signing/signing-smoke.mjs` | Passed real unsigned inspection, alignment, APK/AAB signing and certificate verification with a disposable RSA-4096 key; both signed archives contain the exact source privacy policy. Dry-run never invoked execution. Temporary key removed. |
 | `npm run release -- setup --dry-run`; `npm run secrets -- generate-key --dry-run`; `npm run secrets -- verify-key --dry-run`; `npm run secrets -- release-sign --tag v1.0.0 --release-id 1 --dry-run --publish` | All passed without owner operations. |
 | `.\.tmp\actionlint\bin\actionlint.exe` (official v1.7.7, checksum verified) | Passed both workflows. Remote workflow execution is unexercised. |
 | Offline `stage --execute` fixture with child-only run ID/attempt 1, followed by `verifyFiles` | Passed schema and all hashes; fixture metadata is not evidence of a real CI run. |

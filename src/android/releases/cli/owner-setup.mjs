@@ -1,4 +1,4 @@
-import { REPOSITORY, requireThat } from './contract.mjs';
+import { REPOSITORY, requireThat } from '../artifacts/contract.mjs';
 export const setupPlan = [
   'Review all tracked files and git history for private material before making them public.',
   `gh repo create ${REPOSITORY} --public --description "Local-only authenticated LAN camera"`,

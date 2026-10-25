@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { identity, requireThat } from './contract.mjs';
+import { identity, requireThat } from '../releases/artifacts/contract.mjs';
 
 export const PASS_ENV = 'AGENT_EYE_KEY_PASSWORD';
 export function parseBadging(text) {
