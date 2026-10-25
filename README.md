@@ -7,4 +7,8 @@ agent can look at something physical — a TV screen, a device display — and a
 - No cloud, no accounts, no ads, no third-party SDKs. LAN subnet only, per-session token.
 - Sideloaded APK (`android/`), PC client in Node (`src/`).
 
-First consumer: `../tv-tuneup` (driving Samsung TV menus).
+See [the Agent Eye runbook](docs/AGENT-EYE.md) for builds, sideloading, the HTTP contract,
+PC commands and the physical-device acceptance checklist. Component map: [STRUCTURE.md](STRUCTURE.md).
+
+The PC client requires Node 22 and uses `AGENT_EYE_TOKEN`. Snapshots are transient and must be
+cleaned after inspection. Any device-control actions belong to the consumer's own authorized workflow.
