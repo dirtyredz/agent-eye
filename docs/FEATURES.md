@@ -23,3 +23,8 @@ verifies both artifacts and exact bundled privacy bytes. Both workflows pass act
 See the distribution runbook for commands, recovery fixtures and corrected initial failures.
 Real GitHub CI/draft creation, real key provisioning, public installation, minified CameraX
 device checks, offline policy display and a second in-place signed update remain **not exercised**.
+
+The 2026-10-25 structure review separates CI/owner commands, artifact contracts, GitHub access,
+local checkout/draft/cache/lock components and signing tools. Its gate passed 90 Node tests,
+all owner dry-runs, offline release APK/AAB builds, disposable-key signing and workflow YAML
+parsing. These checks preserve the acceptance limits above; see the distribution record.
