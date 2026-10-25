@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { digest } from './artifacts.mjs';
-import { identity, requireThat } from './contract.mjs';
+import { digest } from '../releases/artifacts/artifacts.mjs';
+import { identity, requireThat } from '../releases/artifacts/contract.mjs';
 import { PASS_ENV } from './apk-signing.mjs';
 
 export const BUNDLETOOL = Object.freeze({ version: '1.18.1', sha256: 'a73341a7945abcb0e6b8971c7b1b2801bd765006447ca0d2437a4260d572ceac', url: 'https://dl.google.com/dl/android/maven2/com/android/tools/build/bundletool/1.18.1/bundletool-1.18.1.jar' });

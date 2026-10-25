@@ -1,10 +1,10 @@
 import { readFile, writeFile, mkdir, mkdtemp, rm, open, copyFile, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { REPOSITORY, UNSIGNED, FINAL, version, manifest, certificate, requireThat } from './contract.mjs';
-import { digest, verifyFiles, finalManifest, hashes } from './artifacts.mjs';
-import { assertDraft } from './github.mjs';
-import { recoverKey } from '../signing/key-provisioning.mjs';
-import { onTermination } from '../tooling/process.mjs';
+import { REPOSITORY, UNSIGNED, FINAL, version, manifest, certificate, requireThat } from '../artifacts/contract.mjs';
+import { digest, verifyFiles, finalManifest, hashes } from '../artifacts/artifacts.mjs';
+import { assertDraft } from '../github/github.mjs';
+import { recoverKey } from '../../signing/key-provisioning.mjs';
+import { onTermination } from '../../tooling/process.mjs';
 
 const finalNames = [...FINAL, 'release.json', 'SHA256SUMS'];
 export async function checkout(run, root, tag) {
