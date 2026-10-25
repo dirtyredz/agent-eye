@@ -1,8 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { digest } from '../releases/artifacts/artifacts.mjs';
-import { identity, requireThat } from '../releases/artifacts/contract.mjs';
-import { PASS_ENV } from './apk-signing.mjs';
+import { identity, requireThat, PASS_ENV, assertJarUnsigned } from '../releases/artifacts/contract.mjs';
 
 export const BUNDLETOOL = Object.freeze({ version: '1.18.1', sha256: 'a73341a7945abcb0e6b8971c7b1b2801bd765006447ca0d2437a4260d572ceac', url: 'https://dl.google.com/dl/android/maven2/com/android/tools/build/bundletool/1.18.1/bundletool-1.18.1.jar' });
 export function parseBundleManifest(xml) {
@@ -40,7 +39,7 @@ export function bundleTools(toolDir, run) {
     async unsigned(path, expected) {
       await inspect(path, expected);
       const entries = (await run('jar', ['tf', path])).stdout;
-      requireThat(!/^META-INF\/[^\r\n]+\.(SF|RSA|DSA|EC)$/im.test(entries), 'Signed AAB input refused');
+      assertJarUnsigned(entries, 'Signed AAB input refused');
     },
     async sign(input, output, key, pin, expected) {
       await run('jarsigner', ['-J-Duser.language=en', '-keystore', key.path, '-storetype', 'PKCS12', '-storepass:env', PASS_ENV, '-keypass:env', PASS_ENV, '-sigalg', 'SHA256withRSA', '-digestalg', 'SHA-256', '-signedjar', output, input, pin.alias], { env: { [PASS_ENV]: key.password }, secrets: [key.password] });

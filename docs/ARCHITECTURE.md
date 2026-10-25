@@ -34,6 +34,12 @@ Node contract. CI checks formatting/tests, builds unsigned R8/resource-shrunk AP
 validates embedded identity and stages a commit/run-bound manifest. Only a separate job can
 write draft release assets; it cannot sign or publish.
 
+`src/android/releases/cli/cli.mjs` parses arguments and keeps dry-runs free of adapters.
+`commands.mjs` dispatches to separate `ci-commands.mjs` and `owner-commands.mjs` modules.
+Release `artifacts/` owns manifests, hashes and the shared asset-set contract; `github/`
+owns remote release/history/provenance access. CI drafts allow only unsigned names;
+owner retries allow mixed unsigned/final sets until cleanup requires exactly the final set.
+
 The owner CLI first validates a clean tagged checkout, remote main ancestry, draft identity,
 trusted Actions artifact provenance and all published version metadata. Only then may the
 lazy DesktopAuth adapter recover the pinned key. A Windows ACL is restricted and verified
@@ -41,6 +47,12 @@ before key bytes are materialized. APK alignment precedes apksigner; AAB uses ja
 Complete public signed outputs persist for retry; key material does not. Uploads are downloaded
 and verified before exact unsigned assets are removed, and publication is the last mutation.
 The local signing lock and repeated remote checks prevent accidental overlapping transactions.
+
+Release `local/release-sign.mjs` sequences the transaction; `local-release.mjs` assembles
+checkout identity/ancestry, draft verification, public retry cache and lock/scratch ownership.
+`src/android/signing/` owns APK/AAB tools and attended key custody; shared Android tool
+discovery lives in `src/android/tooling/android-tools.mjs`. Signing and CI tag validation
+use the same local tag-to-HEAD and main-ancestry check.
 
 `docs/PRIVACY.md` is copied into generated Android assets and displayed as text by a dedicated
 dialog. There is no policy fetch, WebView or added runtime dependency. Node's development-only

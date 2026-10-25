@@ -1,3 +1,6 @@
+> Historical implementation plan. The 2026-10-25 structure review superseded the flat
+> release paths below; see [STRUCTURE.md](../../STRUCTURE.md) for current placement.
+
 ## 1. Goal
 
 Create a public GitHub release pipeline for `dirtyredz/agent-eye`: CI produces unsigned, minified APK and AAB artifacts in a draft release; the owner signs them locally using 1Password DesktopAuth/Windows Hello and publishes the verified APK for installation from a plain link.

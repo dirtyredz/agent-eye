@@ -45,9 +45,13 @@ src/android/
 ```
 
 Release `cli/cli.mjs` parses flags without loading execution adapters on dry-run;
-`cli/commands.mjs` dispatches CI and owner operations. `local/release-sign.mjs` owns
-transaction ordering, while `local/local-release.mjs` assembles checkout checks and the
-public retry cache. APK and AAB verification remain separate under `signing/`.
+`cli/commands.mjs` dispatches to `cli/ci-commands.mjs` (tag validation, staging and drafts)
+or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
+`local/release-sign.mjs` owns transaction ordering; `local/local-release.mjs` assembles
+`checkout.mjs`, `draft-verification.mjs`, `retry-cache.mjs` and `release-lock.mjs`.
+`artifacts/contract.mjs` owns phase-specific asset sets and shared unsigned-JAR checks.
+APK and AAB verification remain separate under `signing/`; `tooling/android-tools.mjs`
+owns SDK discovery and the build-tools version used by both workflows and signing.
 `signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 

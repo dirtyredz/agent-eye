@@ -1,27 +1,18 @@
+import { UNSIGNED_MANIFEST } from '../artifacts/contract.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkout, localRelease } from './local-release.mjs';
+import { localRelease } from './local-release.mjs';
 import { releaseSign } from './release-sign.mjs';
 import { mkdir, mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { SDK, WORKFLOW, UNSIGNED } from '../artifacts/contract.mjs';
 import { digest } from '../artifacts/artifacts.mjs';
-test('checkout preflight rejects changed commit, dirty files and wrong repository', async () => {
-  for (const mode of ['dirty', 'origin', 'commit']) {
-    await assert.rejects(checkout(async (_file, args) => {
-      if (args[0] === 'status') return { stdout: mode === 'dirty' ? ' M source' : '' };
-      if (args[0] === 'remote') return { stdout: mode === 'origin' ? 'https://github.com/other/repo.git' : 'https://github.com/dirtyredz/agent-eye.git' };
-      if (args[0] === 'rev-parse') return { stdout: args[1] === 'HEAD' ? 'a'.repeat(40) : 'b'.repeat(40) };
-      throw new Error('Unexpected command');
-    }, '.', 'v1.0.0'), /Clean checkout|Unexpected origin|does not match tag/);
-  }
-});
 async function transactionFixture() {
   await mkdir('.tmp', { recursive: true }); const root = await mkdtemp(resolve('.tmp/transaction-test-'));
   const commit = 'a'.repeat(40), tag = 'v1.0.0';
   const files = new Map(UNSIGNED.map(name => [name, Buffer.from(`unsigned:${name}`)]));
   const m = { schema: 1, repository: 'dirtyredz/agent-eye', applicationId: 'local.agenteye', ...SDK, versionName: '1.0.0', versionCode: 1, tag, commit, runId: 12, runAttempt: 1, workflow: WORKFLOW, artifacts: Object.fromEntries([...files].map(([name, bytes]) => [name, digest(bytes)])) };
-  files.set('release-unsigned.json', Buffer.from(JSON.stringify(m)));
+  files.set(UNSIGNED_MANIFEST, Buffer.from(JSON.stringify(m)));
   const events = [];
   let failUpload = false;
   const gh = {
@@ -41,7 +32,7 @@ async function transactionFixture() {
       if (files.has(name)) assert.deepEqual(files.get(name), bytes);
       files.set(name, bytes);
     },
-    removeUnsigned: async () => { events.push('remove'); for (const name of ['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', 'release-unsigned.json']) files.delete(name); },
+    removeUnsigned: async () => { events.push('remove'); for (const name of ['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', UNSIGNED_MANIFEST]) files.delete(name); },
     publish: async () => { events.push('publish'); },
   };
   const run = async (_file, args) => ({ stdout: args[0] === 'status' ? '' : args[0] === 'remote' ? 'https://github.com/dirtyredz/agent-eye.git' : commit });
@@ -67,7 +58,7 @@ for (const changed of ['commit', 'run', 'hash']) test(`local ${changed} tamperin
     if (changed === 'commit') f.m.commit = 'c'.repeat(40);
     if (changed === 'run') f.m.runId = 13;
     if (changed === 'hash') f.files.set('agent-eye-unsigned.apk', Buffer.from('tampered'));
-    f.files.set('release-unsigned.json', Buffer.from(JSON.stringify(f.m)));
+    f.files.set(UNSIGNED_MANIFEST, Buffer.from(JSON.stringify(f.m)));
     await assert.rejects(releaseSign(f.deps, f.options), /mismatch|Changed run/);
     assert.equal(f.events.includes('vault'), false); assert.equal(f.events.includes('publish'), false);
   } finally { await f.cleanup(); }

@@ -30,7 +30,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - run: |
+          build_tools=$(node --input-type=module -e "import { BUILD_TOOLS_VERSION } from './src/android/tooling/android-tools.mjs'; console.log(BUILD_TOOLS_VERSION)")
+          sdkmanager 'platforms;android-36' "build-tools;$build_tools"
       - run: npm ci
       - run: node --test
       - run: bash android/gradlew -p android ktlintCheck assembleDebug testDebugUnitTest --no-daemon

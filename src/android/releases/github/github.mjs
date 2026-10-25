@@ -1,6 +1,6 @@
 import { mkdir, readFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { REPOSITORY, WORKFLOW, manifest, requireThat } from '../artifacts/contract.mjs';
+import { UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, manifest, requireThat } from '../artifacts/contract.mjs';
 import { digest, verifyFiles } from '../artifacts/artifacts.mjs';
 
 export const ACTION_ARTIFACT = m => `unsigned-${m.commit}-${m.runAttempt}`;
@@ -46,7 +46,7 @@ export function github(run) {
       const matches = records.filter(a => a.name === ACTION_ARTIFACT(m));
       requireThat(matches.length === 1 && !matches[0].expired && matches[0].workflow_run?.head_sha === m.commit, 'Missing/expired/conflicting Actions artifact provenance');
       await run('gh', ['run', 'download', String(m.runId), '--repo', REPOSITORY, '--name', ACTION_ARTIFACT(m), '--dir', dir]);
-      const original = manifest(JSON.parse(await readFile(join(dir, 'release-unsigned.json'), 'utf8')));
+      const original = manifest(JSON.parse(await readFile(join(dir, UNSIGNED_MANIFEST), 'utf8')));
       requireThat(JSON.stringify(original) === JSON.stringify(m), 'Draft manifest differs from Actions artifact');
       await verifyFiles(dir, original);
       return original;
@@ -64,7 +64,7 @@ export function github(run) {
     async removeUnsigned(id, tag) {
       assertDraft(await release(id), tag, id);
       for (const asset of await assets(id)) {
-        if (['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', 'release-unsigned.json'].includes(asset.name)) await api(`releases/assets/${asset.id}`, ['--method', 'DELETE']);
+        if (['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', UNSIGNED_MANIFEST].includes(asset.name)) await api(`releases/assets/${asset.id}`, ['--method', 'DELETE']);
       }
     },
     async publish(id, tag) {

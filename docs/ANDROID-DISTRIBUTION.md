@@ -159,7 +159,7 @@ Missing/expired provenance fails closed. All published history is paginated; mis
 or non-increasing version codes fails closed.
 
 Bundletool 1.18.1 is resolved from Google Maven with Gradle; the executable jar SHA-256 is
-pinned in `bundle-signing.mjs`. `releaseTools` stages its transitive dependencies. APK signing
+pinned in `src/android/signing/bundle-signing.mjs`. `releaseTools` stages its transitive dependencies. APK signing
 uses zipalign before apksigner; AAB uses jarsigner and verifies all entries. Only expected
 self-signed trust/timestamp warnings are accepted. See [apksigner](https://developer.android.com/tools/apksigner)
 and [command-line signing](https://developer.android.com/build/building-cmdline).

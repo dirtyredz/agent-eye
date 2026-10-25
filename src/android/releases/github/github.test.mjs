@@ -1,3 +1,4 @@
+import { UNSIGNED_MANIFEST } from '../artifacts/contract.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
@@ -18,7 +19,7 @@ test('only exact unsigned asset names are removed', async () => {
   const gh = github(async (_file, args) => {
     const route = args[1];
     if (args.includes('DELETE')) { deleted.push(route); return { stdout: '' }; }
-    if (route.includes('/assets?')) return { stdout: JSON.stringify(['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', 'release-unsigned.json', 'mapping.txt', 'agent-eye.apk', 'custom-unsigned.apk'].map((name, i) => ({ id: i + 1, name }))) };
+    if (route.includes('/assets?')) return { stdout: JSON.stringify(['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', UNSIGNED_MANIFEST, 'mapping.txt', 'agent-eye.apk', 'custom-unsigned.apk'].map((name, i) => ({ id: i + 1, name }))) };
     return { stdout: JSON.stringify({ id: 1, tag_name: 'v1.0.0', draft: true, prerelease: false }) };
   });
   await gh.removeUnsigned(1, 'v1.0.0'); assert.equal(deleted.length, 3); assert.ok(deleted[2].endsWith('/3'));

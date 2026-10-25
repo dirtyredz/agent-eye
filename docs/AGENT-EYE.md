@@ -28,7 +28,7 @@ try { .\gradlew.bat ktlintCheck assembleDebug assembleRelease bundleRelease test
 finally { .\gradlew.bat --stop; Pop-Location }
 npm ci
 node --test
-node src/android/releases/signing-smoke.mjs
+node src/android/signing/signing-smoke.mjs
 dk check
 ```
 
