@@ -31,3 +31,7 @@
   signing. A checksum beside a draft download alone is not trusted build provenance.
 - Privacy/Data safety disclosures must include off-device LAN transfers and plain HTTP.
   Local-only does not imply encrypted transport or automatically imply no Play-defined collection.
+- Escape the Windows drive colon in `local.properties` (`sdk.dir=C\:/...`); otherwise release
+  lint reports `PropertyEscape` even when the build itself can locate the SDK.
+- Run `ktlintFormat` separately before the gate. Combining format/check task selectors can
+  schedule a subproject's check before its formatter and report stale formatting errors.

@@ -19,8 +19,8 @@ From the repository root in PowerShell:
 java -version
 node --version
 # SDK location is machine-local and must stay ignored.
-$sdkPath = "$env:LOCALAPPDATA\Android\Sdk".Replace('\', '/')
-Set-Content android/local.properties "sdk.dir=$sdkPath"
+$sdkPath = "$env:LOCALAPPDATA\Android\Sdk".Replace('\', '/').Replace(':', '\:')
+Set-Content -Encoding ascii android/local.properties "sdk.dir=$sdkPath"
 # Use the owner's authorized normal user cache.
 $env:GRADLE_USER_HOME = "$env:USERPROFILE\.gradle"
 Push-Location android

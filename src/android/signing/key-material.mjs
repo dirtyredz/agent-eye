@@ -21,5 +21,5 @@ export async function withKeyDirectory(deps, action) {
   const key = await protectedDirectory(deps);
   const removeCleanup = onTermination(key.cleanup);
   try { return await action(key); }
-  finally { removeCleanup(); await key.cleanup(); }
+  finally { try { await key.cleanup(); } finally { removeCleanup(); } }
 }

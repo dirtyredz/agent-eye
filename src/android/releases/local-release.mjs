@@ -45,7 +45,7 @@ export function localRelease({ root, run, gh, apk, bundle, vault, localVersion, 
       scratch = await mkdtemp(join(tempRoot, 'inspection-'));
       const cleanup = async () => { await rm(scratch, { recursive: true, force: true }); await rm(lockPath, { force: true }); };
       const removeCleanup = onTermination(cleanup, 2);
-      return async () => { removeCleanup(); await cleanup(); };
+      return async () => { try { await cleanup(); } finally { removeCleanup(); } };
     },
     async preflight(options) {
       version(localVersion, options.tag); certificate(pin);

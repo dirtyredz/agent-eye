@@ -37,12 +37,13 @@ android {
             )
         }
     }
-    sourceSets.getByName("main").assets.srcDir(privacyAssets)
+    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/privacyAssets"))
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+tasks.named("preBuild") { dependsOn(privacyAssets) }
 kotlin {
     compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
 }

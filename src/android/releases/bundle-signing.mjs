@@ -29,7 +29,7 @@ export function bundleTools(toolDir, run) {
     identity(parseBundleManifest((await bundle(['dump', 'manifest', `--bundle=${path}`, '--module=base'])).stdout), expected);
   }
   async function verify(path, pin, expected) {
-    jarReport(await run('jarsigner', ['-verify', '-strict', path], { allowed: [0, 4] }));
+    jarReport(await run('jarsigner', ['-J-Duser.language=en', '-verify', '-strict', path], { allowed: [0, 4] }));
     const report = (await run('keytool', ['-printcert', '-jarfile', path, '-J-Duser.language=en'])).stdout;
     const certs = [...report.matchAll(/SHA256: ([A-F0-9:]+)/g)];
     requireThat(certs.length === 1 && certs[0][1].replaceAll(':', '').toLowerCase() === pin.sha256, 'AAB signer does not match pin');
@@ -43,7 +43,7 @@ export function bundleTools(toolDir, run) {
       requireThat(!/^META-INF\/[^\r\n]+\.(SF|RSA|DSA|EC)$/im.test(entries), 'Signed AAB input refused');
     },
     async sign(input, output, key, pin, expected) {
-      await run('jarsigner', ['-keystore', key.path, '-storetype', 'PKCS12', '-storepass:env', PASS_ENV, '-keypass:env', PASS_ENV, '-sigalg', 'SHA256withRSA', '-digestalg', 'SHA-256', '-signedjar', output, input, pin.alias], { env: { [PASS_ENV]: key.password }, secrets: [key.password] });
+      await run('jarsigner', ['-J-Duser.language=en', '-keystore', key.path, '-storetype', 'PKCS12', '-storepass:env', PASS_ENV, '-keypass:env', PASS_ENV, '-sigalg', 'SHA256withRSA', '-digestalg', 'SHA-256', '-signedjar', output, input, pin.alias], { env: { [PASS_ENV]: key.password }, secrets: [key.password] });
       await verify(output, pin, expected);
     },
   };

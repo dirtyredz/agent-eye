@@ -11,6 +11,9 @@ test('APK badging and exactly one supported signer are required', () => {
   assert.throws(() => parseSigner(report.replace('true', 'false')));
   assert.throws(() => parseSigner(report + `Signer #2 certificate SHA-256 digest: ${'b'.repeat(64)}\n`));
 });
+test('build-tools 35 aapt2 reports minSdkVersion rather than sdkVersion', () => {
+  assert.equal(parseBadging(badging.replace("sdkVersion:'24'", "minSdkVersion:'24'")).minSdk, 24);
+});
 test('APK aligns before signing and supplies password only in child env', async () => {
   const calls = [];
   const api = apkTools('tools', async (file, args, options) => {
