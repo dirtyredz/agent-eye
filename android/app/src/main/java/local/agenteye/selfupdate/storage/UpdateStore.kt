@@ -10,7 +10,8 @@ import local.agenteye.selfupdate.transport.Backoff
 /** The candidate being transferred, and whether its complete bytes were verified. */
 data class TransferRecord(val candidate: Candidate, val verifiedAt: Long? = null)
 
-enum class InstallStage { Staging, Committed }
+/** Committing = intent persisted, commit() not yet known to have returned. */
+enum class InstallStage { Staging, Committing, Committed }
 
 /** Installer session identity, persisted before each irreversible transition. */
 data class InstallRecord(

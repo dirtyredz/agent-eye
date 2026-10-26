@@ -9,7 +9,7 @@ agent can look at something physical — a TV screen, a device display — and a
 
 Signed downloads will be available at [GitHub Releases](https://github.com/dirtyredz/agent-eye/releases/latest).
 On Android, download `agent-eye.apk`, allow installs from your browser when prompted, and install.
-The public repository and first release are owner-run steps and are not yet published.
+v1.0.0 is [published](https://github.com/dirtyredz/agent-eye/releases/tag/v1.0.0); v1.1.0 (versionCode 2) is not yet published.
 See [Android distribution](docs/ANDROID-DISTRIBUTION.md) for signing, updates and recovery,
 and [Privacy](docs/PRIVACY.md) for LAN transfer and snapshot retention details.
 

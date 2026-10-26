@@ -37,6 +37,42 @@ class PackageInstallerGatewayTest {
         assertEquals(1, port.commits.size)
     }
 
+    @Test fun deathBetweenCommitIntentAndCommitRecoversToIdleAndRetries() {
+        // Process died after the Committing record was saved but before commit() ran.
+        val id = port.create(apk.length())
+        store.saveInstall(
+            local.agenteye.selfupdate.storage.InstallRecord(
+                candidate,
+                id,
+                nonce,
+                InstallStage.Committing
+            )
+        )
+        val restarted = PackageInstallerGateway(port, store) { nonce }
+        assertEquals(InstallRecovery.Outcome.Orphan, restarted.reconcile(1, true, false))
+        assertTrue(id in port.abandoned)
+        assertNull(store.readInstall())
+        // Not stuck: a retry stages and commits a fresh session.
+        restarted.stage(apk, candidate)
+        assertEquals(1, port.commits.size)
+        assertEquals(InstallStage.Committed, store.readInstall()!!.stage)
+    }
+
+    @Test fun committingRecordWithCommittedSessionKeepsRunning() {
+        val id = port.create(1)
+        port.sessions[id] = SessionState.Committed
+        store.saveInstall(
+            local.agenteye.selfupdate.storage.InstallRecord(
+                candidate,
+                id,
+                nonce,
+                InstallStage.Committing
+            )
+        )
+        assertEquals(InstallRecovery.Outcome.StillRunning, gateway.reconcile(1, true, false))
+        assertEquals(UpdateProblem.InstallInterrupted, problem { gateway.stage(apk, candidate) })
+    }
+
     @Test fun permissionDenialCreatesNoSession() {
         port.allowed = false
         assertEquals(UpdateProblem.InstallDenied, problem { gateway.stage(apk, candidate) })

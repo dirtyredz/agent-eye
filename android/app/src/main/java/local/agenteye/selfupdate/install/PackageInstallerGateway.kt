@@ -52,8 +52,8 @@ class PackageInstallerGateway(
     fun stage(apk: File, candidate: Candidate) {
         if (!port.allowed()) throw UpdateFailure(UpdateProblem.InstallDenied)
         store.readInstall()?.let { existing ->
-            if (existing.stage == InstallStage.Committed &&
-                port.state(existing.sessionId) != SessionState.Missing
+            if (existing.stage != InstallStage.Staging &&
+                port.state(existing.sessionId) == SessionState.Committed
             ) {
                 // Never create a second installation while Android is still completing one.
                 throw UpdateFailure(UpdateProblem.InstallInterrupted)
@@ -77,8 +77,14 @@ class PackageInstallerGateway(
             ) {
                 throw UpdateFailure(UpdateProblem.Corrupt)
             }
-            store.saveInstall(record.copy(stage = InstallStage.Committed))
+            // Commit intent first: process death between here and commit() leaves an open
+            // session that recovery abandons, never one that looks like a running install.
+            store.saveInstall(record.copy(stage = InstallStage.Committing))
             port.commit(id, record.nonce)
+            // Keep any flags a fast callback already stored; only upgrade the stage.
+            store.readInstall()?.takeIf { it.sessionId == id }?.let {
+                store.saveInstall(it.copy(stage = InstallStage.Committed))
+            }
         } catch (e: Exception) {
             runCatching { port.abandon(id) }
             store.clearInstall()
@@ -94,7 +100,7 @@ class PackageInstallerGateway(
     /** Validates a callback; returns the status only for the stored committed session and nonce. */
     fun accept(sessionId: Int, nonce: String?, status: InstallStatus): InstallStatus? {
         val record = store.readInstall() ?: return null
-        if (record.stage != InstallStage.Committed || record.sessionId != sessionId ||
+        if (record.stage == InstallStage.Staging || record.sessionId != sessionId ||
             record.nonce != nonce
         ) {
             return null

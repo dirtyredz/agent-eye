@@ -35,6 +35,11 @@ class InstallRecoveryTest {
                 session = SessionState.Open
             )
         )
+        // Commit intent saved but commit() never took effect: abandon, never wait forever.
+        val committing = committed.copy(stage = InstallStage.Committing)
+        assertEquals(Outcome.Orphan, outcome(record = committing, session = SessionState.Open))
+        assertEquals(Outcome.Orphan, outcome(session = SessionState.Open))
+        assertEquals(Outcome.StillRunning, outcome(record = committing))
         assertEquals(Outcome.StillRunning, outcome())
         assertEquals(Outcome.Interrupted, outcome(session = SessionState.Missing))
     }

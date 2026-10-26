@@ -71,6 +71,10 @@ closed on more than one). `draftId` uses it too. Never reintroduce `releases/tag
   backoff (shown as distinct from "up to date"); 404 on latest means no published release.
 - **Lost installer confirmation.** If the process dies while Android's confirm screen is up, the app
   offers "Retry installation" (abandons the waiting session); reopening reconciles locally.
+- **Commit intent stage.** The install record is saved as `Committing` before `commit()` and upgraded to
+  `Committed` only after it returns. Recovery abandons any record whose platform session is still `Open`
+  (death before commit() took effect) and returns the app to idle/retry; a permanent "Installing" (Start
+  disabled) was the old failure. A `Committed` platform session is left to Android to finish or abort.
 - **Signer incompatibility.** Debug or differently signed installs cannot self-update; the app shows an
   incompatible-channel message and never offers uninstall.
 - **Forward-only recovery.** A bad release is fixed only by a higher version code; never downgrade.

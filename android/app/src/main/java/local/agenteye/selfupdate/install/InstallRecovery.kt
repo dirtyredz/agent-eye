@@ -17,7 +17,7 @@ object InstallRecovery {
         /** Installed package (pinned signer) is at least the target: clear files and records. */
         Replaced,
 
-        /** Session created but never committed: abandon it. */
+        /** Session created but never committed (or commit never took effect): abandon it. */
         Orphan,
 
         /** A committed session is still alive; observe it, never start a second one. */
@@ -30,6 +30,7 @@ object InstallRecovery {
         Interrupted
     }
 
+    /** Staging, or commit intent with the session still open (commit() never took effect), is an orphan. */
     fun reconcile(
         record: InstallRecord?,
         installedCode: Long,
@@ -39,7 +40,7 @@ object InstallRecovery {
     ): Outcome = when {
         record == null -> Outcome.None
         installedEligible && installedCode >= record.candidate.versionCode -> Outcome.Replaced
-        record.stage == InstallStage.Staging -> Outcome.Orphan
+        record.stage == InstallStage.Staging || session == SessionState.Open -> Outcome.Orphan
         session == SessionState.Missing -> Outcome.Interrupted
         record.pendingUserAction && !haveConfirmation -> Outcome.ConfirmationLost
         else -> Outcome.StillRunning
