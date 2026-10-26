@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { identity, requireThat, PASS_ENV, assertJarUnsigned } from '../releases/artifacts/contract.mjs';
+import { identity, requireThat, PASS_ENV, assertJarUnsigned } from '../../releases/artifacts/contract.mjs';
 
 export function parseBadging(text) {
   const attr = name => text.match(new RegExp(`${name}='([^']*)'`))?.[1];

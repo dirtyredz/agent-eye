@@ -4,11 +4,11 @@ import { certificate } from '../artifacts/contract.mjs';
 import { setup } from './owner-setup.mjs';
 import { releaseSign } from '../local/release-sign.mjs';
 import { localRelease } from '../local/local-release.mjs';
-import { setupVault } from '../../signing/vault-setup.mjs';
-import { provisionFlow } from '../../signing/provision-flow.mjs';
-import { openVault } from '../../signing/vault.mjs';
-import { provision, recoverKey } from '../../signing/key-provisioning.mjs';
-import { inspectVault, cleanupOrphans } from '../../signing/vault-maintenance.mjs';
+import { setupVault } from '../../signing/vault/vault-setup.mjs';
+import { provisionFlow } from '../../signing/keys/provision-flow.mjs';
+import { openVault } from '../../signing/vault/vault.mjs';
+import { provision, recoverKey } from '../../signing/keys/key-provisioning.mjs';
+import { inspectVault, cleanupOrphans } from '../../signing/vault/vault-maintenance.mjs';
 import { tooling } from '../../tooling/android-tools.mjs';
 
 export async function ownerCommand({ root, run, gh, localVersion, log }, options) {

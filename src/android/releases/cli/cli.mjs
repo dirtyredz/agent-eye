@@ -3,7 +3,7 @@ import { requireThat } from '../artifacts/contract.mjs';
 import { runScript } from '../../../script-run/script-run.mjs';
 import { OWNER_COMMANDS, CI_COMMANDS } from './command-names.mjs';
 import { setupPlan } from './owner-setup.mjs';
-import { vaultPlan } from '../../signing/vault-setup.mjs';
+import { vaultPlan } from '../../signing/vault/vault-setup.mjs';
 
 const plans = {
   setup: setupPlan,

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { finalNames, requireThat } from '../artifacts/contract.mjs';
 import { digest } from '../artifacts/artifacts.mjs';
-import { recoverKey } from '../../signing/key-provisioning.mjs';
+import { recoverKey } from '../../signing/keys/key-provisioning.mjs';
 import { releaseLock } from './release-lock.mjs';
 import { draftVerification } from './draft-verification.mjs';
 import { retryCache } from './retry-cache.mjs';

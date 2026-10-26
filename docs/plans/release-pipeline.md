@@ -27,8 +27,8 @@ Agent Eye currently has no root `package.json`, release tooling, or workflows. I
 | `src/android/releases/bundle-signing.mjs` | AAB inspection, JAR signing and signature verification. |
 | `src/android/releases/owner-setup.mjs` | Reviewable owner bootstrap plan and explicit execution for public repository creation/configuration. |
 | `src/android/releases/signing-certificate.json` | Public package identity, certificate SHA-256, alias and first release version code. Never private key material. |
-| `src/android/signing/vault.mjs` | Lazy-loaded 1Password SDK DesktopAuth adapter. |
-| `src/android/signing/key-provisioning.mjs` | Dedicated Agent Eye key generation, vault storage and recovery verification. |
+| `src/android/signing/vault/vault.mjs` | Lazy-loaded 1Password SDK DesktopAuth adapter. |
+| `src/android/signing/keys/key-provisioning.mjs` | Dedicated Agent Eye key generation, vault storage and recovery verification. |
 | `src/android/signing/key-material.mjs` | Windows-protected temporary key storage and cleanup. |
 | `src/android/tooling/process.mjs` | Shared subprocess execution with bounded output and secret redaction. |
 | Adjacent `*.test.mjs` files | Tests for release contracts, transaction failures, signing adapters and owner commands. |

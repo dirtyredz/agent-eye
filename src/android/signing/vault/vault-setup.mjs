@@ -2,7 +2,7 @@
 // Creates (never modifies) the "Agent Eye Signing" vault; refuses ambiguity and never overwrites config.
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { requireThat } from '../releases/artifacts/contract.mjs';
+import { requireThat } from '../../releases/artifacts/contract.mjs';
 import { desktopClient } from './vault.mjs';
 import { DEFAULT_ACCOUNT } from './owner-account.mjs';
 

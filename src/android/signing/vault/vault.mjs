@@ -1,4 +1,4 @@
-import { requireThat } from '../releases/artifacts/contract.mjs';
+import { requireThat } from '../../releases/artifacts/contract.mjs';
 let clientPromise;
 let account;
 async function sdkModule() { const imported = await import('@1password/sdk'); return imported.default ?? imported; }

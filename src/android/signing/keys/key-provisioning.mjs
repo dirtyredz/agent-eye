@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { readFile, writeFile, access } from 'node:fs/promises';
-import { APPLICATION_ID, certificate, requireThat, PASS_ENV } from '../releases/artifacts/contract.mjs';
+import { APPLICATION_ID, certificate, requireThat, PASS_ENV } from '../../releases/artifacts/contract.mjs';
 import { withKeyDirectory } from './key-material.mjs';
 
 export async function keyCertificate(run, path, password, alias = 'agent-eye') {

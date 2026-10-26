@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { protectedDirectory } from './key-material.mjs';
 import { mkdir, mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { run } from '../tooling/process.mjs';
+import { run } from '../../tooling/process.mjs';
 test('ACL failure cleans directory before key bytes can be written', async () => {
   const calls = [];
   const io = { mkdtemp: async () => 'C:/protected/unique', rm: async () => calls.push('cleanup') };
@@ -38,7 +38,7 @@ test('catchable termination awaits cleanup even when child failure starts normal
   const script = `
     import { writeFile } from 'node:fs/promises';
     import { withKeyDirectory } from ${JSON.stringify(new URL('./key-material.mjs', import.meta.url).href)};
-    import { onTermination } from ${JSON.stringify(new URL('../tooling/process.mjs', import.meta.url).href)};
+    import { onTermination } from ${JSON.stringify(new URL('../../tooling/process.mjs', import.meta.url).href)};
     let fail, ready;
     const started = new Promise(resolve => ready = resolve);
     const cleanup = async () => { await new Promise(resolve => setTimeout(resolve, 100)); await writeFile(${JSON.stringify(marker)}, 'cleaned'); };

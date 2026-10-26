@@ -1,7 +1,7 @@
 // Owner repair tools for a failed provisioning: list the Agent Eye vault items (never values) and remove
 // orphaned ones. Cleanup is allowed only while nothing can depend on the key: the public pin is still unset
 // and GitHub has no release at all. Anything uncertain (gh failure, odd responses, duplicates) fails closed.
-import { requireThat } from '../releases/artifacts/contract.mjs';
+import { requireThat } from '../../releases/artifacts/contract.mjs';
 
 const describe = item => `${item.title} [${item.category}, ${item.state}, created ${item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt}]`;
 const isAgentEye = item => typeof item.title === 'string' && item.title.startsWith('Agent Eye ');

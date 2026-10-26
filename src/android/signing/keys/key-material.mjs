@@ -1,8 +1,8 @@
 import * as fs from 'node:fs/promises';
 import { join, resolve, relative } from 'node:path';
 import { tmpdir } from 'node:os';
-import { requireThat } from '../releases/artifacts/contract.mjs';
-import { onTermination } from '../tooling/process.mjs';
+import { requireThat } from '../../releases/artifacts/contract.mjs';
+import { onTermination } from '../../tooling/process.mjs';
 
 export async function protectedDirectory({ run, root, io = fs, tempRoot = tmpdir(), platform = process.platform }) {
   requireThat(platform === 'win32', 'Owner key operations require Windows ACL protection');

@@ -1,5 +1,5 @@
 // `provision` = create/verify the signing vault, then generate the key into it.
-import { setupVault } from './vault-setup.mjs';
+import { setupVault } from '../vault/vault-setup.mjs';
 import { provision } from './key-provisioning.mjs';
 
 export async function provisionFlow({ root, run, vault, account, log, pinPath, firstVersionCode, say = console.log }) {
