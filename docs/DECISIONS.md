@@ -107,4 +107,4 @@
 - **2026-10-25 — `provision` = vault then key.** One owner command creates the dedicated signing
   vault and `android/signing.local.json`, then generates the key (`signing/provision-flow.mjs`);
   `setup-vault` and `generate-key` remain for retries. Account precedence: `--account`,
-  `OP_ACCOUNT_ID`, existing config, then the owner default in `signing/owner-account.mjs`.
+  `OP_ACCOUNT_ID`, existing config, then the owner default in `signing/vault/owner-account.mjs`.

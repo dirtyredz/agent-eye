@@ -35,7 +35,7 @@
 - `docs/DECISIONS.md` — toolchain and product decisions with rationale.
 - `docs/FEATURES.md` — implemented capabilities and verification status.
 - `docs/GOTCHAS.md` — operational traps and recovery constraints.
-- `docs/plans/` — original implementation specification; its superseded-naming note applies.
+- `docs/plans/` — implementation plans (`agent-eye-app.md` is the original specification; its superseded-naming note applies).
 - `docs/items/` — Docket work items, edited through `dk` only.
 - `.tmp/` — ignored build inputs, verification artifacts and transient snapshots.
 
@@ -47,7 +47,7 @@ Local JVM tests mirror these packages under `app/src/test/java/`.
 
 Self-update (user-initiated, outbound) lives under `selfupdate/`: `UpdateRuntime` (wiring, lazily
 owned by `AgentEyeApplication`), `UpdateCoordinator` (state machine) and `UpdateState`;
-`contract/` (`ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; imports nothing, so `release/`, `transport/` and `storage/` share it without a cycle);
+`contract/` (`ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; imports nothing. The shared updater vocabulary (`Candidate`, `UpdateProblem`, `UpdateFailure`, `UpdateCancelled`) still lives in the root `UpdateState.kt`, so the subpackages import the root package and form a cycle; tracked as debt in dk-7948b352);
 `release/` (`ReleaseManifest` decode and SHA256SUMS parse via `JsonObject`,
 `ReleasePolicy`, `GitHubReleaseSource`); `transport/` (`UpdateUrlPolicy`, `UpdateHttpClient`,
 `HttpsConnector`); `download/` (`ApkDownloader`, pure `ApkVerifier`, `AndroidApkInspector`);
@@ -120,3 +120,24 @@ owns SDK discovery and the build-tools version used by both workflows and signin
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 
 Structural review: 2026-10-25. No code file exceeds 800 lines.
+Last full review: 2026-10-26
+
+## Structural debt
+
+From the 2026-10-26 baseline review: componentization and abstraction lenses for each area, a
+topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items hold the details.
+
+- **Dependency cycles (P1):** `camera` -> `http` through `Shot` (dk-c6943e21); `service` <-> `ui`
+  through the notification intent (dk-6844e342); `selfupdate` root <-> subpackages through the
+  shared vocabulary (dk-7948b352); `signing/` <-> `releases/` through `requireThat` in
+  `contract.mjs` (dk-28656ae1).
+- **Duplicated mechanics (P1):** SHA-256/hex four times in self-update (dk-09deb5ab); the camera
+  client's private-dir and atomic-write helper (dk-6eb63a65); the SHA256SUMS format and
+  `release.json` literals in release tooling (dk-d31136f0).
+- **Wide coordinators:** `CaptureService` (dk-e3c7da36), `MainActivity` (dk-6839f9b8), GitHub
+  knowledge leaking out of the `github()` adapter (dk-67c7a246, dk-782342ab), `retry-cache.mjs`
+  (dk-d31136f0), the release CLI command spread (dk-0e25e219).
+- **Smaller seams (P2/P3):** dk-bed2beb9, dk-1a0ea30f, dk-7fe1491b, dk-de2486c6, dk-02d3e16c,
+  dk-25aafecb, dk-48064578, dk-8e8110f3.
+- `selfupdate/contract/` and `src/android/releases/github/` are single-module folders on purpose.
+  They gain files when dk-7948b352 and dk-782342ab land.
