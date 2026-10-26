@@ -9,10 +9,13 @@
 - `src/android/releases/cli/` — side-effect-free argument parsing and CI/owner command dispatch.
 - `src/android/releases/github/` — GitHub release assets, history and Actions provenance.
 - `src/android/releases/local/` — owner transaction ordering, checkout, verification, retry cache and lock.
-- `src/android/signing/` — APK/AAB signing, disposable smoke, attended DesktopAuth, signing-vault creation (`vault-setup.mjs`), key provisioning (`provision-flow.mjs`, `key-provisioning.mjs`) and key isolation.
+- `src/android/signing/` — signing responsibilities below plus `signing-smoke.mjs`, the explicitly invoked disposable-key integration check.
+- `src/android/signing/artifacts/` — APK (`apk-signing.mjs`) and AAB (`bundle-signing.mjs`) inspection, signing and verification.
+- `src/android/signing/vault/` — 1Password DesktopAuth adapter (`vault.mjs`, documents the `error.stage` contract), vault creation (`vault-setup.mjs`), repair (`vault-maintenance.mjs`) and the default account (`owner-account.mjs`).
+- `src/android/signing/keys/` — key custody: isolated key directories (`key-material.mjs`), generation and recovery (`key-provisioning.mjs`) and `provision-flow.mjs` (vault then key).
 - `src/android/tooling/` — Android SDK/tool discovery, bounded secret-redacting subprocess execution (`process.mjs`) and the workflow guard test (no bare `sdkmanager` in `.github/workflows/`).
 - `src/script-run/` — `script-run.mjs`, the standard script wrapper (repo-root resolution, per-run redacted log, OK/FAILED line, v1.1.0). Deliberately ONE dependency-free file: the canonical copy is copied verbatim to other repos and extended through options only. Holds its tests and the repo-wide all-entry-points-from-tmpdir test.
-- `scripts/release/` — owner-run PowerShell entry points (`provision.ps1`, `sign-release.ps1`), shared plumbing (`owner-run.ps1`: repo root, `.tmp/owner-runs/` log, OK/FAILED line) and their dry-run tests (`release-scripts.test.ps1`, run by `release-scripts.test.mjs` under pwsh/powershell). They call `cli.mjs` and hold no release logic.
+- `scripts/release/` — owner-run PowerShell entry points (`provision.ps1`, `sign-release.ps1`, `vault-repair.ps1`), the verbatim harness template `owner-run.ps1` (v1.0.0), repo specifics `agent-eye.ps1` (CLI path, CLI pass-through, final line pointing at the CLI log) and the dry-run tests (`release-scripts.test.ps1`, run by `release-scripts.test.mjs` under pwsh/powershell). They call `cli.mjs` and hold no release logic.
 - `.github/workflows/` — read-only verification/builds and separately privileged draft creation.
 - `docs/ANDROID-DISTRIBUTION.md`, `docs/PRIVACY.md`, `docs/PLAY-LISTING.md` — owner distribution, bundled privacy and future Play checklist.
 - `docs/AGENT-EYE.md` — build, operation, API and physical acceptance runbook.
@@ -42,11 +45,19 @@ src/
     ├── releases/
     │   ├── artifacts/   contract, manifests and staging
     │   ├── cli/         CLI parsing and CI/owner commands
-    │   ├── github/      release API and Actions provenance
-    │   ├── local/       owner transaction and local checks/cache/lock
+    │   ├── github/      release API, draft lookup and Actions provenance
+    │   ├── local/       owner transaction, release tools, local checks/cache/lock
     │   └── signing-certificate.json
-    ├── signing/         artifact signing, vault creation and key custody
+    ├── signing/
+    │   ├── artifacts/   APK and AAB signing
+    │   ├── vault/       DesktopAuth adapter, vault setup and repair
+    │   ├── keys/        key material, provisioning, provision flow
+    │   └── signing-smoke.mjs
     └── tooling/         Android tools and subprocess execution
+scripts/release/        owner-run .ps1 pass-throughs, harness template, dry-run tests
+android/                Gradle project (Kotlin app, version.properties, signing.example.json)
+.github/workflows/      ci.yml (verification), android-release.yml (unsigned artifacts, draft)
+docs/                   living docs, runbooks, plans/, items/
 ```
 
 Release `cli/cli.mjs` parses flags without loading execution adapters on dry-run;
@@ -55,10 +66,10 @@ or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
 `local/release-sign.mjs` owns transaction ordering; `local/local-release.mjs` assembles
 `checkout.mjs`, `draft-verification.mjs`, `retry-cache.mjs` and `release-lock.mjs`.
 `artifacts/contract.mjs` owns phase-specific asset sets and shared unsigned-JAR checks.
-APK and AAB verification remain separate under `signing/`; `tooling/android-tools.mjs`
+APK and AAB verification remain separate under `signing/artifacts/`; `tooling/android-tools.mjs`
 owns SDK discovery and the build-tools version used by both workflows and signing;
 `tooling/workflows.test.mjs` guards both workflows against PATH-based `sdkmanager` calls.
-`signing/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` (`setup-vault`); `signing/provision-flow.mjs` runs `provision` = vault then key; the default 1Password account lives alone in `signing/owner-account.mjs`. `cli/command-names.mjs` is the single owner/CI command set. Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
+`signing/vault/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` (`setup-vault`); `signing/keys/provision-flow.mjs` runs `provision` = vault then key; the default 1Password account lives alone in `signing/vault/owner-account.mjs`. `cli/command-names.mjs` is the single owner/CI command set. Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
 `signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 

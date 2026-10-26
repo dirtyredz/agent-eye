@@ -9,10 +9,10 @@
                       (fails closed if gh fails). Deletes only the two exact Agent Eye item titles of the configured vault.
                       Without -Execute it is a dry run that prints the plan and deletes nothing.
   Exactly one of -Inspect / -CleanupOrphans is required. After a cleanup, rerun provision.ps1.
-  Works from any directory. Each run writes <repo>\.tmp\owner-runs\vault-repair-<stamp>-<pid>.log and ends with
-  "OK (exit 0) log: <path>" or "FAILED (exit N) log: <path>".
+  Works from any directory. The CLI's log is authoritative; this script keeps a short wrapper log and ends with
+  "OK (exit 0) log: <CLI log>" or "FAILED (exit N) log: <CLI log>".
 
-  Exit codes: 0 done, 1 bad arguments or node missing, 3 the CLI command failed.
+  Exit codes: 0 done, 1 bad arguments or node missing, otherwise the CLI's exit code.
 
 .PARAMETER Execute
   With -CleanupOrphans: actually delete. With -Inspect: ignored (inspect always reads).
@@ -29,7 +29,8 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'owner-run.ps1')
-Initialize-OwnerRun 'vault-repair'
+. (Join-Path $PSScriptRoot 'agent-eye.ps1')
+Initialize-AgentEyeRun 'vault-repair'
 
 if ($Inspect -eq $CleanupOrphans) { Complete-OwnerRun 1 'Pass exactly one of -Inspect or -CleanupOrphans.' }
 if ($DryRun -and $Execute) { Complete-OwnerRun 1 '-DryRun and -Execute conflict.' }
@@ -39,8 +40,5 @@ $mode = if ($run) { '--execute' } else { '--dry-run' }
 Write-Log "Agent Eye $command ($mode). Repo: $script:RepoRoot"
 if ($CleanupOrphans -and -not $run -and -not $DryRun) { Write-Log 'No -Execute: showing the plan only; nothing will be deleted.' }
 
-$node = Find-Tool 'node'
-if (-not $node) { Complete-OwnerRun 1 'node was not found on PATH. Install Node 22 and open a new shell.' }
-$code = Invoke-Native $node @($script:CliPath, $command, $mode) $script:RepoRoot
-if ($code -ne 0) { Complete-OwnerRun 3 "$command failed (exit $code)." }
-Complete-OwnerRun 0
+$code = Invoke-AgentEyeCli @($command, $mode)
+Complete-AgentEyeRun $code

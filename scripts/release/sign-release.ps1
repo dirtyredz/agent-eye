@@ -3,33 +3,27 @@
   Sign a CI-built Agent Eye draft release locally (1Password + Windows Hello) and optionally publish it.
 
 .DESCRIPTION
-  Owner-run. Wraps the Node CLI's release-sign and adds no signing logic. Steps:
-    1. validate -Tag (vMAJOR.MINOR.PATCH)
-    2. find the draft's numeric release ID with gh (unless -ReleaseId is given)
-    3. gradlew releaseTools, then gradlew --stop (pinned verification tools; skip with -SkipReleaseTools)
-    4. cli.mjs release-sign --tag <Tag> --release-id <id> [--publish]
+  Owner-run. A pass-through to `cli.mjs release-sign`; the CLI validates -Tag, finds the draft's numeric
+  release ID with gh (refusing a published release), runs gradlew releaseTools + --stop, then signs.
   Run it from a clean checkout of the tagged commit (git switch --detach <Tag>) with an up-to-date
   origin/main; the CLI enforces that. Without -Publish the signed draft is left for review; rerunning
   with -Publish verifies again and publishes last.
-  Works from any directory and PowerShell 5.1 or 7. Log: <repo>\.tmp\owner-runs\sign-release-<stamp>-<pid>.log;
-  the last line is "OK (exit 0) log: <path>" or "FAILED (exit N) log: <path>".
+  Works from any directory and PowerShell 5.1 or 7. The CLI's log (<repo>\.tmp\owner-runs\release-sign-<stamp>.log)
+  is authoritative; this script writes a short wrapper log beside it, forwards the CLI's exit code, and its
+  last line is "OK (exit 0) log: <CLI log>" or "FAILED (exit N) log: <CLI log>".
 
-  Exit codes: 0 done (or dry run completed), 1 bad input or a prerequisite is missing (tag format,
-  node, gh), 2 draft lookup failed or the release is not a draft, 3 releaseTools failed,
-  4 release-sign failed.
+  Exit codes: 0 done (or dry run completed), 1 node missing (or the CLI rejected the input), otherwise the CLI's code.
 
 .PARAMETER Tag
   Release tag, like v1.0.0. Required.
 .PARAMETER ReleaseId
-  Positive numeric draft database ID. Default: looked up with gh release view <Tag>.
+  Positive numeric draft database ID. Only overrides the CLI's default lookup of the draft by tag.
 .PARAMETER Publish
   Publish after signing and verifying (CLI --publish).
 .PARAMETER DryRun
-  Change nothing: no gh lookup, no gradle, CLI --dry-run (a missing -ReleaseId is shown as a placeholder).
+  Change nothing: CLI --dry-run prints the plan (no gh lookup, no gradle, no 1Password).
 .PARAMETER SkipReleaseTools
   Skip the gradlew releaseTools / --stop step (already resolved for this checkout).
-.PARAMETER Repository
-  GitHub repository for the draft lookup (default dirtyredz/agent-eye).
 #>
 [CmdletBinding()]
 param(
@@ -37,51 +31,19 @@ param(
   [string]$ReleaseId,
   [switch]$Publish,
   [switch]$DryRun,
-  [switch]$SkipReleaseTools,
-  [string]$Repository = 'dirtyredz/agent-eye'
+  [switch]$SkipReleaseTools
 )
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'owner-run.ps1')
-Initialize-OwnerRun 'sign-release'
+. (Join-Path $PSScriptRoot 'agent-eye.ps1')
+Initialize-AgentEyeRun 'sign-release'
 $mode = if ($DryRun) { '--dry-run' } else { '--execute' }
-$pubText = if ($Publish) { ' --publish' } else { '' }
-Write-Log "Agent Eye sign-release $Tag ($mode$pubText). Repo: $script:RepoRoot"
+$cliArgs = @('release-sign', '--tag', $Tag, $mode)
+if ($ReleaseId) { $cliArgs += @('--release-id', $ReleaseId) }
+if ($Publish) { $cliArgs += '--publish' }
+if ($SkipReleaseTools) { $cliArgs += '--skip-release-tools' }
+Write-Log "Agent Eye sign-release $Tag ($mode). Repo: $script:RepoRoot"
 
-if ($Tag -notmatch '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') { Complete-OwnerRun 1 "Tag '$Tag' must look like v1.0.0." }
-if ($ReleaseId -and $ReleaseId -notmatch '^[1-9]\d*$') { Complete-OwnerRun 1 "ReleaseId '$ReleaseId' must be a positive number." }
-$node = Find-Tool 'node'
-if (-not $node) { Complete-OwnerRun 1 'node was not found on PATH. Install Node 22 and open a new shell.' }
-
-if (-not $ReleaseId) {
-  if ($DryRun) { $ReleaseId = '1'; Write-Log "DRY RUN: would look up the draft ID for $Tag with gh (using placeholder 1)." }
-  else {
-    $gh = Find-Tool 'gh'
-    if (-not $gh) { Complete-OwnerRun 1 'gh was not found on PATH (needed to look up the draft ID; or pass -ReleaseId).' }
-    $prev = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    $json = (& $gh release view $Tag --repo $Repository --json databaseId,isDraft 2>&1 | Out-String)
-    $ghCode = $LASTEXITCODE
-    $ErrorActionPreference = $prev
-    if ($ghCode -ne 0) { Complete-OwnerRun 2 "gh release view $Tag failed: $json" }
-    $info = $json | ConvertFrom-Json
-    if (-not $info.isDraft) { Complete-OwnerRun 2 "Release $Tag is not a draft (already published?). Nothing to sign." }
-    $ReleaseId = [string]$info.databaseId
-    Write-Log "Draft release ID for ${Tag}: $ReleaseId"
-  }
-}
-
-if ($DryRun -or $SkipReleaseTools) { Write-Log 'Skipping gradle releaseTools.' }
-else {
-  $gradle = Join-Path $script:RepoRoot 'android/gradlew.bat'
-  $androidDir = Join-Path $script:RepoRoot 'android'
-  $code = Invoke-Native $gradle @('-p', $androidDir, 'releaseTools') $script:RepoRoot
-  if ($code -ne 0) { Complete-OwnerRun 3 "gradlew releaseTools failed (exit $code)." }
-  $null = Invoke-Native $gradle @('--stop') $script:RepoRoot
-}
-
-$signArgs = @($script:CliPath, 'release-sign', '--tag', $Tag, '--release-id', $ReleaseId, $mode)
-if ($Publish) { $signArgs += '--publish' }
-$code = Invoke-Native $node $signArgs $script:RepoRoot
-if ($code -ne 0) { Complete-OwnerRun 4 "release-sign failed (exit $code)." }
-Complete-OwnerRun 0
+$code = Invoke-AgentEyeCli $cliArgs
+Complete-AgentEyeRun $code

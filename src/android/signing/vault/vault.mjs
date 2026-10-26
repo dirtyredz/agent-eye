@@ -1,4 +1,7 @@
 import { requireThat } from '../../releases/artifacts/contract.mjs';
+// Contract: failures raised by the vault adapter and its callers may carry `error.stage` (a short step name such as
+// "store-password" or "store-document") set by atStage(); reporters print it next to the original cause. atStage itself stays private
+// to the signing modules: it never changes the error message and never masks the underlying failure.
 let clientPromise;
 let account;
 async function sdkModule() { const imported = await import('@1password/sdk'); return imported.default ?? imported; }
@@ -11,7 +14,7 @@ export async function desktopClient(accountId) {
   return clientPromise;
 }
 // Tags a failure with the stage it happened in so callers can report it without losing the cause.
-export async function atStage(name, action) { try { return await action(); } catch (error) { if (!error?.stage) try { error.stage = name; } catch { /* frozen error */ } throw error; } }
+async function atStage(name, action) { try { return await action(); } catch (error) { if (!error?.stage) try { error.stage = name; } catch { /* frozen error */ } throw error; } }
 // `injected` ({ client, sdk }) lets tests supply a fake SDK; production uses the DesktopAuth client.
 export async function openVault(config, injected) {
   for (const field of ['accountId', 'vaultId', 'documentTitle', 'passwordTitle']) requireThat(typeof config[field] === 'string' && config[field].length > 0 && !config[field].startsWith('OWNER_'), `Configure ${field}`);

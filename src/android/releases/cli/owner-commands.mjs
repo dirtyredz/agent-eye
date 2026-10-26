@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { certificate } from '../artifacts/contract.mjs';
 import { setup } from './owner-setup.mjs';
 import { releaseSign } from '../local/release-sign.mjs';
+import { resolveReleaseTools } from '../local/release-tools.mjs';
 import { localRelease } from '../local/local-release.mjs';
 import { setupVault } from '../../signing/vault/vault-setup.mjs';
 import { provisionFlow } from '../../signing/keys/provision-flow.mjs';
@@ -29,11 +30,13 @@ export async function ownerCommand({ root, run, gh, localVersion, log }, options
   }
   if (options.command === 'verify-key') return recoverKey({ root, run, vault }, certificate(JSON.parse(await readFile(pinPath, 'utf8'))), async () => console.log('Recovery verified against committed public certificate.'));
   if (options.command === 'inspect-vault') return inspectVault({ vault: await vault() });
-  if (options.command === 'cleanup-orphans') return cleanupOrphans({ vault: await vault(), pin: JSON.parse(await readFile(pinPath, 'utf8')), gh, execute: true });
+  if (options.command === 'cleanup-orphans') return cleanupOrphans({ vault: await vault(), pin: JSON.parse(await readFile(pinPath, 'utf8')), gh, execute: options.execute });
   const { apk, bundle } = tooling(root, run);
   if (options.command === 'release-sign') {
-    const outputs = await releaseSign(localRelease({ root, run, gh, apk, bundle, vault, localVersion, pin: JSON.parse(await readFile(pinPath, 'utf8')) }), options);
-    console.log(`${options.publish ? 'Published' : 'Verified signed draft'} ${options.tag}, release ${options.releaseId}. Public retry cache: ${outputs}`);
+    const releaseId = options.releaseId ?? await gh.draftId(options.tag);
+    if (!options.skipReleaseTools) await resolveReleaseTools({ root, run });
+    const outputs = await releaseSign(localRelease({ root, run, gh, apk, bundle, vault, localVersion, pin: JSON.parse(await readFile(pinPath, 'utf8')) }), { ...options, releaseId });
+    console.log(`${options.publish ? 'Published' : 'Verified signed draft'} ${options.tag}, release ${releaseId}. Public retry cache: ${outputs}`);
     return outputs;
   }
 }

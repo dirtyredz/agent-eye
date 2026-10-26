@@ -13,7 +13,7 @@ const plans = {
   'verify-key': ['Read committed public certificate pin.', 'Recover dedicated Agent Eye key through DesktopAuth into an ACL-verified Windows directory.', 'Verify one RSA-4096 private key, alias and pinned SHA-256. Delete temporary keys.'],
   'inspect-vault': ['Read-only: sign in through DesktopAuth and list the Agent Eye item titles, categories, states and creation times in the configured vault. Values are never read.'],
   'cleanup-orphans': ['Refuse unless the public pin sha256 is null and gh confirms no GitHub release exists (fail closed).', 'Print the exact two Agent Eye item titles found in the configured vault.', 'Delete only those items, and only with --execute. Then provision can be rerun.'],
-  'release-sign': ['Lock local signing; require clean checkout matching tag and repository.', 'Validate draft ID/tag, remote main ancestry, successful trusted workflow run and Actions artifact provenance.', 'Validate unsigned APK/AAB identity, hashes, non-debuggable status and paginated release version history before accessing 1Password.', 'Recover pinned key through DesktopAuth into an ACL-verified directory; align then apksigner-sign APK; jarsigner-sign AAB.', 'Verify signatures/identity; retain complete signed retry cache; upload without clobber; download and verify every final asset.', 'Recheck draft, tag and versions; remove only exact unsigned assets; publish last only with --publish; clean temporary key material.'],
+  'release-sign': ['Resolve the draft release ID for --tag with gh (--release-id overrides); refuse a published release.', 'Run gradlew releaseTools then --stop (skip with --skip-release-tools).', 'Lock local signing; require clean checkout matching tag and repository.', 'Validate draft ID/tag, remote main ancestry, successful trusted workflow run and Actions artifact provenance.', 'Validate unsigned APK/AAB identity, hashes, non-debuggable status and paginated release version history before accessing 1Password.', 'Recover pinned key through DesktopAuth into an ACL-verified directory; align then apksigner-sign APK; jarsigner-sign AAB.', 'Verify signatures/identity; retain complete signed retry cache; upload without clobber; download and verify every final asset.', 'Recheck draft, tag and versions; remove only exact unsigned assets; publish last only with --publish; clean temporary key material.'],
   stage: ['Validate unsigned APK/AAB; stage artifacts and commit/run-bound manifest.'],
   draft: ['Create or resume same draft/tag/commit; refuse published releases and conflicting assets.'],
   'validate-tag': ['Validate tag/version and ancestry from main.'],
@@ -28,7 +28,7 @@ export function parse(args) {
   for (let i = 0; i < rest.length; i++) {
     const flag = rest[i];
     requireThat(!seen.has(flag), `Duplicate flag: ${flag}`); seen.add(flag);
-    if (['--execute', '--dry-run', '--publish'].includes(flag)) options[flag === '--dry-run' ? 'dryRun' : flag.slice(2)] = true;
+    if (['--execute', '--dry-run', '--publish', '--skip-release-tools'].includes(flag)) options[{ '--dry-run': 'dryRun', '--skip-release-tools': 'skipReleaseTools' }[flag] ?? flag.slice(2)] = true;
     else if (['--tag', '--release-id', '--account'].includes(flag)) {
       requireThat(rest[i + 1] && !rest[i + 1].startsWith('--'), `Missing value: ${flag}`);
       options[{ '--release-id': 'releaseId', '--tag': 'tag', '--account': 'account' }[flag]] = rest[++i];
@@ -36,10 +36,15 @@ export function parse(args) {
   }
   requireThat(!(options.execute && options.dryRun), 'Conflicting execution flags');
   requireThat(!options.publish || command === 'release-sign', '--publish requires release-sign');
+  requireThat(!options.skipReleaseTools || command === 'release-sign', '--skip-release-tools requires release-sign');
   requireThat(!options.releaseId || command === 'release-sign', '--release-id requires release-sign');
   requireThat(!options.account || ['setup-vault', 'provision'].includes(command), '--account requires setup-vault or provision');
   requireThat(!options.tag || ['release-sign', 'validate-tag', 'stage', 'draft'].includes(command), 'Unexpected --tag');
-  if (command === 'release-sign') requireThat(/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(options.tag) && /^[1-9]\d*$/.test(options.releaseId) && Number.isSafeInteger(Number(options.releaseId)), 'release-sign requires valid --tag and --release-id');
+  if (command === 'release-sign') {
+    requireThat(/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(options.tag), 'release-sign requires a valid --tag (vMAJOR.MINOR.PATCH)');
+    // --release-id only overrides the draft lookup by tag.
+    requireThat(options.releaseId === undefined || (/^[1-9]\d*$/.test(options.releaseId) && Number.isSafeInteger(Number(options.releaseId))), '--release-id must be a positive number');
+  }
   return options;
 }
 export async function main(args, { output = console.log, execute = async (options, log) => (await import('./commands.mjs')).execute(options, log), log } = {}) {

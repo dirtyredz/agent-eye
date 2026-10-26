@@ -13,3 +13,11 @@ test('every dry-run stops before loading execution adapters', async () => {
 test('invalid or conflicting CLI flags fail closed', () => {
   for (const args of [['setup', '--execute', '--dry-run'], ['setup', '--publish'], ['setup', '--clobber'], ['release-sign'], ['release-sign', '--tag', 'v1.0.0', '--release-id', '-1'], ['setup', '--execute', '--execute']]) assert.throws(() => parse(args));
 });
+test('release-sign resolves the draft by default; --release-id only overrides; tools step can be skipped', () => {
+  const lookup = parse(['release-sign', '--tag', 'v1.0.0', '--execute']);
+  assert.equal(lookup.releaseId, undefined);
+  const skip = parse(['release-sign', '--tag', 'v1.0.0', '--release-id', '12', '--skip-release-tools', '--execute']);
+  assert.equal(skip.releaseId, '12'); assert.equal(skip.skipReleaseTools, true);
+  assert.throws(() => parse(['release-sign', '--tag', '1.0', '--execute']));
+  assert.throws(() => parse(['setup', '--skip-release-tools']));
+});

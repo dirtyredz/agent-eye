@@ -11,12 +11,13 @@
   Afterwards commit the public pin it prints:
     git add src/android/releases/signing-certificate.json
     git commit -m "Pin Agent Eye release certificate"
-  Works from any directory (cmd, PowerShell 5.1 or 7, even C:\Windows\System32). The repo is
-  located from this script's own path. Each run writes <repo>\.tmp\owner-runs\provision-<stamp>-<pid>.log
-  and ends with "OK (exit 0) log: <path>" or "FAILED (exit N) log: <path>".
+  Works from any directory (cmd, PowerShell 5.1 or 7, even C:\Windows\System32). The repo is located
+  from this script's own path. The CLI's log (<repo>\.tmp\owner-runs\provision-<stamp>.log) is authoritative;
+  this script writes a short wrapper log beside it and ends with "OK (exit 0) log: <CLI log>" or
+  "FAILED (exit N) log: <CLI log>".
 
   Exit codes: 0 done (or dry run completed), 1 a prerequisite is missing (node or npm not found),
-  2 npm ci failed, 3 provision failed, 4 verify-key failed.
+  2 npm ci failed, otherwise the failing CLI command's own exit code.
 
 .PARAMETER DryRun
   Change nothing. Passes --dry-run to the CLI (no 1Password access, no subprocess calls, no
@@ -32,7 +33,8 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'owner-run.ps1')
-Initialize-OwnerRun 'provision'
+. (Join-Path $PSScriptRoot 'agent-eye.ps1')
+Initialize-AgentEyeRun 'provision'
 $mode = if ($DryRun) { '--dry-run' } else { '--execute' }
 Write-Log "Agent Eye provision ($mode). Repo: $script:RepoRoot"
 
@@ -50,13 +52,13 @@ if (-not (Test-Path -LiteralPath (Join-Path $script:RepoRoot 'node_modules'))) {
   }
 } else { Write-Log 'node_modules present; skipping npm ci.' }
 
-$provisionArgs = @($script:CliPath, 'provision', $mode)
+$provisionArgs = @('provision', $mode)
 if ($Account) { $provisionArgs += @('--account', $Account) }
-$code = Invoke-Native $node $provisionArgs $script:RepoRoot
-if ($code -ne 0) { Complete-OwnerRun 3 "provision failed (exit $code)." }
+$code = Invoke-AgentEyeCli $provisionArgs
+if ($code -ne 0) { Complete-AgentEyeRun $code 'provision failed.' }
 
-$code = Invoke-Native $node @($script:CliPath, 'verify-key', $mode) $script:RepoRoot
-if ($code -ne 0) { Complete-OwnerRun 4 "verify-key failed (exit $code)." }
+$code = Invoke-AgentEyeCli @('verify-key', $mode)
+if ($code -ne 0) { Complete-AgentEyeRun $code 'verify-key failed.' }
 
 if (-not $DryRun) { Write-Log 'Next: git add src/android/releases/signing-certificate.json; git commit -m "Pin Agent Eye release certificate"' }
-Complete-OwnerRun 0
+Complete-AgentEyeRun 0

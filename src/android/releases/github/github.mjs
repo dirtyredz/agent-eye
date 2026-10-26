@@ -25,8 +25,15 @@ export function github(run) {
     await run('gh', ['release', 'download', tag, '--repo', REPOSITORY, '--pattern', name, '--dir', dir]);
     return readFile(join(dir, name));
   }
+  // The numeric database ID of the draft release for a tag; refuses a missing or already published release.
+  async function draftId(tag) {
+    const info = JSON.parse((await run('gh', ['release', 'view', tag, '--repo', REPOSITORY, '--json', 'databaseId,isDraft'])).stdout || 'null');
+    requireThat(info?.isDraft === true, `Release ${tag} is not a draft (already published?); nothing to sign`);
+    requireThat(Number.isSafeInteger(info.databaseId) && info.databaseId > 0, 'Invalid draft release ID');
+    return String(info.databaseId);
+  }
   return {
-    api, release, assets, download,
+    api, release, assets, download, draftId,
     async history(current) {
       for (const rel of await pages(api, 'releases')) {
         if (rel.draft) continue;

@@ -46,3 +46,12 @@ test('changed commit, untrusted workflow and failed runs reject before artifact 
     await assert.rejects(gh.provenance(m, 'unused'), /Untrusted/);
   }
 });
+test('draftId resolves the numeric ID of a draft by tag and refuses published or invalid releases', async () => {
+  const seen = [];
+  const fake = body => github(async (file, args) => { seen.push([file, ...args]); return { stdout: JSON.stringify(body) }; });
+  assert.equal(await fake({ databaseId: 987, isDraft: true }).draftId('v1.0.0'), '987');
+  assert.deepEqual(seen[0].slice(0, 4), ['gh', 'release', 'view', 'v1.0.0']);
+  await assert.rejects(fake({ databaseId: 987, isDraft: false }).draftId('v1.0.0'), /not a draft/);
+  await assert.rejects(fake({ databaseId: 'x', isDraft: true }).draftId('v1.0.0'), /Invalid draft release ID/);
+  await assert.rejects(github(async () => { throw new Error('release not found'); }).draftId('v9.9.9'), /not found/);
+});
