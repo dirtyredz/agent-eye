@@ -19,10 +19,11 @@ export async function draftRelease({ root, dir, run, gh, localVersion, tag, comm
   const m = manifest(JSON.parse(await readFile(join(dir, UNSIGNED_MANIFEST), 'utf8')));
   requireThat(m.tag === tag && m.commit === commit && m.runId === runId && m.runAttempt <= runAttempt, 'Draft staging identity mismatch');
   await verifyFiles(dir, m);
-  if (!await gh.releaseByTag(tag)) {
+  let rel = await gh.releaseByTag(tag);
+  if (!rel) {
     await run('gh', ['release', 'create', tag, '--repo', REPOSITORY, '--draft', '--verify-tag', '--target', commit, '--title', `Agent Eye ${localVersion.versionName}`, '--notes', `Unsigned build of ${commit}. Owner-attended local signing required.`]);
+    rel = await gh.releaseByTag(tag);
   }
-  const rel = await gh.releaseByTag(tag);
   requireThat(rel, `Draft ${tag} not found after creation`);
   assertDraft(rel, tag, rel.id);
   requireThat(rel.target_commitish === commit, 'Existing draft commit differs');

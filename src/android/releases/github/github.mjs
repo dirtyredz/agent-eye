@@ -27,8 +27,9 @@ export function github(run) {
   }
   // GET releases/tags/<tag> never returns drafts (404), so find a release by listing and matching tag_name exactly.
   // Returns null when absent; fails closed when the tag matches more than one release.
+  const listReleases = () => pages(api, 'releases');
   async function releaseByTag(tag) {
-    const matches = (await pages(api, 'releases')).filter(rel => rel.tag_name === tag);
+    const matches = (await listReleases()).filter(rel => rel.tag_name === tag);
     requireThat(matches.length <= 1, `Multiple releases match tag ${tag}; manual reconciliation required`);
     return matches[0] ?? null;
   }
@@ -41,9 +42,9 @@ export function github(run) {
     return String(info.id);
   }
   return {
-    api, release, releaseByTag, assets, download, draftId,
+    api, release, listReleases, releaseByTag, assets, download, draftId,
     async history(current) {
-      for (const rel of await pages(api, 'releases')) {
+      for (const rel of await listReleases()) {
         if (rel.draft) continue;
         requireThat(/^v\d+\.\d+\.\d+$/.test(rel.tag_name), 'Unexpected release history; manual reconciliation required');
         const asset = (await assets(rel.id)).find(a => a.name === 'release.json');

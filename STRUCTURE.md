@@ -7,7 +7,7 @@
 - `src/android/releases/` — public signing certificate pin and release responsibilities below.
 - `src/android/releases/artifacts/` — release contract, manifests, hashes and artifact staging.
 - `src/android/releases/cli/` — side-effect-free argument parsing and CI/owner command dispatch.
-- `src/android/releases/github/` — GitHub release assets, history and Actions provenance.
+- `src/android/releases/github/` — GitHub release assets, history, draft lookup by tag (`releaseByTag`; the tags endpoint hides drafts) and Actions provenance.
 - `src/android/releases/local/` — owner transaction ordering, checkout, verification, retry cache and lock.
 - `src/android/signing/` — signing responsibilities below plus `signing-smoke.mjs`, the explicitly invoked disposable-key integration check.
 - `src/android/signing/artifacts/` — APK (`apk-signing.mjs`) and AAB (`bundle-signing.mjs`) inspection, signing and verification.

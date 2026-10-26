@@ -54,7 +54,7 @@ test('draftRelease resumes an existing draft without creating it', async t => {
   deps.gh.assets = async () => [{ name: UNSIGNED[0] }];
   await draftRelease(deps);
   assert.equal(events.includes('create'), false);
-  assert.deepEqual(events, ['release', 'release', ...UNSIGNED, UNSIGNED_MANIFEST]);
+  assert.deepEqual(events, ['release', ...UNSIGNED, UNSIGNED_MANIFEST]);
 });
 
 test('draftRelease propagates a failed lookup before creating or uploading', async t => {

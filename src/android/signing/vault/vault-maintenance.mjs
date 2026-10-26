@@ -18,7 +18,7 @@ export async function inspectVault({ vault, say = console.log }) {
 export async function cleanupOrphans({ vault, pin, gh, execute, say = console.log }) {
   requireThat(pin?.sha256 === null, 'Refusing cleanup: the public certificate pin is set, the key may be in use');
   let releases;
-  try { releases = await gh.api('releases?per_page=100'); } catch { releases = undefined; }
+  try { releases = await gh.listReleases(); } catch { releases = undefined; }
   requireThat(Array.isArray(releases), 'Refusing cleanup: could not list GitHub releases (gh failed); fail closed');
   requireThat(releases.length === 0, `Refusing cleanup: ${releases.length} GitHub release(s) exist, a key may have signed one`);
   const titles = [vault.config.documentTitle, vault.config.passwordTitle];

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { github } from '../../releases/github/github.mjs';
 import { inspectVault, cleanupOrphans } from './vault-maintenance.mjs';
 
 const config = { documentTitle: 'Agent Eye release key', passwordTitle: 'Agent Eye release key password' };
@@ -8,7 +9,7 @@ function fakeVault(items) {
   return { config, deleted, overview: async () => items, deleteItem: async id => { deleted.push(id); } };
 }
 const item = (id, title) => ({ id, title, category: 'Password', state: 'active', createdAt: new Date('2026-10-26T02:00:00Z') });
-const noRelease = { api: async () => [] };
+const noRelease = { listReleases: async () => [] };
 const lines = () => { const out = []; out.push = out.push.bind(out); return out; };
 
 test('inspect lists only Agent Eye items and never values', async () => {
@@ -35,12 +36,21 @@ test('cleanup fails closed: pin set, release exists, gh failure, odd gh output, 
   const vault = fakeVault([item('a', 'Agent Eye release key')]);
   const cases = [
     [{ sha256: 'a'.repeat(64) }, noRelease, /pin is set/],
-    [{ sha256: null }, { api: async () => [{ tag_name: 'v1.0.0' }] }, /release\(s\) exist/],
-    [{ sha256: null }, { api: async () => { throw new Error('gh: not logged in'); } }, /could not list GitHub releases/],
-    [{ sha256: null }, { api: async () => null }, /could not list GitHub releases/],
+    [{ sha256: null }, { listReleases: async () => [{ tag_name: 'v1.0.0' }] }, /release\(s\) exist/],
+    [{ sha256: null }, { listReleases: async () => { throw new Error('gh: not logged in'); } }, /could not list GitHub releases/],
+    [{ sha256: null }, { listReleases: async () => null }, /could not list GitHub releases/],
   ];
   for (const [pin, gh, pattern] of cases) await assert.rejects(cleanupOrphans({ vault, pin, gh, execute: true, say: () => {} }), pattern);
   const dup = fakeVault([item('a', 'Agent Eye release key'), item('b', 'Agent Eye release key')]);
   await assert.rejects(cleanupOrphans({ vault: dup, pin: { sha256: null }, gh: noRelease, execute: true, say: () => {} }), /duplicate/);
   assert.deepEqual(vault.deleted.concat(dup.deleted), []);
+});
+
+test('cleanup guard sees a release on page 2 (via the github adapter) and refuses', async () => {
+  const gh = github(async (_file, args) => {
+    const route = args[1];
+    const page = Number(/page=(d+)/.exec(route)[1]);
+    return { stdout: JSON.stringify(page === 1 ? Array(100).fill({ tag_name: 'x', draft: true }) : [{ tag_name: 'v1.0.0' }]) };
+  });
+  await assert.rejects(cleanupOrphans({ vault: fakeVault([item('a', 'Agent Eye release key')]), pin: { sha256: null }, gh, execute: true, say: () => {} }), /101 GitHub release(s) exist/);
 });
