@@ -9,8 +9,9 @@
 - `src/android/releases/cli/` — side-effect-free argument parsing and CI/owner command dispatch.
 - `src/android/releases/github/` — GitHub release assets, history and Actions provenance.
 - `src/android/releases/local/` — owner transaction ordering, checkout, verification, retry cache and lock.
-- `src/android/signing/` — APK/AAB signing, disposable smoke, attended DesktopAuth and key isolation.
-- `src/android/tooling/` — Android tool discovery, bounded secret-redacting subprocess execution, `script-run.mjs` (the standard, dependency-free script wrapper: repo-root resolution, per-run redacted log, OK/FAILED line; canonical copy shared across repos) with its tests, the all-entry-points-from-tmpdir test, and the workflow guard test (no bare `sdkmanager` in `.github/workflows/`).
+- `src/android/signing/` — APK/AAB signing, disposable smoke, attended DesktopAuth, signing-vault creation (`vault-setup.mjs`), key provisioning (`provision-flow.mjs`, `key-provisioning.mjs`) and key isolation.
+- `src/android/tooling/` — Android SDK/tool discovery, bounded secret-redacting subprocess execution (`process.mjs`) and the workflow guard test (no bare `sdkmanager` in `.github/workflows/`).
+- `src/script-run/` — `script-run.mjs`, the standard script wrapper (repo-root resolution, per-run redacted log, OK/FAILED line, v1.1.0). Deliberately ONE dependency-free file: the canonical copy is copied verbatim to other repos and extended through options only. Holds its tests and the repo-wide all-entry-points-from-tmpdir test.
 - `.github/workflows/` — read-only verification/builds and separately privileged draft creation.
 - `docs/ANDROID-DISTRIBUTION.md`, `docs/PRIVACY.md`, `docs/PLAY-LISTING.md` — owner distribution, bundled privacy and future Play checklist.
 - `docs/AGENT-EYE.md` — build, operation, API and physical acceptance runbook.
@@ -33,15 +34,18 @@ The PC CLI is `snapshot.mjs`; `client.mjs` owns direct HTTP validation;
 There is no device-control integration in this repository.
 
 ```text
-src/android/
-├── releases/
-│   ├── artifacts/   contract, manifests and staging
-│   ├── cli/         CLI parsing and CI/owner commands
-│   ├── github/      release API and Actions provenance
-│   ├── local/       owner transaction and local checks/cache/lock
-│   └── signing-certificate.json
-├── signing/         artifact signing and attended key custody
-└── tooling/         Android tools and subprocess execution
+src/
+├── camera/          PC client and snapshot store
+├── script-run/      standard script wrapper (copied verbatim across repos)
+└── android/
+    ├── releases/
+    │   ├── artifacts/   contract, manifests and staging
+    │   ├── cli/         CLI parsing and CI/owner commands
+    │   ├── github/      release API and Actions provenance
+    │   ├── local/       owner transaction and local checks/cache/lock
+    │   └── signing-certificate.json
+    ├── signing/         artifact signing, vault creation and key custody
+    └── tooling/         Android tools and subprocess execution
 ```
 
 Release `cli/cli.mjs` parses flags without loading execution adapters on dry-run;
@@ -53,7 +57,7 @@ or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
 APK and AAB verification remain separate under `signing/`; `tooling/android-tools.mjs`
 owns SDK discovery and the build-tools version used by both workflows and signing;
 `tooling/workflows.test.mjs` guards both workflows against PATH-based `sdkmanager` calls.
-`signing/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` (`setup-vault`, and `provision` = vault then key). Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
+`signing/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` (`setup-vault`); `signing/provision-flow.mjs` runs `provision` = vault then key; the default 1Password account lives alone in `signing/owner-account.mjs`. `cli/command-names.mjs` is the single owner/CI command set. Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
 `signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 

@@ -57,3 +57,12 @@ use the same local tag-to-HEAD and main-ancestry check.
 `docs/PRIVACY.md` is copied into generated Android assets and displayed as text by a dedicated
 dialog. There is no policy fetch, WebView or added runtime dependency. Node's development-only
 1Password SDK is not part of the phone or camera client.
+
+## Entry points and logs
+
+Every runnable entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside
+`runScript` from `src/script-run/`, so paths resolve from the file location rather than the
+caller's directory. Each run writes a secret-redacted log to `.tmp/logs/` (or `.tmp/owner-runs/`
+for owner commands, listed in `releases/cli/command-names.mjs`) and ends with an `OK`/`FAILED`
+line naming the log. `src/script-run/entry-points.test.mjs` runs every entry point with `--dry-run`
+from `os.tmpdir()` to guard this.

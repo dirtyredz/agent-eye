@@ -36,3 +36,14 @@
   before Play enrollment; an upload-key reset never changes the established sideload signer.
 - **Privacy source.** `docs/PRIVACY.md` is bundled at build time and displayed as local text.
   Plain HTTP LAN transfer is disclosed and must be assessed explicitly in future Data safety forms.
+- **2026-10-25 — Standard script wrapper.** `src/script-run/script-run.mjs` is the canonical,
+  dependency-free script wrapper (repo-root resolution, redacted per-run log, OK/FAILED line). It is
+  copied VERBATIM into other repos and never edited per repo: variation goes through options
+  (`kind`, `logDir`, `redaction`, `error.exitCode`, `log.dryRun`), and any API change bumps its
+  version string (now 1.1.0). One runner only: `log.wrapRun(base)`; the log redacts regardless of
+  whether `base` does. Rejected: a shared package (no cross-repo dependency mechanism) and a second
+  built-in runner (two redaction paths).
+- **2026-10-25 — `provision` = vault then key.** One owner command creates the dedicated signing
+  vault and `android/signing.local.json`, then generates the key (`signing/provision-flow.mjs`);
+  `setup-vault` and `generate-key` remain for retries. Account precedence: `--account`,
+  `OP_ACCOUNT_ID`, existing config, then the owner default in `signing/owner-account.mjs`.
