@@ -21,7 +21,7 @@ Pairing: the service owns a `PairingCodes` state machine (security package) next
 token. It holds one six-digit SecureRandom code valid two minutes and usable once; five wrong
 guesses burn it, a per-client sliding window (10 requests/minute) throttles guessing, and the
 comparison is constant-time. `POST /pair` is the only unauthenticated route and sits behind the
-same subnet admission and connection limits; it returns the token. The Activity's `PairingPanel`
+same subnet admission and connection limits; `StillServer` routes it to `PairHandler` (body checks, code-for-token exchange) and it returns the token. The Activity's `PairingPanel`
 polls the code once a second for the countdown. Stop discards the gate with the token. The PC
 `pair` command stores the token in an owner-only `.tmp/agent-eye/token.json`.
 
