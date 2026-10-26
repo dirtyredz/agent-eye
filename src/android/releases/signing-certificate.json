@@ -1,6 +1,6 @@
 {
   "applicationId": "local.agenteye",
-  "sha256": null,
   "alias": "agent-eye",
-  "firstVersionCode": 1
+  "firstVersionCode": 1,
+  "sha256": "f0d99c5825fbc240e7fefb68bb791d47cb61c37f13c42a5f9f81730168d6d6e2"
 }
