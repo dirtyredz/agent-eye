@@ -40,9 +40,9 @@ export async function ciCommand(deps, options) {
   const tag = options.tag ?? process.env.RELEASE_TAG;
   version(localVersion, tag);
   if (options.command === 'validate-tag') return validateTag({ ...deps, tag });
-  const commit = (await run('git', ['rev-parse', 'HEAD'])).stdout.trim();
+  const commit = (await run('git', ['rev-parse', 'HEAD'], { cwd: root })).stdout.trim();
   const context = { ...deps, tag, commit, dir: join(root, '.tmp/release-stage'),
     runId: Number(process.env.GITHUB_RUN_ID), runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) };
-  if (options.command === 'stage') return stageRelease({ ...context, ...tooling(root) });
+  if (options.command === 'stage') return stageRelease({ ...context, ...tooling(root, run) });
   if (options.command === 'draft') return draftRelease(context);
 }

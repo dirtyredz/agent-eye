@@ -1,16 +1,21 @@
 import { requireThat } from '../releases/artifacts/contract.mjs';
 let clientPromise;
 let account;
+async function sdkModule() { const imported = await import('@1password/sdk'); return imported.default ?? imported; }
+// One DesktopAuth client (and account) per process; Windows Hello approves the sign-in.
+export async function desktopClient(accountId) {
+  requireThat(!account || account === accountId, 'One DesktopAuth account per process');
+  account = accountId;
+  const sdk = await sdkModule();
+  clientPromise ??= sdk.createClient({ auth: new sdk.DesktopAuth(accountId), integrationName: 'Agent Eye attended signing', integrationVersion: '1.0.0' });
+  return clientPromise;
+}
 export async function openVault(config) {
   for (const field of ['accountId', 'vaultId', 'documentTitle', 'passwordTitle']) requireThat(typeof config[field] === 'string' && config[field].length > 0 && !config[field].startsWith('OWNER_'), `Configure ${field}`);
   requireThat(config.documentTitle.startsWith('Agent Eye ') && config.passwordTitle.startsWith('Agent Eye '), 'Dedicated Agent Eye items required');
   requireThat(config.documentTitle !== config.passwordTitle, 'Key Document and password need distinct titles');
-  requireThat(!account || account === config.accountId, 'One DesktopAuth account per process');
-  account = config.accountId;
-  const imported = await import('@1password/sdk');
-  const sdk = imported.default ?? imported;
-  clientPromise ??= sdk.createClient({ auth: new sdk.DesktopAuth(config.accountId), integrationName: 'Agent Eye attended signing', integrationVersion: '1.0.0' });
-  const client = await clientPromise;
+  const client = await desktopClient(config.accountId);
+  const sdk = await sdkModule();
   async function find(title) {
     const matches = (await client.items.list(config.vaultId, { type: 'ByState', content: { active: true, archived: true } })).filter(item => item.title === title);
     requireThat(matches.length <= 1, 'Duplicate Agent Eye vault item');

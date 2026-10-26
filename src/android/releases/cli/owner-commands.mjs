@@ -4,21 +4,27 @@ import { certificate } from '../artifacts/contract.mjs';
 import { setup } from './owner-setup.mjs';
 import { releaseSign } from '../local/release-sign.mjs';
 import { localRelease } from '../local/local-release.mjs';
+import { setupVault } from '../../signing/vault-setup.mjs';
 import { openVault } from '../../signing/vault.mjs';
 import { provision, recoverKey } from '../../signing/key-provisioning.mjs';
 import { tooling } from '../../tooling/android-tools.mjs';
 
-export async function ownerCommand({ root, run, gh, localVersion }, options) {
+export async function ownerCommand({ root, run, gh, localVersion, log }, options) {
   const pinPath = join(root, 'src/android/releases/signing-certificate.json');
   const vault = async () => openVault(JSON.parse(await readFile(join(root, 'android/signing.local.json'), 'utf8')));
-  if (options.command === 'setup') return setup(run);
-  if (options.command === 'generate-key') {
+  if (options.command === 'setup') return setup(run, root);
+  if (['setup-vault', 'provision'].includes(options.command)) {
+    const result = await setupVault({ root, account: options.account, log });
+    console.log(`Signing vault: ${result.status}.`);
+    if (options.command === 'setup-vault') return result;
+  }
+  if (['generate-key', 'provision'].includes(options.command)) {
     const pin = await provision({ root, run, vault }, { pinPath, firstVersionCode: localVersion.versionCode });
     console.log(`Vault recovery verified. Commit only this public certificate: ${JSON.stringify(pin)}`);
     return pin;
   }
   if (options.command === 'verify-key') return recoverKey({ root, run, vault }, certificate(JSON.parse(await readFile(pinPath, 'utf8'))), async () => console.log('Recovery verified against committed public certificate.'));
-  const { apk, bundle } = tooling(root);
+  const { apk, bundle } = tooling(root, run);
   if (options.command === 'release-sign') {
     const outputs = await releaseSign(localRelease({ root, run, gh, apk, bundle, vault, localVersion, pin: JSON.parse(await readFile(pinPath, 'utf8')) }), options);
     console.log(`${options.publish ? 'Published' : 'Verified signed draft'} ${options.tag}, release ${options.releaseId}. Public retry cache: ${outputs}`);
