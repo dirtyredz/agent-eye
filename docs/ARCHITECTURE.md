@@ -4,8 +4,10 @@ Visible Activity + camera permission → camera foreground service → service-o
 ImageCapture → authenticated private Wi-Fi HTTP → transient PC JPEG → agent inspection.
 Any action taken after inspection belongs to the consuming application and its authorization rules.
 
-The Activity owns no capture lifecycle. It binds to the service to attach/detach Preview;
-ImageCapture remains bound when the Activity stops. The service starts only on explicit Start,
+The Activity owns no capture lifecycle. It binds to the service to attach/detach Preview and pushes the display
+rotation and the preview ViewPort (DisplayManager + layout listeners); Preview and ImageCapture are
+bound as one UseCaseGroup so the still matches the preview framing. The Activity declares
+`configChanges` and is not recreated on rotation. ImageCapture remains bound when the Activity stops. The service starts only on explicit Start,
 posts an ongoing notification with Stop, acquires session power locks, creates a fresh token,
 and observes Wi-Fi. Stop tears down listener/connections, pending captures, camera, token and locks.
 The service is not sticky and no boot receiver is present.

@@ -47,7 +47,7 @@ owned by `AgentEyeApplication`), `UpdateCoordinator` (state machine) and `Update
 `HttpsConnector`); `download/` (`ApkDownloader`, pure `ApkVerifier`, `AndroidApkInspector`);
 `storage/` (`UpdateStore`: paths, atomic write, cleanup, and the persisted `Backoff`; `RecordCodec`: record <-> map); `install/` (`PackageInstallerGateway` policy, `AndroidInstallerPort`,
 pure `InstallRecovery`, `InstallResultReceiver`). `ui/CameraScreen.kt` (extracted from
-`MainActivity`: screen views and insets) and `ui/update/` (`UpdatePanel` view, pure
+`MainActivity`: screen views, insets and the portrait/landscape layout switch) and `ui/update/` (`UpdatePanel` view, pure
 `UpdatePresenter`) present it. Tests mirror under `app/src/test/java/local/agenteye/selfupdate/**`
 and `ui/update/`, with fakes in `selfupdate/UpdateFakes.kt`. The signer pin is not hand-written in
 Kotlin: Gradle task `generateUpdatePinAsset` packages `signing-certificate.json` as `update-signer.txt`.
@@ -83,7 +83,7 @@ docs/                   living docs, runbooks, plans/, items/
 
 ```text
 android/app/src/main/java/local/agenteye/
-├── camera/          CameraX session, JPEG encoding
+├── camera/          CameraX session, capture geometry (crop maths), JPEG encoding
 ├── http/            HttpRequest (bounded parser), StillServer (routes, POST /pair)
 ├── json/            StrictJson, JsonObject
 ├── network/         LAN binding, subnet policy
@@ -96,7 +96,7 @@ android/app/src/main/java/local/agenteye/
 │   ├── storage/     UpdateStore, RecordCodec
 │   └── install/     PackageInstaller gateway, recovery, result receiver
 ├── service/         CaptureService, SessionPower
-└── ui/              CameraScreen, MainActivity, PairingPanel, update/ (panel, presenter)
+└── ui/              CameraScreen, MainActivity, PairingPanel, PrivacyPolicyDialog, update/ (panel, presenter)
 ```
 
 Release `cli/cli.mjs` parses flags without loading execution adapters on dry-run;

@@ -1,5 +1,10 @@
 # Decisions
 
+- **2026-10-26 — Handle rotation in place (`configChanges`), not by Activity recreation.** Recreating
+  the Activity unbound and rebound the camera mid-capture (capture_failed after rotating). The Activity
+  now handles orientation itself, re-lays out, and pushes rotation and a shared ViewPort to the service.
+  Rejected: state-restoring recreation (still rebinds CameraX on every turn) and locking to portrait
+  (stills of a wide TV crop the sides).
 - **2026-10-26 — Signing config falls back to the main worktree; sign-release auto-installs deps.**
   Read-only lookups (release-sign, inspect, cleanup, key commands) resolve the git-ignored
   `android/signing.local.json` in the checkout, then in the main worktree, so a fresh tag checkout
