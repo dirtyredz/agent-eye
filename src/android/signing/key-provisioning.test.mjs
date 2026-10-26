@@ -45,6 +45,14 @@ test('partial vault provisioning fails without writing a pin and cleans keys', a
   await assert.rejects(provision(f.deps, { pinPath: 'pin', firstVersionCode: 1 }), /Partial provisioning/);
   assert.equal(f.events.includes('write:pin'), false); assert.equal(f.events.at(-1), 'cleanup');
 });
+test('partial provisioning keeps the cause and names the failed stage', async () => {
+  const f = provisioningFixture();
+  const base = f.deps.vault;
+  f.deps.vault = async () => ({ ...(await base()), store: async () => { throw Object.assign(new Error('document rejected'), { stage: 'store-document' }); } });
+  await assert.rejects(provision(f.deps, { pinPath: 'pin', firstVersionCode: 1 }), error => /stage store-document: document rejected/.test(error.message) && error.cause?.message === 'document rejected');
+  const g = provisioningFixture(true);
+  await assert.rejects(provision(g.deps, { pinPath: 'pin', firstVersionCode: 1 }), error => /stage recover: failed/.test(error.message));
+});
 test('existing vault item prevents generating another key', async () => {
   const f = provisioningFixture(); f.deps.vault = async () => ({ assertAbsent: async () => { throw new Error('already exists'); } });
   await assert.rejects(provision(f.deps, { pinPath: 'pin', firstVersionCode: 1 }), /already exists/);

@@ -179,6 +179,18 @@ and [command-line signing](https://developer.android.com/build/building-cmdline)
 
 ## Recovery and safety boundaries
 
+**Failed provisioning.** The error names the stage (`store-password`, `store-document`, `recover`, `verify`,
+`pin-write`) and carries the underlying cause (redacted in the log). Never regenerate over an existing key. Then:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File C:Usersdirtyprojectsagent-eyescriptseleaseault-repair.ps1 -Inspect
+```
+
+lists the Agent Eye items (titles, categories, created times; never values). If only an orphan from a failed run
+exists, `-CleanupOrphans` (dry run) then `-CleanupOrphans -Execute` deletes exactly the two Agent Eye item titles.
+It refuses unless the public pin sha256 is `null` and `gh` confirms no GitHub release exists (it fails closed if
+`gh` fails). After a cleanup, rerun `provision.ps1`. If the pin is set or a release exists, recover the key instead.
+
 Real keys are materialized outside the checkout under a unique `agent-eye-key-*` directory.
 The current user's SID owns the protected DACL with one explicit full-control ACE, verified
 before bytes are written. Passwords are child-only environment references, never argv or logs.

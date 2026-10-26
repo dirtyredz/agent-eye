@@ -31,6 +31,10 @@ function Invoke-Case([string]$Title, [string]$Script, [string[]]$Arguments, [int
 }
 
 Invoke-Case 'provision -DryRun' 'provision.ps1' @('-DryRun') 0 'OK'
+Invoke-Case 'vault-repair -Inspect -DryRun' 'vault-repair.ps1' @('-Inspect', '-DryRun') 0 'OK'
+Invoke-Case 'vault-repair -CleanupOrphans (no -Execute) is a dry run' 'vault-repair.ps1' @('-CleanupOrphans') 0 'OK'
+Invoke-Case 'vault-repair requires exactly one action' 'vault-repair.ps1' @() 1 'FAILED'
+Invoke-Case 'vault-repair rejects both actions' 'vault-repair.ps1' @('-Inspect', '-CleanupOrphans') 1 'FAILED'
 Invoke-Case 'sign-release -DryRun with release id' 'sign-release.ps1' @('-Tag', 'v1.0.0', '-ReleaseId', '123', '-DryRun', '-Publish') 0 'OK'
 Invoke-Case 'sign-release -DryRun without release id (no gh lookup)' 'sign-release.ps1' @('-Tag', 'v1.0.1', '-DryRun') 0 'OK'
 Invoke-Case 'sign-release rejects a malformed tag' 'sign-release.ps1' @('-Tag', '1.0', '-DryRun') 1 'FAILED'

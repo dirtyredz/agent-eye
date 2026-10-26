@@ -1,5 +1,11 @@
 # Gotchas
 
+- 1Password SDK (`@1password/sdk` 0.5.0) serializes requests with `JSON.stringify` and a replacer that only
+  converts `instanceof Uint8Array` to a number array. A Node `Buffer` has `toJSON()` (`{type:'Buffer',data}`), so a
+  Document item created with `content: Buffer` is rejected. Always pass `new Uint8Array(buffer)` (as command-deck does).
+  A failed provision can leave the password item behind (it is created first): use `vault-repair.ps1 -Inspect` /
+  `-CleanupOrphans`; never regenerate blindly.
+
 - GitHub's Android SDK command-line tools are not necessarily on PATH. Workflows use
   `"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"` and accept licenses before installation.
   With Bash `pipefail`, use `(yes || true)` so the producer's SIGPIPE does not fail a successful

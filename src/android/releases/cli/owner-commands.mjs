@@ -8,6 +8,7 @@ import { setupVault } from '../../signing/vault-setup.mjs';
 import { provisionFlow } from '../../signing/provision-flow.mjs';
 import { openVault } from '../../signing/vault.mjs';
 import { provision, recoverKey } from '../../signing/key-provisioning.mjs';
+import { inspectVault, cleanupOrphans } from '../../signing/vault-maintenance.mjs';
 import { tooling } from '../../tooling/android-tools.mjs';
 
 export async function ownerCommand({ root, run, gh, localVersion, log }, options) {
@@ -27,6 +28,8 @@ export async function ownerCommand({ root, run, gh, localVersion, log }, options
     return pin;
   }
   if (options.command === 'verify-key') return recoverKey({ root, run, vault }, certificate(JSON.parse(await readFile(pinPath, 'utf8'))), async () => console.log('Recovery verified against committed public certificate.'));
+  if (options.command === 'inspect-vault') return inspectVault({ vault: await vault() });
+  if (options.command === 'cleanup-orphans') return cleanupOrphans({ vault: await vault(), pin: JSON.parse(await readFile(pinPath, 'utf8')), gh, execute: true });
   const { apk, bundle } = tooling(root, run);
   if (options.command === 'release-sign') {
     const outputs = await releaseSign(localRelease({ root, run, gh, apk, bundle, vault, localVersion, pin: JSON.parse(await readFile(pinPath, 'utf8')) }), options);

@@ -22,18 +22,25 @@ export async function provision(deps, { pinPath, firstVersionCode }) {
     const password = randomBytes(48).toString('base64url');
     await deps.run('keytool', ['-genkeypair', '-alias', 'agent-eye', '-keyalg', 'RSA', '-keysize', '4096', '-sigalg', 'SHA256withRSA', '-validity', '10950', '-dname', 'CN=Agent Eye', '-storetype', 'PKCS12', '-keystore', key.path, '-storepass:env', PASS_ENV, '-keypass:env', PASS_ENV], { env: { [PASS_ENV]: password }, secrets: [password] });
     const sha256 = await keyCertificate(deps.run, key.path, password);
+    let stage = 'store';
     try {
       const bytes = await io.readFile(key.path);
       try { await vault.store(bytes, password); } finally { bytes.fill(0); }
+      stage = 'recover';
       const recovered = await vault.recover();
+      stage = 'verify';
       const recoveryPath = key.path + '.recovered';
       try { await io.writeFile(recoveryPath, recovered.bytes, { flag: 'wx' }); } finally { recovered.bytes.fill(0); }
       requireThat(await keyCertificate(deps.run, recoveryPath, recovered.password) === sha256, 'Recovery certificate mismatch');
+      stage = 'pin-write';
       const pin = certificate({ applicationId: APPLICATION_ID, alias: 'agent-eye', firstVersionCode, sha256 });
       requireThat((await io.readFile(pinPath, 'utf8')) === originalPin, 'Pin changed during provisioning');
       await io.writeFile(pinPath, JSON.stringify(pin, null, 2) + '\n');
       return pin;
-    } catch { throw new Error('Partial provisioning: inspect both vault items and recover the existing key; do not regenerate. Recovery verification or public pin write did not complete.'); }
+    } catch (cause) {
+      const where = cause?.stage ?? stage, detail = String(cause?.message ?? cause).split(String.fromCharCode(10))[0];
+      throw new Error(`Partial provisioning at stage ${where}: ${detail}. Run inspect-vault, recover or clean up orphans (cleanup-orphans); never regenerate over an existing key.`, { cause });
+    }
   });
 }
 export async function recoverKey(deps, pin, action) {
