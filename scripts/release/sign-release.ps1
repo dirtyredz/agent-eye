@@ -73,7 +73,7 @@ if (-not $ReleaseId) {
 
 if ($DryRun -or $SkipReleaseTools) { Write-Log 'Skipping gradle releaseTools.' }
 else {
-  $gradle = Join-Path $script:RepoRoot 'android\gradlew.bat'
+  $gradle = Join-Path $script:RepoRoot 'android/gradlew.bat'
   $androidDir = Join-Path $script:RepoRoot 'android'
   $code = Invoke-Native $gradle @('-p', $androidDir, 'releaseTools') $script:RepoRoot
   if ($code -ne 0) { Complete-OwnerRun 3 "gradlew releaseTools failed (exit $code)." }

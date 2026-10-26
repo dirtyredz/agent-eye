@@ -5,11 +5,11 @@
 
 function Initialize-OwnerRun([string]$Name) {
   $script:RepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-  $dir = Join-Path $script:RepoRoot '.tmp\owner-runs'
+  $dir = Join-Path $script:RepoRoot '.tmp/owner-runs'
   New-Item -ItemType Directory -Path $dir -Force | Out-Null
   $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
   $script:LogFile = Join-Path $dir "$Name-$stamp-$PID.log"
-  $script:CliPath = Join-Path $script:RepoRoot 'src\android\releases\cli\cli.mjs'
+  $script:CliPath = Join-Path $script:RepoRoot 'src/android/releases/cli/cli.mjs'
 }
 
 function Write-Log([string]$Message) {
