@@ -14,25 +14,25 @@ import android.os.IBinder
 import android.os.Looper
 import android.view.Surface
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import androidx.camera.view.PreviewView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import local.agenteye.AgentEyeApplication
+import local.agenteye.selfupdate.UpdatePhase
+import local.agenteye.selfupdate.UpdateState
 import local.agenteye.service.CaptureService
+import local.agenteye.ui.update.UpdateAction
+import local.agenteye.ui.update.UpdatePresenter
 
 class MainActivity : Activity() {
-    private lateinit var preview: PreviewView
-    private lateinit var status: TextView
-    private lateinit var pairingPanel: PairingPanel
+    private lateinit var screen: CameraScreen
+    private val updates get() = (application as AgentEyeApplication).updates
     private val ticker = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
         override fun run() {
-            pairingPanel.tick()
+            screen.pairingPanel.tick()
             if (visible) ticker.postDelayed(this, 1000)
         }
+    }
+    private val updateListener: (UpdateState) -> Unit = { state ->
+        screen.updatePanel.render(UpdatePresenter.present(state, System.currentTimeMillis()))
     }
     private var service: CaptureService? = null
     private var bound = false
@@ -43,93 +43,38 @@ class MainActivity : Activity() {
             service?.observer = { refresh() }
             if (visible) {
                 service?.attach(
-                    preview.surfaceProvider,
-                    preview.display?.rotation ?: Surface.ROTATION_0
+                    screen.preview.surfaceProvider,
+                    screen.preview.display?.rotation ?: Surface.ROTATION_0
                 )
             }
             refresh()
         }
+
         override fun onServiceDisconnected(name: ComponentName) {
             service = null
             refresh()
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // The pairing code and camera preview should not enter screenshots or the recents thumbnail.
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(PAD, PAD, PAD, PAD)
-        }
-        // targetSdk 35+ is edge-to-edge: keep content clear of the status bar, cutout and
-        // gesture/3-button navigation bar by padding the root with the system insets.
-        ViewCompat.setOnApplyWindowInsetsListener(layout) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            view.setPadding(PAD + bars.left, PAD + bars.top, PAD + bars.right, PAD + bars.bottom)
-            insets
-        }
-        layout.addView(
-            TextView(this).apply {
-                text = "Agent Eye"
-                textSize = 26f
-            }
-        )
-        preview =
-            PreviewView(this).apply {
-                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-            }
-        layout.addView(preview, LinearLayout.LayoutParams(-1, 0, 1f))
-        val buttons = LinearLayout(this)
-        buttons.addView(
-            Button(this).apply {
-                text = "Start"
-                setOnClickListener { requestStart() }
-            }
-        )
-        buttons.addView(
-            Button(this).apply {
-                text = "Stop"
-                setOnClickListener {
-                    service?.stopSession()
-                    refresh()
-                }
-            }
-        )
-        layout.addView(buttons)
-        layout.addView(
-            Button(this).apply {
-                setText(local.agenteye.R.string.privacy_policy)
-                setOnClickListener { PrivacyPolicyDialog.show(this@MainActivity) }
-            }
-        )
-        pairingPanel = PairingPanel(
+        screen = CameraScreen(
             this,
+            onStart = ::requestStart,
+            onStop = {
+                service?.stopSession()
+                refresh()
+            },
+            onPrivacy = { PrivacyPolicyDialog.show(this) },
             code = { service?.pairingCode() },
             renew = { service?.newPairingCode() }
         )
-        layout.addView(pairingPanel)
-        status = TextView(this).apply {
-            textSize = 16f
-            setTextIsSelectable(true)
-        }
-        layout.addView(
-            ScrollView(this).apply {
-                addView(status)
-            },
-            LinearLayout.LayoutParams(-1, 200)
-        )
-        layout.addView(
-            TextView(this).apply {
-                text =
-                    "Trusted Wi-Fi only. Keep plugged in for screen-off use. Stop when finished."
-            }
-        )
-        setContentView(layout)
-        ViewCompat.requestApplyInsets(layout)
+        screen.updatePanel.onAction = ::onUpdateAction
+        setContentView(screen.root)
     }
+
     override fun onStart() {
         super.onStart()
         visible = true
@@ -140,10 +85,16 @@ class MainActivity : Activity() {
                 connection,
                 Context.BIND_AUTO_CREATE
             )
+        // Local reconciliation only: launching or foregrounding never contacts the network.
+        updates.attach(this, ::stopForInstall)
+        updates.coordinator.observe(updateListener)
     }
+
     override fun onStop() {
         visible = false
         ticker.removeCallbacks(tick)
+        updates.coordinator.forget(updateListener)
+        updates.detach(isChangingConfigurations)
         service?.observer = null
         service?.attach(null)
         if (bound) unbindService(connection)
@@ -151,16 +102,51 @@ class MainActivity : Activity() {
         service = null
         super.onStop()
     }
-    private fun refresh() {
-        status.text =
-            service?.displayStatus() ?: "Stopped · Press Start to begin"
-        pairingPanel.tick()
+
+    private fun onUpdateAction(action: UpdateAction) {
+        val coordinator = updates.coordinator
+        when (action) {
+            UpdateAction.Check -> coordinator.check()
+
+            UpdateAction.Update -> coordinator.update()
+
+            UpdateAction.Cancel -> coordinator.cancel()
+
+            UpdateAction.Install -> coordinator.install()
+
+            UpdateAction.GrantPermission -> runCatching {
+                startActivity(updates.permissionIntent())
+            }
+
+            UpdateAction.Continue -> updates.continueInstall()
+
+            UpdateAction.AbandonRetry -> coordinator.abandonAndRetry()
+        }
     }
+
+    /** Verified install handoff: stop the camera session first. False when the service is not bound yet. */
+    private fun stopForInstall(): Boolean {
+        val capture = service ?: return false
+        capture.stopSession()
+        refresh()
+        return true
+    }
+
+    private fun refresh() {
+        screen.showStatus(service?.displayStatus() ?: "Stopped · Press Start to begin")
+        screen.pairingPanel.tick()
+    }
+
     private fun requestStart() {
+        val phase = updates.coordinator.state.phase
+        if (phase == UpdatePhase.Installing || phase == UpdatePhase.AwaitingConfirmation) {
+            screen.showStatus(
+                "An update is being installed. Start is available again when it finishes or is cancelled."
+            )
+            return
+        }
         val permissions = mutableListOf<String>()
-        if (checkSelfPermission(Manifest.permission.CAMERA) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.CAMERA)
         }
         if (Build.VERSION.SDK_INT >= 33 &&
@@ -178,6 +164,7 @@ class MainActivity : Activity() {
             startSession()
         }
     }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -186,11 +173,13 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 1 && visible) startSession()
     }
+
     private fun startSession() {
         if (!visible) return
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            status.text =
+            screen.showStatus(
                 "Camera permission is required. Grant it in app settings or press Start to retry."
+            )
             return
         }
         try {
@@ -203,12 +192,7 @@ class MainActivity : Activity() {
                 startService(intent)
             }
         } catch (_: Exception) {
-            status.text =
-                "Cannot start camera session. Reopen the app and try again."
+            screen.showStatus("Cannot start camera session. Reopen the app and try again.")
         }
-    }
-
-    private companion object {
-        const val PAD = 24
     }
 }

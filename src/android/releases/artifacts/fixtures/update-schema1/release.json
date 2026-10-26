@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "repository": "dirtyredz/agent-eye",
+  "applicationId": "local.agenteye",
+  "minSdk": 24,
+  "targetSdk": 36,
+  "compileSdk": 36,
+  "versionName": "1.1.1",
+  "versionCode": 3,
+  "tag": "v1.1.1",
+  "commit": "cccccccccccccccccccccccccccccccccccccccc",
+  "runId": 4242,
+  "runAttempt": 1,
+  "workflow": ".github/workflows/android-release.yml",
+  "artifacts": {
+    "agent-eye.apk": {
+      "size": 24,
+      "sha256": "4a0055bb88b9a758c9b3d80e8507c7b2c147e687d25d94133e8422c572b7d263"
+    },
+    "agent-eye.aab": {
+      "size": 24,
+      "sha256": "0cdbb1af2edb1dc419a70340f10d8d8c420e31fce4ffbf49acabfe6324f2f668"
+    },
+    "mapping.txt": {
+      "size": 22,
+      "sha256": "8aa83e207f0aae83922d260cc5f863e3e296b7479107841521186a889fd64290"
+    }
+  },
+  "signerSha256": "f0d99c5825fbc240e7fefb68bb791d47cb61c37f13c42a5f9f81730168d6d6e2",
+  "unsignedHashes": {
+    "agent-eye-unsigned.apk": "1111111111111111111111111111111111111111111111111111111111111111",
+    "agent-eye-unsigned.aab": "2222222222222222222222222222222222222222222222222222222222222222",
+    "mapping.txt": "3333333333333333333333333333333333333333333333333333333333333333"
+  }
+}

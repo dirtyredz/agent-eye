@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Governs client APIs (the updater's HTTPS to GitHub): no cleartext, system trust anchors only,
+     no user-added CAs and no certificate pinning of GitHub's TLS keys. It does not govern the
+     raw inbound LAN camera server, and it is not a destination allowlist (UpdateUrlPolicy is). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

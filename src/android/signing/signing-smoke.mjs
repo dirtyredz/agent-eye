@@ -46,8 +46,14 @@ async function smoke(log) {
       const bundled = await readFile(join(dir, entry));
       if (!bundled.equals(policy)) throw new Error(`Bundled privacy policy differs from source: ${entry}`);
     }
+    // The updater's packaged signer pin must be the tracked public pin (not the disposable key).
+    const tracked = JSON.parse(await readFile(join(root, 'src/android/releases/signing-certificate.json'), 'utf8')).sha256;
+    for (const [archive, entry] of [[signedApk, 'assets/update-signer.txt'], [signedAab, 'base/assets/update-signer.txt']]) {
+      await run('jar', ['xf', archive, entry], { cwd: dir });
+      if ((await readFile(join(dir, entry), 'utf8')).trim() !== tracked) throw new Error(`Bundled update pin differs from signing-certificate.json: ${entry}`);
+    }
     await main(['release-sign', '--tag', `v${version.versionName}`, '--release-id', '1', '--dry-run', '--publish'], { log, output: () => {}, execute: () => { throw new Error('Dry-run attempted execution'); } });
-    console.log('PASS: real unsigned inspection, bundled privacy equality, APK/AAB signing and verification with disposable RSA-4096 key; dry-run has no execution.');
+    console.log('PASS: real unsigned inspection, bundled privacy and update-pin equality, APK/AAB signing and verification with disposable RSA-4096 key; dry-run has no execution.');
   } finally {
     try { await cleanup(); } finally { removeCleanup(); }
   }

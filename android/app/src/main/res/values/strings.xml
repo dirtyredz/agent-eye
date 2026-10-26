@@ -2,4 +2,5 @@
     <string name="app_name">Agent Eye</string>
     <string name="privacy_policy">Privacy policy</string>
     <string name="close">Close</string>
+    <string name="update_disclosure">Camera and pairing stay on your local network. Only Check for updates and Update contact GitHub and its download servers. They receive your IP address and request information; photos and pairing credentials are never sent. Mobile data may be used.</string>
 </resources>
