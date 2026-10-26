@@ -18,10 +18,8 @@ import android.view.Surface
 import android.view.WindowManager
 import local.agenteye.AgentEyeApplication
 import local.agenteye.selfupdate.UpdatePhase
-import local.agenteye.selfupdate.UpdateState
 import local.agenteye.service.CaptureService
-import local.agenteye.ui.update.UpdateAction
-import local.agenteye.ui.update.UpdatePresenter
+import local.agenteye.ui.settings.SettingsActivity
 
 class MainActivity : Activity() {
     private lateinit var screen: CameraScreen
@@ -32,9 +30,6 @@ class MainActivity : Activity() {
             screen.pairingPanel.tick()
             if (visible) ticker.postDelayed(this, 1000)
         }
-    }
-    private val updateListener: (UpdateState) -> Unit = { state ->
-        screen.updatePanel.render(UpdatePresenter.present(state, System.currentTimeMillis()))
     }
     private var service: CaptureService? = null
     private var bound = false
@@ -72,11 +67,11 @@ class MainActivity : Activity() {
                 service?.stopSession()
                 refresh()
             },
-            onPrivacy = { PrivacyPolicyDialog.show(this) },
+            onSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
+            onSwitch = { service?.switchCamera() },
             code = { service?.pairingCode() },
             renew = { service?.newPairingCode() }
         )
-        screen.updatePanel.onAction = ::onUpdateAction
         setContentView(screen.root)
     }
 
@@ -92,9 +87,25 @@ class MainActivity : Activity() {
                 connection,
                 Context.BIND_AUTO_CREATE
             )
-        // Local reconciliation only: launching or foregrounding never contacts the network.
-        updates.attach(this, ::stopForInstall)
-        updates.coordinator.observe(updateListener)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Local reconciliation also runs on the camera screen; only Settings offers network actions.
+        updates.attach(this) {
+            val capture = service
+            if (capture == null) {
+                false
+            } else {
+                capture.stopSession()
+                true
+            }
+        }
+    }
+
+    override fun onPause() {
+        updates.detach(isChangingConfigurations)
+        super.onPause()
     }
 
     override fun onStop() {
@@ -102,8 +113,6 @@ class MainActivity : Activity() {
         ticker.removeCallbacks(tick)
         displays.unregisterDisplayListener(displayListener)
         screen.preview.removeOnLayoutChangeListener(layoutListener)
-        updates.coordinator.forget(updateListener)
-        updates.detach(isChangingConfigurations)
         service?.observer = null
         service?.attach(null)
         if (bound) unbindService(connection)
@@ -141,38 +150,10 @@ class MainActivity : Activity() {
         pushSurface()
     }
 
-    private fun onUpdateAction(action: UpdateAction) {
-        val coordinator = updates.coordinator
-        when (action) {
-            UpdateAction.Check -> coordinator.check()
-
-            UpdateAction.Update -> coordinator.update()
-
-            UpdateAction.Cancel -> coordinator.cancel()
-
-            UpdateAction.Install -> coordinator.install()
-
-            UpdateAction.GrantPermission -> runCatching {
-                startActivity(updates.permissionIntent())
-            }
-
-            UpdateAction.Continue -> updates.continueInstall()
-
-            UpdateAction.AbandonRetry -> coordinator.abandonAndRetry()
-        }
-    }
-
-    /** Verified install handoff: stop the camera session first. False when the service is not bound yet. */
-    private fun stopForInstall(): Boolean {
-        val capture = service ?: return false
-        capture.stopSession()
-        refresh()
-        return true
-    }
-
     private fun refresh() {
         screen.showStatus(service?.displayStatus() ?: "Stopped · Press Start to begin")
         screen.pairingPanel.tick()
+        screen.showLens(service?.selectedLens, service?.availableLenses.orEmpty().size > 1)
     }
 
     private fun requestStart() {

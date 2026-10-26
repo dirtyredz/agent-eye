@@ -10,9 +10,14 @@ import android.os.Build
 import android.os.IBinder
 import androidx.camera.core.Preview
 import androidx.camera.core.ViewPort
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import local.agenteye.R
 import local.agenteye.camera.CameraSession
+import local.agenteye.camera.Lens
+import local.agenteye.camera.LensSelection
+import local.agenteye.camera.cameraSelector
 import local.agenteye.http.StillServer
 import local.agenteye.network.LanAddress
 import local.agenteye.network.LanBinding
@@ -49,6 +54,31 @@ class CaptureService : LifecycleService() {
     private var viewPort: ViewPort? = null
     var observer: (() -> Unit)? = null
 
+    private val lenses by lazy {
+        val prefs = getSharedPreferences("camera", MODE_PRIVATE)
+        LensSelection(prefs.getString("lens", null)) { prefs.edit().putString("lens", it).apply() }
+    }
+    val availableLenses get() = lenses.available
+    val selectedLens get() = lenses.selected
+
+    override fun onCreate() {
+        super.onCreate()
+        val future = ProcessCameraProvider.getInstance(this)
+        future.addListener({
+            runCatching {
+                val provider = future.get()
+                lenses.discover(Lens.entries.filter { provider.hasCamera(it.cameraSelector()) })
+                lenses.selected?.let { camera?.selectLens(it) }
+            }
+            observer?.invoke()
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    fun switchCamera() {
+        lenses.cycle()?.let { camera?.selectLens(it) }
+        observer?.invoke()
+    }
+
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
         return binder
@@ -70,7 +100,7 @@ class CaptureService : LifecycleService() {
             token = SessionToken()
             pairing = PairingCodes()
             power = SessionPower(this).also { it.acquire() }
-            camera = CameraSession(this, this) { _, code ->
+            camera = CameraSession(this, this, lenses.selected ?: Lens.BACK) { _, code ->
                 if (running) {
                     error = code ?: if (address ==
                         null

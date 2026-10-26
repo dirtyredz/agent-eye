@@ -63,6 +63,8 @@ object JpegEncoder {
             } else {
                 base
             }
+            // In-memory ImageCapture is unmirrored for either lens. Apply sensor/display
+            // rotation only: agents must see readable text and the scene as it is.
             val rotation = image.imageInfo.rotationDegrees
             require(rotation in listOf(0, 90, 180, 270))
             oriented = Bitmap.createBitmap(

@@ -1,5 +1,18 @@
 # Features and verification status
 
+v1.2.0 / 4 adds available-lens switching on the camera screen (back/front/external logical
+directions, saved locally across restarts), sensitive clipboard Copy for the active pairing
+code, and a separate Settings screen for updates, privacy and operating guidance. Switching
+while stopped selects the next Start lens; switching live preserves the server, token and code.
+A pending still finishes before the camera rebinds; requests during rebind may report unavailable.
+Front stills are unmirrored; the front preview retains CameraX's familiar mirrored presentation.
+JVM tests cover selection, fallback, persistence and clipboard eligibility/confirmation policy.
+Local fast gate on 2026-10-26 passed offline: npm ci, 155 Node tests, icon check, ktlint,
+debug/release APKs, release AAB, 108 JVM tests and release lint (0 errors, 36 warnings).
+The final Android gate took 5m 2s; Gradle was stopped afterward.
+Phone acceptance remains pending: both orientations, live/stopped switching, restart persistence,
+front text orientation, Copy on API <33/33+, and Settings/install lifecycle.
+
 Agent Eye implements a sideloaded Android camera foreground service with live preview,
 Start/Stop and session credentials; fresh, bounded JPEG capture; exact-subnet Wi-Fi binding;
 authenticated status and snapshot endpoints; and a Node CLI with pair, status, shot, smoke, unpair and clean.

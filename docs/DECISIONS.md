@@ -1,5 +1,18 @@
 # Decisions
 
+- **2026-10-26 — Split Settings from capture controls; persist logical lens direction (1.2.0 / 4).**
+  A separate non-exported SettingsActivity keeps update/privacy/guidance out of the capture screen.
+  It uses the same in-place configChanges policy and a scrolling inset-aware layout. Updater
+  ownership follows resume/pause, so an outgoing Activity cannot detach the incoming owner's
+  callbacks. Main still reconciles install state locally; network actions exist only in Settings.
+  LensSelection persists BACK/FRONT/EXTERNAL in private preferences, not unstable camera IDs;
+  unavailable preferences fall back to back, or the first available direction if back is absent.
+  This cycles logical directions, not every physical wide/telephoto sensor. Live changes defer
+  rebind until an active capture completes and keep the same server/session/rotation/viewport.
+  Front stills are unmirrored so agents see readable text and real scene handedness; CameraX's
+  default mirrored front preview is retained. No remote camera-switch API is added.
+  Pairing Copy uses sensitive ClipData and only shows an app toast below API 33.
+
 - **2026-10-26 — Handle rotation in place (`configChanges`), not by Activity recreation.** Recreating
   the Activity unbound and rebound the camera mid-capture (capture_failed after rotating). The Activity
   now handles orientation itself, re-lays out, and pushes rotation and a shared ViewPort to the service.

@@ -2,7 +2,6 @@ package local.agenteye.camera
 
 import android.content.Context
 import android.util.Size
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -26,6 +25,7 @@ import local.agenteye.http.Shot
 class CameraSession(
     context: Context,
     private val owner: LifecycleOwner,
+    private var lens: Lens,
     private val state: (Boolean, String?) -> Unit
 ) : AutoCloseable {
     private val main = ContextCompat.getMainExecutor(context)
@@ -33,6 +33,7 @@ class CameraSession(
     private val closed = AtomicBoolean(false)
     private val busy = AtomicBoolean(false)
     private val sequence = AtomicLong()
+    private var rebindPending = false
     private var lastStart = Long.MIN_VALUE
 
     @Volatile private var pending: CompletableFuture<Shot>? = null
@@ -75,9 +76,19 @@ class CameraSession(
             }
         }, main)
     }
-    private fun bind() {
+
+    @Synchronized private fun bind() {
+        if (closed.get()) return
+        ready = false
+        if (busy.get()) {
+            rebindPending = true
+            return
+        }
+        rebindPending = false
         val current = provider ?: return
         try {
+            cameraState?.removeObservers(owner)
+            current.unbind(capture, preview)
             val group = UseCaseGroup.Builder().addUseCase(capture)
             viewPort?.let { group.setViewPort(it) }
             if (surface != null) {
@@ -88,11 +99,10 @@ class CameraSession(
                 preview.setSurfaceProvider(null)
             }
             val bound =
-                current.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, group.build())
-            cameraState?.removeObservers(owner)
+                current.bindToLifecycle(owner, lens.cameraSelector(), group.build())
             cameraState = bound.cameraInfo.cameraState
             cameraState?.observe(owner) { currentState ->
-                if (!closed.get()) {
+                if (!closed.get() && !rebindPending) {
                     ready = currentState.type == CameraState.Type.OPEN && currentState.error == null
                     state(ready, if (ready) null else "camera_unavailable")
                 }
@@ -123,6 +133,22 @@ class CameraSession(
         if (changed && !closed.get()) bind()
     }
 
+    /** Finish an old-lens still before rebinding; preserve server and geometry. */
+    fun selectLens(next: Lens) {
+        if (next == lens || closed.get()) return
+        lens = next
+        ready = false
+        state(false, "camera_unavailable")
+        rebindPending = true
+        if (!busy.get()) bind()
+    }
+
+    private fun captureFinished() {
+        pending = null
+        busy.set(false)
+        main.execute { if (rebindPending && !closed.get()) bind() }
+    }
+
     private fun sameWindow(a: ViewPort?, b: ViewPort?) = a === b || (
         a != null && b != null && a.aspectRatio == b.aspectRatio &&
             a.rotation == b.rotation && a.scaleType == b.scaleType &&
@@ -143,8 +169,7 @@ class CameraSession(
         pending = result
         main.execute {
             if (closed.get() || result.isCancelled) {
-                busy.set(false)
-                pending = null
+                captureFinished()
                 result.completeExceptionally(IllegalStateException("stopped"))
             } else {
                 try {
@@ -171,23 +196,20 @@ class CameraSession(
                                     )
                                 } finally {
                                     image.close()
-                                    pending = null
-                                    busy.set(false)
+                                    captureFinished()
                                 }
                             }
                             override fun onError(exception: ImageCaptureException) {
                                 result.completeExceptionally(
                                     IllegalStateException("capture_failed")
                                 )
-                                pending = null
-                                busy.set(false)
+                                captureFinished()
                             }
                         }
                     )
                 } catch (_: Exception) {
                     result.completeExceptionally(IllegalStateException("capture_failed"))
-                    pending = null
-                    busy.set(false)
+                    captureFinished()
                 }
             }
         }

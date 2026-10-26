@@ -4,7 +4,7 @@ Visible Activity + camera permission → camera foreground service → service-o
 ImageCapture → authenticated private Wi-Fi HTTP → transient PC JPEG → agent inspection.
 Any action taken after inspection belongs to the consuming application and its authorization rules.
 
-The Activity owns no capture lifecycle. It binds to the service to attach/detach Preview and pushes the display
+The camera Activity owns no capture lifecycle. It binds to the service to attach/detach Preview and pushes the display
 rotation and the preview ViewPort (DisplayManager + layout listeners); Preview and ImageCapture are
 bound as one UseCaseGroup so the still matches the preview framing. The Activity declares
 `configChanges` and is not recreated on rotation. ImageCapture remains bound when the Activity stops. The service starts only on explicit Start,
@@ -40,13 +40,32 @@ Failed saves clean temporary files and report failure; an older `latest.jpg` can
 never be interpreted as a new capture. Cleanup touches only the client's names and rejects
 redirected snapshot directories.
 
+## Camera controls and settings
+
+The bound CaptureService discovers CameraX logical lens directions even while stopped.
+The pure camera/LensSelection unit chooses a saved direction, otherwise back (or the first
+available direction on a device without back), cycles only available directions, and persists
+through an injected SharedPreferences writer. A lens change reuses CameraSession and its HTTP
+server closure: it preserves rotation, ViewPort, token, pairing code and capture sequence.
+Rebinding waits for an in-flight still callback to finish; readiness is false until the new
+camera opens. JPEG encoding applies CameraX rotation/crop without horizontal mirroring.
+
+The main screen has preview, Start/Stop, lens switching, pairing (Copy/New code) and status.
+PairingPanel resolves Copy at tap time, rejects inactive/expired codes, and marks ClipData
+sensitive. Only API <33 gets an app toast; Android 13+ provides its own clipboard confirmation.
+SettingsActivity under ui/settings owns a scrollable update/privacy/guidance screen and has
+its own insets and configChanges declaration. Both activities attach the updater on resume
+and detach on pause, avoiding overlapping owners during navigation. Settings binds the service
+only to stop capture before install. Rotation does not recreate either activity; leaving the
+camera screen detaches preview while the service keeps still capture and its last geometry.
+
 ## Self-update (outbound, user-initiated)
 
 Inbound camera networking (above) and outbound update transport are separate: the camera HTTP
 server has no updater routes, and the updater does not bind the process to any network. Updates
 use the ordinary system network (Wi-Fi, mobile data or VPN). Camera admission is unchanged.
 
-- **Lifecycle.** Only the main screen's Check for updates and Update buttons start network work
+- **Lifecycle.** Only Settings' Check for updates and Update buttons start network work
   (no launch, foreground, timer, boot or connectivity check; no automatic retry). `UpdateCoordinator`
   is the state machine; backgrounding cancels network work, rotation keeps it.
 - **Transport.** Unauthenticated HTTPS/443 to the GitHub releases API (never redirected) and

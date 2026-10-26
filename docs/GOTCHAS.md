@@ -93,3 +93,14 @@ closed on more than one). `draftId` uses it too. Never reintroduce `releases/tag
   `JpegEncoder` applies `cropRect` itself if CameraX leaves the crop as metadata. Rebind only when the
   surface or view port changes: needless rebinds race `takePicture` and leave `cameraReady:false`.
   Physical-device acceptance (portrait, landscape, 180 flip, rotate mid-session) is still owed.
+
+- **Lens switches (v1.2.0).** An in-flight still can finish from the old lens; new requests during
+  rebind can briefly return camera unavailable. Retry after Camera ready. Switches preserve the
+  pairing code/token and HTTP listener. Front stills are unmirrored even though the default front
+  preview is mirrored. Check readable text, portrait/landscape and 180-degree flips on hardware.
+- **Settings lifecycle.** Updater attachment uses resume/pause on both Activities: start/stop
+  overlap during navigation and can otherwise let the outgoing screen clear the new launcher.
+  Navigating away cancels an active check/download; simply opening Settings never uses the network.
+- CameraX 1.5.3 marks external lens facing experimental. The opt-in is confined to
+  `camera/LensCameraSelector.kt`; back/front selection uses the stable API. Do not suppress lint
+  globally when changing this adapter.

@@ -168,7 +168,7 @@ are not destination firewalls.
 
 ### Updates (user-initiated)
 
-The main screen has **Check for updates** and, when a newer verified release exists, **Update**. Nothing
+Open **Settings** on the camera screen for **Check for updates** and, when a newer verified release exists, **Update**. Nothing
 runs at launch, on Start, in the background or on a timer. Disclosure on screen: "Camera and pairing
 stay on your local network. Only Check for updates and Update contact GitHub and its download
 servers. They receive your IP address and request information; photos and pairing credentials are
