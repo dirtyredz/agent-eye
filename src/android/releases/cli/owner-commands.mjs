@@ -8,13 +8,14 @@ import { localRelease } from '../local/local-release.mjs';
 import { setupVault } from '../../signing/vault/vault-setup.mjs';
 import { provisionFlow } from '../../signing/keys/provision-flow.mjs';
 import { openVault } from '../../signing/vault/vault.mjs';
+import { resolveSigningConfigPath } from '../../signing/vault/signing-config.mjs';
 import { provision, recoverKey } from '../../signing/keys/key-provisioning.mjs';
 import { inspectVault, cleanupOrphans } from '../../signing/vault/vault-maintenance.mjs';
 import { tooling } from '../../tooling/android-tools.mjs';
 
 export async function ownerCommand({ root, run, gh, localVersion, log }, options) {
   const pinPath = join(root, 'src/android/releases/signing-certificate.json');
-  const vault = async () => openVault(JSON.parse(await readFile(join(root, 'android/signing.local.json'), 'utf8')));
+  const vault = async () => openVault(JSON.parse(await readFile(await resolveSigningConfigPath(root), 'utf8')));
   const keyOptions = { pinPath, firstVersionCode: localVersion.versionCode };
   if (options.command === 'setup') return setup(run, root);
   if (options.command === 'setup-vault') {

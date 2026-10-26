@@ -15,6 +15,18 @@ function Initialize-AgentEyeRun([string]$Name) {
   }
 }
 
+# Runs `npm ci` (logged) when node_modules is missing; the CLI cannot even load without it (@1password/sdk).
+# -PlanOnly only logs what would run (provision -DryRun). node_modules is git-ignored, so this keeps the tree clean.
+function Install-AgentEyeDependencies([switch]$PlanOnly) {
+  if (Test-Path -LiteralPath (Join-Path $script:RepoRoot 'node_modules/@1password/sdk')) { Write-Log 'node_modules present; skipping npm ci.'; return }
+  if ($PlanOnly) { Write-Log 'DRY RUN: would run npm ci (node_modules is missing).'; return }
+  $npm = Find-Tool 'npm'
+  if (-not $npm) { Complete-OwnerRun 1 'npm was not found on PATH (needed because node_modules is missing).' }
+  Write-Log 'node_modules missing; running npm ci.'
+  $code = Invoke-Native $npm @('ci') $script:RepoRoot
+  if ($code -ne 0) { Complete-OwnerRun 2 "npm ci failed (exit $code)." }
+}
+
 # Runs the Node CLI; returns its exit code and remembers the log path it reported.
 function Invoke-AgentEyeCli([string[]]$CliArgs) {
   $node = Find-Tool 'node'

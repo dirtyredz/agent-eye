@@ -105,6 +105,9 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    (override with `-ReleaseId`; a published release is refused), runs `gradlew releaseTools` then `--stop`
    (`-SkipReleaseTools` skips it), then signs. Omitting
    `-Publish` leaves a complete, signed draft; rerunning with `-Publish` verifies it again and publishes last.
+   A fresh detached checkout needs no setup: the script runs `npm ci` (logged) when `node_modules` is missing, and
+   the CLI reads the git-ignored `android/signing.local.json` from the checkout, else from the main worktree
+   (`git rev-parse --git-common-dir`), naming both paths if neither has it. Both stay git-ignored, so the clean-tree check passes.
 
 6. On the phone, open https://github.com/dirtyredz/agent-eye/releases/latest without signing
    in. Download **agent-eye.apk**, allow installation from that browser when Android asks,

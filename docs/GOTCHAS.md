@@ -46,6 +46,9 @@
 - After forced signer termination, verify its PID is gone before removing the stale local lock
   or its exact protected temp-key directory. Preserve the public `.tmp/releases/` transaction
   cache until publication to resume partial uploads without clobbering signatures.
+- A fresh tag checkout lacks the ignored `android/signing.local.json` and `node_modules`. `sign-release.ps1` runs
+  `npm ci` and the CLI falls back to the main worktree's config (`signing-config.mjs`); run `provision.ps1` once in
+  the main checkout so that file exists.
 - Expired Actions artifacts, missing historical release metadata or conflicting assets stop
   signing. A checksum beside a draft download alone is not trusted build provenance.
 - Privacy/Data safety disclosures must include off-device LAN transfers and plain HTTP.

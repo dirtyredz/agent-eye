@@ -8,6 +8,8 @@
   Run it from a clean checkout of the tagged commit (git switch --detach <Tag>) with an up-to-date
   origin/main; the CLI enforces that. Without -Publish the signed draft is left for review; rerunning
   with -Publish verifies again and publishes last.
+  A fresh checkout needs nothing pre-installed: it runs `npm ci` (logged) when node_modules is missing, and the CLI
+  falls back to the main worktree's git-ignored android/signing.local.json when the checkout has none.
   Works from any directory and PowerShell 5.1 or 7. The CLI's log (<repo>\.tmp\owner-runs\release-sign-<stamp>.log)
   is authoritative; this script writes a short wrapper log beside it, forwards the CLI's exit code, and its
   last line is "OK (exit 0) log: <CLI log>" or "FAILED (exit N) log: <CLI log>".
@@ -44,6 +46,9 @@ if ($ReleaseId) { $cliArgs += @('--release-id', $ReleaseId) }
 if ($Publish) { $cliArgs += '--publish' }
 if ($SkipReleaseTools) { $cliArgs += '--skip-release-tools' }
 Write-Log "Agent Eye sign-release $Tag ($mode). Repo: $script:RepoRoot"
+
+# A fresh clean checkout has no node_modules and the CLI cannot load without it, so install first (also for -DryRun).
+Install-AgentEyeDependencies
 
 $code = Invoke-AgentEyeCli $cliArgs
 Complete-AgentEyeRun $code

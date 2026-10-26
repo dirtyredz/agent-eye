@@ -42,15 +42,7 @@ $node = Find-Tool 'node'
 if (-not $node) { Complete-OwnerRun 1 'node was not found on PATH. Install Node 22 and open a new shell.' }
 Write-Log "node: $node"
 
-if (-not (Test-Path -LiteralPath (Join-Path $script:RepoRoot 'node_modules'))) {
-  if ($DryRun) { Write-Log 'DRY RUN: would run npm ci (node_modules is missing).' }
-  else {
-    $npm = Find-Tool 'npm'
-    if (-not $npm) { Complete-OwnerRun 1 'npm was not found on PATH (needed because node_modules is missing).' }
-    $code = Invoke-Native $npm @('ci') $script:RepoRoot
-    if ($code -ne 0) { Complete-OwnerRun 2 "npm ci failed (exit $code)." }
-  }
-} else { Write-Log 'node_modules present; skipping npm ci.' }
+Install-AgentEyeDependencies -PlanOnly:$DryRun
 
 $provisionArgs = @('provision', $mode)
 if ($Account) { $provisionArgs += @('--account', $Account) }
