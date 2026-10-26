@@ -6,7 +6,15 @@ service-account token, keystore or password belongs in CI. Camera runtime remain
 
 ## Owner steps, in order
 
-Agents must not execute provisioning, setup, real signing, pushes or publication.
+**Commands work from any directory** (cmd, PowerShell, even `C:\Windows\System32`):
+`npm --prefix C:\Users\dirty\projects\agent-eye run secrets -- <command> ...` or
+`node <repo>\src\android\releases\cli\cli.mjs <command> ...`. Paths resolve from the script's
+location, never the current directory. Every run writes a timestamped, secret-redacted log
+(owner commands: `<repo>\.tmp\owner-runs\`, other scripts: `<repo>\.tmp\logs\`) and ends with one line,
+`OK (exit 0) log: <path>` or `FAILED (exit N) log: <path>`. Agents read that log themselves.
+
+Agents never run key generation/verification or release-sign (1Password + Windows Hello are
+owner-run). Agents DO push, tag and dispatch releases once the review gate passes.
 All CLI commands default to dry-run. Dry-run performs no subprocess calls, network access,
 SDK initialization, secret reads or writes. `--execute` is explicit; conflicting flags fail.
 
@@ -17,11 +25,17 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
 
    ```powershell
    npm ci
-   Copy-Item android/signing.example.json android/signing.local.json
+   npm run secrets -- provision --dry-run
+   npm run secrets -- provision --execute
    ```
 
-   Edit only your account ID, dedicated vault ID and Agent Eye item titles in the ignored
-   local JSON. Do not copy references from another application. No secret values go in it.
+   `provision` is the whole owner flow: `setup-vault` creates the dedicated "Agent Eye Signing"
+   vault if absent and writes the ignored `android/signing.local.json` itself (account from
+   `--account`, `OP_ACCOUNT_ID`, an existing config, else the owner's default account), then
+   `generate-key` runs below. Only Windows Hello approvals are needed; no hand-editing and no
+   web-UI steps. `setup-vault` alone can be run first; a correct rerun reports "already set up" and
+   a config pointing at another vault is never overwritten. If the installed SDK cannot create
+   vaults the command says so and asks for the one vault to be created once.
 
 2. Review then provision exactly once. This creates an RSA-4096 PKCS12 key (10950 days),
    stores a Document and separate password item, reads them back and verifies recovery:
@@ -43,8 +57,10 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    remove the orphan password item before a new attempt. Never use that procedure to replace
    an established signer. The tooling does not perform that recovery decision automatically.
 
-3. Review repository setup. It refuses any existing origin or repository, including ambiguous
-   lookup failures. Execute once from the reviewed branch; it creates the public repository,
+3. **Done:** the GitHub repository and origin already exist, so `setup` refusing an existing
+   origin is expected and nothing remains here. (Historical text for a fresh clone follows.)
+   Repository setup refuses any existing origin or repository, including ambiguous
+   lookup failures. It would run once from the reviewed branch; it creates the public repository,
    adds the intended origin, pushes HEAD to main and configures read-only default workflow permissions:
 
    ```powershell
