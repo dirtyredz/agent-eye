@@ -5,7 +5,11 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 class HttpRequestTest {
-    private fun read(text: String) = HttpRequest.read(text.byteInputStream())
+    // Route policy as StillServer supplies it: only POST /pair carries a body.
+    private val limit = { method: String, path: String ->
+        if (method == "POST" && path == "/pair") 64 else 0
+    }
+    private fun read(text: String) = HttpRequest.read(text.byteInputStream(), limit)
     private fun rejects(code: Int, text: String) {
         try {
             read(text)

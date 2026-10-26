@@ -7,12 +7,18 @@ data class HttpRequest(
     val path: String,
     val authorization: String?,
     val method: String = "GET",
+    /** Raw body bytes as ISO-8859-1 (lossless); the route's handler validates the content. */
     val body: String = ""
 ) {
     companion object {
-        const val PAIR_PATH = "/pair"
-        const val MAX_BODY = 64
-        fun read(input: InputStream): HttpRequest {
+        /**
+         * [bodyLimit] is the route policy: the largest body a method+path may carry, 0 for none.
+         * This parser only enforces it; it knows no routes.
+         */
+        fun read(
+            input: InputStream,
+            bodyLimit: (method: String, path: String) -> Int = { _, _ -> 0 }
+        ): HttpRequest {
             val bytes = ArrayList<Byte>()
             while (true) {
                 val c = input.read()
@@ -49,10 +55,11 @@ data class HttpRequest(
                 throw HttpFailure(400)
             }
             val length = headers["content-length"]
-            if (first[0] == "POST" && first[1] == PAIR_PATH) {
-                // The only request with a body: a tiny JSON pairing request.
-                if (length == null || !length.matches(Regex("[0-9]{1,3}")) ||
-                    length.toInt() !in 1..MAX_BODY
+            val limit = bodyLimit(first[0], first[1])
+            if (limit > 0) {
+                // A route that takes a body: a declared, bounded, fully-read length.
+                if (length == null || !length.matches(Regex("[0-9]{1,6}")) ||
+                    length.toInt() !in 1..limit
                 ) {
                     throw HttpFailure(400)
                 }
@@ -63,14 +70,11 @@ data class HttpRequest(
                     if (n < 0) throw HttpFailure(400)
                     got += n
                 }
-                if (body.any { it < 32 || it > 126 }) {
-                    throw HttpFailure(400)
-                }
                 return HttpRequest(
                     first[1],
                     headers["authorization"],
-                    "POST",
-                    body.toString(Charsets.US_ASCII)
+                    first[0],
+                    body.toString(Charsets.ISO_8859_1)
                 )
             }
             if (length != null && length != "0") throw HttpFailure(400)

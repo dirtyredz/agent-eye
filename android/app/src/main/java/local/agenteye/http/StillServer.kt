@@ -9,7 +9,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import local.agenteye.security.PairResult
+import local.agenteye.security.PairHandler
 import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
 
@@ -31,6 +31,7 @@ class StillServer(
     private val intervalMs: Long = 1000,
     private val pairing: PairingCodes? = null
 ) : AutoCloseable {
+    private val pairHandler = pairing?.let { PairHandler(it, token) }
     private val listener = ServerSocket(port, 4, address)
     val localPort: Int get() = listener.localPort
     private val stopped = AtomicBoolean(false)
@@ -88,8 +89,8 @@ class StillServer(
     private fun handle(socket: Socket) {
         try {
             socket.soTimeout = connectionTimeoutMs.toInt()
-            val request = HttpRequest.read(socket.getInputStream())
-            if (request.method == "POST") {
+            val request = HttpRequest.read(socket.getInputStream(), ::bodyLimit)
+            if (request.method == "POST" && request.path == PAIR_PATH) {
                 pair(socket, request)
                 return
             }
@@ -138,23 +139,17 @@ class StillServer(
         }
     }
 
+    /** Only the pairing route may carry a request body. */
+    private fun bodyLimit(method: String, path: String) =
+        if (method == "POST" && path == PAIR_PATH) PairHandler.MAX_BODY else 0
+
     /** POST /pair {"code":"123456"} -> {"token":"..."}; unauthenticated by design. */
     private fun pair(socket: Socket, request: HttpRequest) {
-        val gate = pairing ?: throw HttpFailure(404)
-        val code = PAIR_BODY.matchEntire(request.body)?.groupValues?.get(1)
-            ?: throw HttpFailure(400)
+        val handler = pairHandler ?: throw HttpFailure(404)
         val client = socket.inetAddress.hostAddress.orEmpty()
-        when (gate.attempt(client, code)) {
-            PairResult.PAIRED -> {
-                val secret = token.display()
-                if (secret.isEmpty()) throw HttpFailure(503)
-                respond(socket, 200, "application/json", "{\"token\":\"$secret\"}".toByteArray())
-            }
-
-            PairResult.REJECTED -> throw HttpFailure(403)
-
-            PairResult.RATE_LIMITED -> throw HttpFailure(429)
-        }
+        val result = handler.handle(client, request.body)
+        if (result.status != 200) throw HttpFailure(result.status)
+        respond(socket, 200, "application/json", result.body.toByteArray())
     }
 
     private fun freshShot(): Shot {
@@ -223,7 +218,7 @@ class StillServer(
     }
 
     private companion object {
-        val PAIR_BODY = Regex("""\{\s*"code"\s*:\s*"([0-9]{6})"\s*\}""")
+        const val PAIR_PATH = "/pair"
     }
 
     override fun close() {
