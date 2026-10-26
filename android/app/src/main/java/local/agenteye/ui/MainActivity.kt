@@ -9,10 +9,10 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
-import android.view.Surface
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
+import android.view.Surface
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout

@@ -8,8 +8,13 @@ import org.junit.Test
 class PairingCodesTest {
     private var now = 1_000L
     private var next = 111_111
+    private fun nextDigits(): Int {
+        val value = next
+        next += 111_111
+        return value
+    }
     private fun codes(limit: Int = 10) =
-        PairingCodes(clock = { now }, digits = { next.also { next += 111_111 } }, clientLimit = limit)
+        PairingCodes(clock = { now }, digits = ::nextDigits, clientLimit = limit)
 
     @Test fun codeIsSixDigitsAndExpiresAfterTwoMinutes() {
         val pairing = codes()

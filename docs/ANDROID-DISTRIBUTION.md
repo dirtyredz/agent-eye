@@ -113,8 +113,8 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    Run the complete physical procedure in [AGENT-EYE.md](AGENT-EYE.md), including the local
    Privacy policy dialog with WAN disconnected.
 
-7. Return to the development branch, set `versionName=1.0.1`, `versionCode=2`, commit, pass
-   the gate and push the reviewed main update. Tag/push `v1.0.1`; repeat signing with its new
+7. Return to the development branch, set `versionName=1.1.0`, `versionCode=2`, commit, pass
+   the gate and push the reviewed main update. Tag/push `v1.1.0`; repeat signing with its new
    draft ID. Install over 1.0.0 **without uninstalling**. Record package, certificate, version
    codes, phone model/API and every device check. Every later published code must increase,
    including Play uploads; never reuse a code or derive it from a workflow counter.
@@ -123,21 +123,21 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
 
    ```powershell
    git switch release-pipeline
-   @('versionName=1.0.1', 'versionCode=2') | Set-Content -Encoding ascii android/version.properties
+   @('versionName=1.1.0', 'versionCode=2') | Set-Content -Encoding ascii android/version.properties
    git add android/version.properties
-   git commit -m "Release Agent Eye 1.0.1"
+   git commit -m "Release Agent Eye 1.1.0"
    node --test
    .\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest lintRelease releaseTools
    node src/android/signing/signing-smoke.mjs
    .\android\gradlew.bat --stop
    git push origin HEAD:main
-   git tag v1.0.1
-   git push origin v1.0.1
+   git tag v1.1.0
+   git push origin v1.1.0
    gh run list --repo dirtyredz/agent-eye --workflow android-release.yml
-   gh release view v1.0.1 --repo dirtyredz/agent-eye --json databaseId,isDraft,targetCommitish
+   gh release view v1.1.0 --repo dirtyredz/agent-eye --json databaseId,isDraft,targetCommitish
    git fetch origin main --tags
-   git switch --detach v1.0.1
-   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.1 -Publish -DryRun
+   git switch --detach v1.1.0
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.1.0 -Publish -DryRun
    powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.1 -Publish
    ```
 

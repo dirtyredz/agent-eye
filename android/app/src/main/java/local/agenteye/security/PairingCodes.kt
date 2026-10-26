@@ -48,7 +48,9 @@ class PairingCodes(
         // Fixed-length ASCII comparison; a malformed submission simply cannot match.
         val ok = MessageDigest.isEqual(
             live.value.toByteArray(Charsets.US_ASCII),
-            submitted.padEnd(live.value.length).take(live.value.length).toByteArray(Charsets.US_ASCII)
+            submitted.padEnd(
+                live.value.length
+            ).take(live.value.length).toByteArray(Charsets.US_ASCII)
         ) && submitted.length == live.value.length
         if (ok) {
             code = newCode() // single use
@@ -59,7 +61,17 @@ class PairingCodes(
     }
 
     private fun withinRate(client: String, now: Long): Boolean {
-        if (clientHits.size > 256) clientHits.entries.removeAll { it.value.lastOrNull()?.let { t -> now - t >= clientWindowMs } ?: true }
+        if (clientHits.size >
+            256
+        ) {
+            clientHits.entries.removeAll {
+                it.value.lastOrNull()?.let { t ->
+                    now - t >=
+                        clientWindowMs
+                }
+                    ?: true
+            }
+        }
         val hits = clientHits.getOrPut(client) { ArrayDeque() }
         while (hits.isNotEmpty() && now - hits.first() >= clientWindowMs) hits.removeFirst()
         if (hits.size >= clientLimit) return false

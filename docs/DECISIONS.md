@@ -18,7 +18,7 @@
   no wildcard listeners. IPv6, Ethernet, cellular, hotspots and ambiguous topology are excluded.
 - **Session authentication.** 256 random bits per Start, required on both endpoints, cleared on
   Stop. No token in URLs, notifications or logs. The app blocks screenshots/recents thumbnails.
-- **2026-10-26 — Short-code pairing (v1.0.1).** The 64-hex token was unreadable by hand and the app
+- **2026-10-26 — Short-code pairing (v1.1.0).** The 64-hex token was unreadable by hand and the app
   blocks screenshots (FLAG_SECURE, kept). The phone shows a six-digit code (two minutes, single use,
   5 attempts, per-client rate limit) that `POST /pair` exchanges for the token. The token is no longer
   shown at all (no "show token" toggle: less exposure, and `pair` makes it unnecessary);

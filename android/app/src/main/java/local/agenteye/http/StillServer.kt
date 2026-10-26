@@ -150,7 +150,9 @@ class StillServer(
                 if (secret.isEmpty()) throw HttpFailure(503)
                 respond(socket, 200, "application/json", "{\"token\":\"$secret\"}".toByteArray())
             }
+
             PairResult.REJECTED -> throw HttpFailure(403)
+
             PairResult.RATE_LIMITED -> throw HttpFailure(429)
         }
     }
