@@ -49,8 +49,8 @@ test('cleanup fails closed: pin set, release exists, gh failure, odd gh output, 
 test('cleanup guard sees a release on page 2 (via the github adapter) and refuses', async () => {
   const gh = github(async (_file, args) => {
     const route = args[1];
-    const page = Number(/page=(d+)/.exec(route)[1]);
+    const page = Number(/page=(\d+)/.exec(route)[1]);
     return { stdout: JSON.stringify(page === 1 ? Array(100).fill({ tag_name: 'x', draft: true }) : [{ tag_name: 'v1.0.0' }]) };
   });
-  await assert.rejects(cleanupOrphans({ vault: fakeVault([item('a', 'Agent Eye release key')]), pin: { sha256: null }, gh, execute: true, say: () => {} }), /101 GitHub release(s) exist/);
+  await assert.rejects(cleanupOrphans({ vault: fakeVault([item('a', 'Agent Eye release key')]), pin: { sha256: null }, gh, execute: true, say: () => {} }), /101 GitHub release\(s\) exist/);
 });
