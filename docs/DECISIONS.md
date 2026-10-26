@@ -44,7 +44,7 @@
   whether `base` does. Rejected: a shared package (no cross-repo dependency mechanism) and a second
   built-in runner (two redaction paths).
 - **2026-10-26 — Owner `.ps1` scripts are pass-throughs; the Node CLI owns release logic and the verdict.** Draft-ID lookup
-  (`gh release view`, draft-only), `gradlew releaseTools` + `--stop`, and tag/ID validation live in the CLI
+  (release list lookup by tag, draft-only), `gradlew releaseTools` + `--stop`, and tag/ID validation live in the CLI
   (`github.draftId`, `local/release-tools.mjs`, `parse`); `release-sign --tag` resolves the draft and `--release-id` only
   overrides. The CLI's `runScript` log is authoritative. `.ps1` scripts keep a short wrapper log (harness template
   `owner-run.ps1` copied verbatim, v1.0.0; Agent Eye specifics in `agent-eye.ps1`), forward the CLI's exit code, never echo

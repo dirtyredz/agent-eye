@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promis
 import { join, resolve } from 'node:path';
 import { draftRelease, stageRelease, validateTag } from './ci-commands.mjs';
 import { SDK, WORKFLOW, REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST } from '../artifacts/contract.mjs';
+import { github } from '../github/github.mjs';
 import { hashes } from '../artifacts/artifacts.mjs';
 
 async function fixture(t) {
@@ -18,18 +19,17 @@ async function fixture(t) {
     runAttempt: 1, workflow: WORKFLOW, artifacts: await hashes(dir, UNSIGNED) };
   await writeFile(join(dir, UNSIGNED_MANIFEST), JSON.stringify(m));
   const events = [];
+  const state = { exists: false };
   const release = { id: 7, tag_name: m.tag, target_commitish: m.commit, draft: true, prerelease: false };
   const deps = { root, dir, localVersion: m, tag: m.tag, commit: m.commit, runId: m.runId, runAttempt: 2,
     run: async (_file, args) => {
-      events.push(args[0] === 'api' ? 'lookup' : 'create');
-      if (args[0] !== 'api') {
-        assert.ok(args.includes('--draft')); assert.ok(args.includes('--verify-tag'));
-        assert.equal(args[args.indexOf('--target') + 1], m.commit);
-      }
-      return args[0] === 'api' ? { code: 1, stderr: 'HTTP 404' } : { code: 0 };
+      events.push('create'); state.exists = true;
+      assert.ok(args.includes('--draft')); assert.ok(args.includes('--verify-tag'));
+      assert.equal(args[args.indexOf('--target') + 1], m.commit);
+      return { code: 0 };
     },
     gh: {
-      api: async () => { events.push('release'); return release; },
+      releaseByTag: async () => { events.push(state.exists ? 'release' : 'lookup'); return state.exists ? release : null; },
       assets: async () => { events.push('assets'); return []; },
       upload: async (id, tag, path, name, scratch) => {
         assert.equal(id, release.id); assert.equal(tag, m.tag);
@@ -38,7 +38,7 @@ async function fixture(t) {
       },
     },
   };
-  return { deps, events, release, m };
+  return { deps, events, release, m, state };
 }
 
 test('draftRelease creates only after 404 and uploads the unsigned set, then cleans scratch', async t => {
@@ -49,18 +49,54 @@ test('draftRelease creates only after 404 and uploads the unsigned set, then cle
 });
 
 test('draftRelease resumes an existing draft without creating it', async t => {
-  const { deps, events } = await fixture(t);
-  deps.run = async () => ({ code: 0 });
+  const { deps, events, state } = await fixture(t);
+  state.exists = true;
   deps.gh.assets = async () => [{ name: UNSIGNED[0] }];
   await draftRelease(deps);
-  assert.deepEqual(events, ['release', ...UNSIGNED, UNSIGNED_MANIFEST]);
+  assert.equal(events.includes('create'), false);
+  assert.deepEqual(events, ['release', 'release', ...UNSIGNED, UNSIGNED_MANIFEST]);
 });
 
-test('draftRelease rejects ambiguous lookup before creating or uploading', async t => {
+test('draftRelease propagates a failed lookup before creating or uploading', async t => {
   const { deps, events } = await fixture(t);
-  deps.run = async () => ({ code: 1, stderr: 'HTTP 403' });
-  await assert.rejects(draftRelease(deps), /Ambiguous release lookup/);
+  deps.gh.releaseByTag = async () => { throw new Error('HTTP 403'); };
+  await assert.rejects(draftRelease(deps), /HTTP 403/);
   assert.deepEqual(events, []);
+});
+
+// Real GitHub: GET releases/tags/<tag> 404s for drafts; only the list endpoint shows them.
+function realisticRun(releases, calls) {
+  return async (file, args) => {
+    calls.push([file, ...args]);
+    if (args[0] === 'api') {
+      const route = args[1];
+      if (route.includes('/releases/tags/')) throw new Error('gh: Not Found (HTTP 404)');
+      if (route.includes('/assets?')) return { stdout: '[]' };
+      if (route.includes('/releases?')) return { stdout: JSON.stringify(route.includes('page=1') ? releases : []) };
+      return { stdout: JSON.stringify(releases[0]) };
+    }
+    if (args[0] === 'release' && args[1] === 'create') releases.push({ id: 9, tag_name: 'v1.0.0', target_commitish: 'a'.repeat(40), draft: true, prerelease: false });
+    return { stdout: '', code: 0 };
+  };
+}
+
+test('draftRelease reuses an existing empty draft that releases/tags/<tag> cannot see (no duplicate create)', async t => {
+  const { deps, m } = await fixture(t);
+  const draft = { id: 423852989, tag_name: m.tag, target_commitish: m.commit, draft: true, prerelease: false };
+  const calls = [];
+  const run = realisticRun([draft], calls);
+  deps.run = run; deps.gh = { ...github(run), upload: async () => {} };
+  await draftRelease(deps);
+  assert.equal(calls.some(c => c[1] === 'release' && c[2] === 'create'), false);
+});
+
+test('draftRelease creates a missing draft then finds it via the list endpoint', async t => {
+  const { deps } = await fixture(t);
+  const calls = [];
+  const run = realisticRun([], calls);
+  deps.run = run; deps.gh = { ...github(run), upload: async () => {} };
+  await draftRelease(deps);
+  assert.equal(calls.filter(c => c[1] === 'release' && c[2] === 'create').length, 1);
 });
 
 for (const field of ['tag', 'commit', 'runId', 'runAttempt']) test(`draftRelease rejects staged ${field} mismatch before GitHub`, async t => {
@@ -78,8 +114,8 @@ test('draftRelease verifies staged bytes before GitHub', async t => {
 });
 
 for (const mode of ['published', 'commit', 'signed', 'duplicate']) test(`draftRelease rejects ${mode} draft before uploads`, async t => {
-  const { deps, events, release } = await fixture(t);
-  deps.run = async () => ({ code: 0 });
+  const { deps, events, release, state } = await fixture(t);
+  state.exists = true;
   if (mode === 'published') release.draft = false;
   if (mode === 'commit') release.target_commitish = 'b'.repeat(40);
   if (mode === 'signed') deps.gh.assets = async () => [{ name: 'agent-eye.apk' }];

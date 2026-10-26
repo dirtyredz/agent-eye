@@ -46,12 +46,24 @@ test('changed commit, untrusted workflow and failed runs reject before artifact 
     await assert.rejects(gh.provenance(m, 'unused'), /Untrusted/);
   }
 });
-test('draftId resolves the numeric ID of a draft by tag and refuses published or invalid releases', async () => {
+const listed = (releases, seen = []) => github(async (file, args) => {
+  seen.push([file, ...args]);
+  const route = args[1];
+  if (route.includes('/releases/tags/')) throw new Error('gh: Not Found (HTTP 404)');
+  return { stdout: JSON.stringify(route.includes('page=1') ? releases : []) };
+});
+test('releaseByTag finds a draft that releases/tags/<tag> 404s on, null when absent, fails closed on duplicates', async () => {
+  const draft = { id: 423852989, tag_name: 'v1.0.0', draft: true };
+  const other = { id: 5, tag_name: 'v1.0.01', draft: false };
   const seen = [];
-  const fake = body => github(async (file, args) => { seen.push([file, ...args]); return { stdout: JSON.stringify(body) }; });
-  assert.equal(await fake({ databaseId: 987, isDraft: true }).draftId('v1.0.0'), '987');
-  assert.deepEqual(seen[0].slice(0, 4), ['gh', 'release', 'view', 'v1.0.0']);
-  await assert.rejects(fake({ databaseId: 987, isDraft: false }).draftId('v1.0.0'), /not a draft/);
-  await assert.rejects(fake({ databaseId: 'x', isDraft: true }).draftId('v1.0.0'), /Invalid draft release ID/);
-  await assert.rejects(github(async () => { throw new Error('release not found'); }).draftId('v9.9.9'), /not found/);
+  assert.deepEqual(await listed([other, draft], seen).releaseByTag('v1.0.0'), draft);
+  assert.ok(seen.every(c => !c[2].includes('/releases/tags/')));
+  assert.equal(await listed([other]).releaseByTag('v1.0.0'), null);
+  await assert.rejects(listed([draft, { ...draft, id: 6 }]).releaseByTag('v1.0.0'), /Multiple releases match/);
+});
+test('draftId resolves the numeric ID of a draft by tag and refuses published, missing or invalid releases', async () => {
+  assert.equal(await listed([{ id: 987, tag_name: 'v1.0.0', draft: true }]).draftId('v1.0.0'), '987');
+  await assert.rejects(listed([{ id: 987, tag_name: 'v1.0.0', draft: false }]).draftId('v1.0.0'), /not a draft/);
+  await assert.rejects(listed([{ id: 'x', tag_name: 'v1.0.0', draft: true }]).draftId('v1.0.0'), /Invalid draft release ID/);
+  await assert.rejects(listed([]).draftId('v9.9.9'), /not found/);
 });

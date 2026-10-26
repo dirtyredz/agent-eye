@@ -46,3 +46,10 @@
   lint reports `PropertyEscape` even when the build itself can locate the SDK.
 - Run `ktlintFormat` separately before the gate. Combining format/check task selectors can
   schedule a subproject's check before its formatter and report stale formatting errors.
+
+## GitHub's get-release-by-tag never returns drafts
+`GET repos/<repo>/releases/tags/<tag>` (and so `gh api` on it) returns 404 for DRAFT releases, even right after you
+create one. The v1.0.0 release run (40267716974) failed on exactly this: the `draft` step created the draft, then its
+re-fetch by tag 404'd; a retry would also have created a duplicate. Look drafts up with `github.releaseByTag(tag)`
+(`src/android/releases/github/github.mjs`), which lists releases and matches `tag_name` exactly (null if none, fails
+closed on more than one). `draftId` uses it too. Never reintroduce `releases/tags/` for release-pipeline lookups.
