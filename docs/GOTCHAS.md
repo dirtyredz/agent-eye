@@ -85,3 +85,11 @@ closed on more than one). `draftId` uses it too. Never reintroduce `releases/tag
   cancel until Start is pressed.
 - **Node 22:** `node --test src/dir/` fails on a directory argument; use globs or plain `node --test`.
 - **Windows:** `File.renameTo` will not replace an existing file; tests inject a rename.
+- **Rotation (v1.1.1).** `MainActivity` declares `configChanges`, so turning the phone never recreates
+  it or touches the service-held session (token, pairing code, camera). Rotation reaches CameraX only
+  as `targetRotation`, pushed from a `DisplayManager` listener; never read it from `PreviewView.display`
+  (null before the view is attached, which made stills portrait-only). Preview and still share one
+  `UseCaseGroup` `ViewPort` taken from the `PreviewView`, so the still has the preview's field of view;
+  `JpegEncoder` applies `cropRect` itself if CameraX leaves the crop as metadata. Rebind only when the
+  surface or view port changes: needless rebinds race `takePicture` and leave `cameraReady:false`.
+  Physical-device acceptance (portrait, landscape, 180 flip, rotate mid-session) is still owed.

@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -37,16 +39,19 @@ class MainActivity : Activity() {
     private var service: CaptureService? = null
     private var bound = false
     private var visible = false
+    private val displays by lazy { getSystemService(DisplayManager::class.java) }
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayChanged(displayId: Int) = pushSurface()
+        override fun onDisplayAdded(displayId: Int) = Unit
+        override fun onDisplayRemoved(displayId: Int) = Unit
+    }
+    private val layoutListener =
+        android.view.View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> pushSurface() }
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
             service = (binder as CaptureService.LocalBinder).service
             service?.observer = { refresh() }
-            if (visible) {
-                service?.attach(
-                    screen.preview.surfaceProvider,
-                    screen.preview.display?.rotation ?: Surface.ROTATION_0
-                )
-            }
+            if (visible) pushSurface()
             refresh()
         }
 
@@ -79,6 +84,8 @@ class MainActivity : Activity() {
         super.onStart()
         visible = true
         ticker.post(tick)
+        displays.registerDisplayListener(displayListener, ticker)
+        screen.preview.addOnLayoutChangeListener(layoutListener)
         bound =
             bindService(
                 Intent(this, CaptureService::class.java),
@@ -93,6 +100,8 @@ class MainActivity : Activity() {
     override fun onStop() {
         visible = false
         ticker.removeCallbacks(tick)
+        displays.unregisterDisplayListener(displayListener)
+        screen.preview.removeOnLayoutChangeListener(layoutListener)
         updates.coordinator.forget(updateListener)
         updates.detach(isChangingConfigurations)
         service?.observer = null
@@ -101,6 +110,35 @@ class MainActivity : Activity() {
         bound = false
         service = null
         super.onStop()
+    }
+
+    /** The display's current rotation; the Activity (not a possibly detached view) is the truth. */
+    @Suppress("DEPRECATION")
+    private fun displayRotation(): Int = if (Build.VERSION.SDK_INT >= 30) {
+        display?.rotation ?: Surface.ROTATION_0
+    } else {
+        windowManager.defaultDisplay.rotation
+    }
+
+    /**
+     * Hands the service the live surface, the display rotation and the preview's visible window.
+     * Rotation and window changes land here without recreating the Activity, so the camera is
+     * never torn down by turning the phone and stills keep the preview's orientation and framing.
+     */
+    private fun pushSurface() {
+        if (!visible) return
+        val rotation = displayRotation()
+        service?.attach(
+            screen.preview.surfaceProvider,
+            rotation,
+            screen.preview.getViewPort(rotation)
+        )
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        screen.applyOrientation(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE)
+        pushSurface()
     }
 
     private fun onUpdateAction(action: UpdateAction) {

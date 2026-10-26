@@ -8,6 +8,8 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -41,6 +43,7 @@ class CameraSession(
     private var cameraState: LiveData<CameraState>? = null
     private val preview = Preview.Builder().build()
     private var surface: Preview.SurfaceProvider? = null
+    private var viewPort: ViewPort? = null
     private val capture = ImageCapture.Builder()
         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
         .setFlashMode(ImageCapture.FLASH_MODE_OFF)
@@ -75,14 +78,17 @@ class CameraSession(
     private fun bind() {
         val current = provider ?: return
         try {
-            val bound = if (surface != null) {
+            val group = UseCaseGroup.Builder().addUseCase(capture)
+            viewPort?.let { group.setViewPort(it) }
+            if (surface != null) {
                 preview.setSurfaceProvider(surface)
-                current.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, capture, preview)
+                group.addUseCase(preview)
             } else {
                 current.unbind(preview)
                 preview.setSurfaceProvider(null)
-                current.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, capture)
             }
+            val bound =
+                current.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, group.build())
             cameraState?.removeObservers(owner)
             cameraState = bound.cameraInfo.cameraState
             cameraState?.observe(owner) { currentState ->
@@ -96,12 +102,32 @@ class CameraSession(
             state(false, "camera_unavailable")
         }
     }
-    fun attach(surfaceProvider: Preview.SurfaceProvider?, rotation: Int = capture.targetRotation) {
-        surface = surfaceProvider
+
+    /**
+     * Follows the screen: [rotation] is the display rotation (always applied live, no rebind) and
+     * [port] the preview's visible window, shared by preview and still so both frame the same
+     * field of view. The use cases are rebound only when the surface or the window really changed;
+     * a null surface (screen off) keeps the last window so stills stay framed the same.
+     */
+    fun attach(
+        surfaceProvider: Preview.SurfaceProvider?,
+        rotation: Int = capture.targetRotation,
+        port: ViewPort? = null
+    ) {
         capture.targetRotation = rotation
         preview.targetRotation = rotation
-        if (!closed.get()) bind()
+        val newPort = if (surfaceProvider != null && port != null) port else viewPort
+        val changed = surfaceProvider !== surface || !sameWindow(newPort, viewPort)
+        surface = surfaceProvider
+        viewPort = newPort
+        if (changed && !closed.get()) bind()
     }
+
+    private fun sameWindow(a: ViewPort?, b: ViewPort?) = a === b || (
+        a != null && b != null && a.aspectRatio == b.aspectRatio &&
+            a.rotation == b.rotation && a.scaleType == b.scaleType &&
+            a.layoutDirection == b.layoutDirection
+        )
 
     @Synchronized fun shot(): CompletableFuture<Shot> {
         val result = CompletableFuture<Shot>()

@@ -9,6 +9,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import androidx.camera.core.Preview
+import androidx.camera.core.ViewPort
 import androidx.lifecycle.LifecycleService
 import local.agenteye.R
 import local.agenteye.camera.CameraSession
@@ -45,6 +46,7 @@ class CaptureService : LifecycleService() {
     @Volatile private var error: String? = null
     private var preview: Preview.SurfaceProvider? = null
     private var rotation = 0
+    private var viewPort: ViewPort? = null
     var observer: (() -> Unit)? = null
 
     override fun onBind(intent: Intent): IBinder {
@@ -79,7 +81,7 @@ class CaptureService : LifecycleService() {
                     }
                     observer?.invoke()
                 }
-            }.also { it.attach(preview, rotation) }
+            }.also { it.attach(preview, rotation, viewPort) }
             lan = LanBinding(this, ::rebind)
         } catch (_: Exception) {
             stopSession()
@@ -172,10 +174,15 @@ class CaptureService : LifecycleService() {
         observer?.invoke()
     }
 
-    fun attach(surface: Preview.SurfaceProvider?, displayRotation: Int = rotation) {
+    fun attach(
+        surface: Preview.SurfaceProvider?,
+        displayRotation: Int = rotation,
+        port: ViewPort? = null
+    ) {
         preview = surface
         rotation = displayRotation
-        camera?.attach(surface, rotation)
+        if (surface != null && port != null) viewPort = port
+        camera?.attach(surface, rotation, port)
     }
     fun displayStatus(): String = if (!running) {
         "Stopped${error?.let { " · $it" } ?: ""}"
