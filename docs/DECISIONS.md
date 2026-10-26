@@ -1,5 +1,12 @@
 # Decisions
 
+- **2026-10-26 — Signing config falls back to the main worktree; sign-release auto-installs deps.**
+  Read-only lookups (release-sign, inspect, cleanup, key commands) resolve the git-ignored
+  `android/signing.local.json` in the checkout, then in the main worktree, so a fresh tag checkout
+  can sign; `setup-vault`/`provision` read and write the checkout-local file only. `sign-release`
+  runs `npm ci` when `node_modules` is missing, including under `-DryRun`: the one documented
+  exception to "dry run changes nothing", because the CLI cannot load without `@1password/sdk`
+  (`provision -DryRun` only reports it). Rejected: copying the config into each checkout.
 - **2026-10-26 — In-app updater: direct public GitHub, manual only.** The app queries the public
   `dirtyredz/agent-eye` releases API and exact-tag asset URLs directly. Rejected: a Worker/proxy
   (repo is public; it adds infrastructure and another data recipient). Checks happen only when

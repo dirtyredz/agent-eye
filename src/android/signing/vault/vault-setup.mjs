@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import { requireThat } from '../../releases/artifacts/contract.mjs';
 import { desktopClient } from './vault.mjs';
 import { DEFAULT_ACCOUNT } from './owner-account.mjs';
+import { CONFIG_FILE } from './signing-config.mjs';
 
 export const VAULT_TITLE = 'Agent Eye Signing';
-export const CONFIG_FILE = 'android/signing.local.json';
 export const vaultPlan = [
   `Resolve the 1Password account (--account, OP_ACCOUNT_ID, existing ${CONFIG_FILE}, else the owner default) and sign in with DesktopAuth (Windows Hello).`,
   `Create the dedicated vault "${VAULT_TITLE}" if absent; refuse duplicates.`,

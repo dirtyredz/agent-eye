@@ -1,10 +1,13 @@
 // Locates the git-ignored android/signing.local.json (1Password IDs and item titles, no secrets).
 // A fresh clean checkout of a release tag never has it: fall back to the main worktree's copy.
+// Rule: read-only lookups (release-sign, inspect, cleanup, key commands) resolve checkout -> main worktree
+// via resolveSigningConfigPath; setup-vault/provision deliberately read and write the checkout-local file only.
 import { access } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { CONFIG_FILE } from './vault-setup.mjs';
+
+export const CONFIG_FILE = 'android/signing.local.json';
 
 const execFileAsync = promisify(execFile);
 
