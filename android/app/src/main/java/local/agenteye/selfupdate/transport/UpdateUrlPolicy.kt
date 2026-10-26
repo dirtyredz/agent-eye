@@ -1,7 +1,7 @@
 package local.agenteye.selfupdate.transport
 
 import java.net.URI
-import local.agenteye.selfupdate.release.ReleasePolicy
+import local.agenteye.selfupdate.contract.ReleaseContract
 
 /**
  * The only outbound destinations the updater may contact. Pure, so every rule is unit-tested:
@@ -13,7 +13,7 @@ object UpdateUrlPolicy {
     const val DOWNLOAD_HOST = "github.com"
     val ASSET_HOSTS = setOf("release-assets.githubusercontent.com", "objects.githubusercontent.com")
     const val MAX_REDIRECTS = 5
-    private val repo = ReleasePolicy.REPOSITORY
+    private val repo = ReleaseContract.REPOSITORY
     private val apiPath = Regex("/repos/${Regex.escape(repo)}/releases/(latest|[1-9][0-9]{0,15})")
 
     fun latest(): URI = URI("https://$API_HOST/repos/$repo/releases/latest")
@@ -21,7 +21,7 @@ object UpdateUrlPolicy {
     fun release(id: Long): URI = URI("https://$API_HOST/repos/$repo/releases/$id")
 
     fun asset(tag: String, name: String): URI {
-        require(ReleasePolicy.isStableTag(tag) && name in ReleasePolicy.RELEASE_ASSETS)
+        require(ReleaseContract.isStableTag(tag) && name in ReleaseContract.RELEASE_ASSETS)
         return URI("https://$DOWNLOAD_HOST/$repo/releases/download/$tag/$name")
     }
 
@@ -35,10 +35,10 @@ object UpdateUrlPolicy {
         if (!secure(uri) || uri.host != DOWNLOAD_HOST || uri.rawQuery != null) return false
         val parts = uri.rawPath.orEmpty().split('/')
         return parts.size == 7 && parts[0].isEmpty() && "${parts[1]}/${parts[2]}" == repo &&
-            parts[3] == "releases" && parts[4] == "download" && ReleasePolicy.isStableTag(
+            parts[3] == "releases" && parts[4] == "download" && ReleaseContract.isStableTag(
                 parts[5]
             ) &&
-            parts[6] in ReleasePolicy.RELEASE_ASSETS
+            parts[6] in ReleaseContract.RELEASE_ASSETS
     }
 
     /** Whether a request may be made to [uri] at all (initial request). */

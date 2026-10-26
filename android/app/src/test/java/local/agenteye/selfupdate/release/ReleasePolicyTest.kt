@@ -3,6 +3,7 @@ package local.agenteye.selfupdate.release
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateFixtures
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.ReleaseContract
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -54,7 +55,7 @@ class ReleasePolicyTest {
                 artifacts =
                     base.artifacts +
                         (
-                            ReleasePolicy.APK to
+                            ReleaseContract.APK to
                                 Artifact(ReleasePolicy.MAX_APK_BYTES + 1, "a".repeat(64))
                             )
             ),
@@ -85,7 +86,7 @@ class ReleasePolicyTest {
         }
         val forged = base.copy(
             artifacts =
-                base.artifacts + (ReleasePolicy.APK to Artifact(24, "f".repeat(64)))
+                base.artifacts + (ReleaseContract.APK to Artifact(24, "f".repeat(64)))
         )
         assertThrows(UpdateFailure::class.java) {
             ReleasePolicy.validateChecksums(sums, UpdateFixtures.manifest, forged)
@@ -109,7 +110,7 @@ class ReleasePolicyTest {
     }
 
     @Test fun stableTagsOnly() {
-        assertTrue(ReleasePolicy.isStableTag("v1.1.1"))
+        assertTrue(ReleaseContract.isStableTag("v1.1.1"))
         for (t in listOf(
             "1.1.1",
             "v1.1",
@@ -117,7 +118,7 @@ class ReleasePolicyTest {
             "v1.1.1-rc1",
             "v1.1.1/../x"
         )) {
-            assertFalse(t, ReleasePolicy.isStableTag(t))
+            assertFalse(t, ReleaseContract.isStableTag(t))
         }
     }
 }

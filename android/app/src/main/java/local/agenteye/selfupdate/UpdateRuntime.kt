@@ -9,6 +9,7 @@ import android.os.Looper
 import android.provider.Settings
 import java.security.SecureRandom
 import java.util.concurrent.Executors
+import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.download.AndroidApkInspector
 import local.agenteye.selfupdate.download.ApkDownloader
 import local.agenteye.selfupdate.download.ApkVerifier
@@ -18,7 +19,6 @@ import local.agenteye.selfupdate.install.PackageInstallerGateway
 import local.agenteye.selfupdate.release.GitHubReleaseSource
 import local.agenteye.selfupdate.release.ReleasePolicy
 import local.agenteye.selfupdate.storage.UpdateStore
-import local.agenteye.selfupdate.transport.Backoff
 import local.agenteye.selfupdate.transport.HttpsConnector
 import local.agenteye.selfupdate.transport.UpdateHttpClient
 
@@ -32,16 +32,7 @@ class UpdateRuntime(context: Context) {
     private val store = UpdateStore(java.io.File(app.noBackupFilesDir, "self-update"))
     private val pin = readPin(app)
     private val inspector = AndroidApkInspector(app)
-    private val http = UpdateHttpClient(
-        HttpsConnector(),
-        object : Backoff {
-            override var until: Long
-                get() = store.backoffUntil
-                set(value) {
-                    store.backoffUntil = value
-                }
-        }
-    )
+    private val http = UpdateHttpClient(HttpsConnector(), store)
     private val port = AndroidInstallerPort(app)
     private val random = SecureRandom()
 
@@ -118,7 +109,7 @@ class UpdateRuntime(context: Context) {
             context.assets.open("update-signer.txt").use {
                 it.readBytes()
             }.toString(Charsets.US_ASCII).trim()
-                .takeIf(ReleasePolicy::isPin).orEmpty()
+                .takeIf(ReleaseContract::isSha256).orEmpty()
         } catch (_: java.io.IOException) {
             ""
         }

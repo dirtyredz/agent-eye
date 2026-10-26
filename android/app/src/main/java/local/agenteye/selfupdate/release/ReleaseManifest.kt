@@ -1,5 +1,7 @@
 package local.agenteye.selfupdate.release
 
+import local.agenteye.json.JsonObject
+import local.agenteye.json.StrictJson
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
 
@@ -34,38 +36,36 @@ data class ReleaseManifest(
         /** Bounded strict decoding; any shape problem is [UpdateProblem.Malformed]. */
         fun decode(bytes: ByteArray): ReleaseManifest {
             if (bytes.size > ReleasePolicy.MAX_MANIFEST_BYTES) malformed()
-            val root = try {
-                StrictJson.parse(bytes) as? Map<*, *>
+            return try {
+                decode(JsonObject.parse(bytes))
             } catch (_: StrictJson.Invalid) {
-                null
-            } ?: malformed()
-            if (root.keys != FIELDS) malformed()
-            val artifactMap = root["artifacts"] as? Map<*, *> ?: malformed()
-            val artifacts = artifactMap.entries.associate { entry ->
-                val (k, v) = entry
-                val a = v as? Map<*, *> ?: malformed()
-                if (a.keys != setOf("size", "sha256")) malformed()
-                (k as String) to Artifact(long(a["size"]), string(a["sha256"]))
+                malformed()
             }
-            val unsigned = (root["unsignedHashes"] as? Map<*, *> ?: malformed())
-                .entries.associate { (k, v) -> (k as String) to string(v) }
+        }
+
+        private fun decode(root: JsonObject): ReleaseManifest {
+            if (root.keys != FIELDS) malformed()
+            val artifacts = root.objectMap("artifacts").mapValues { (_, a) ->
+                if (a.keys != setOf("size", "sha256")) malformed()
+                Artifact(a.long("size"), a.string("sha256"))
+            }
             return ReleaseManifest(
-                schema = long(root["schema"]),
-                repository = string(root["repository"]),
-                applicationId = string(root["applicationId"]),
-                minSdk = long(root["minSdk"]),
-                targetSdk = long(root["targetSdk"]),
-                compileSdk = long(root["compileSdk"]),
-                versionName = string(root["versionName"]),
-                versionCode = long(root["versionCode"]),
-                tag = string(root["tag"]),
-                commit = string(root["commit"]),
-                runId = long(root["runId"]),
-                runAttempt = long(root["runAttempt"]),
-                workflow = string(root["workflow"]),
+                schema = root.long("schema"),
+                repository = root.string("repository"),
+                applicationId = root.string("applicationId"),
+                minSdk = root.long("minSdk"),
+                targetSdk = root.long("targetSdk"),
+                compileSdk = root.long("compileSdk"),
+                versionName = root.string("versionName"),
+                versionCode = root.long("versionCode"),
+                tag = root.string("tag"),
+                commit = root.string("commit"),
+                runId = root.long("runId"),
+                runAttempt = root.long("runAttempt"),
+                workflow = root.string("workflow"),
                 artifacts = artifacts,
-                signerSha256 = string(root["signerSha256"]),
-                unsignedHashes = unsigned
+                signerSha256 = root.string("signerSha256"),
+                unsignedHashes = root.stringMap("unsignedHashes")
             )
         }
 
@@ -87,10 +87,6 @@ data class ReleaseManifest(
         }
 
         private val LINE = Regex("([a-f0-9]{64})  ([A-Za-z0-9._-]{1,64})")
-
-        private fun long(value: Any?): Long = value as? Long ?: malformed()
-
-        private fun string(value: Any?): String = value as? String ?: malformed()
 
         private fun malformed(): Nothing = throw UpdateFailure(UpdateProblem.Malformed)
     }

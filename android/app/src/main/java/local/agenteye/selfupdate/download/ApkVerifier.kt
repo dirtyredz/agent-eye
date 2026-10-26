@@ -4,6 +4,7 @@ import java.io.File
 import local.agenteye.selfupdate.Candidate
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.release.ReleasePolicy
 
 /** What PackageManager reports about an installed package or an APK archive. */
@@ -36,7 +37,7 @@ class ApkVerifier(
 ) {
     /** Whether this installation can self-update at all (release package, single pinned signer). */
     fun eligible(): Boolean {
-        if (!ReleasePolicy.isPin(pin)) return false
+        if (!ReleaseContract.isSha256(pin)) return false
         val installed = inspector.installed()
         return installed.packageName == ReleasePolicy.APPLICATION_ID && !installed.debuggable &&
             installed.signers == listOf(pin)

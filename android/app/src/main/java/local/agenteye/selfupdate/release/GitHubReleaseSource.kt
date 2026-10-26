@@ -1,8 +1,11 @@
 package local.agenteye.selfupdate.release
 
+import local.agenteye.json.JsonObject
+import local.agenteye.json.StrictJson
 import local.agenteye.selfupdate.Candidate
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.transport.UpdateHttpClient
 import local.agenteye.selfupdate.transport.UpdateUrlPolicy
 
@@ -31,21 +34,21 @@ class GitHubReleaseSource(private val http: UpdateHttpClient, private val pin: S
         val release =
             release(http.fetch(UpdateUrlPolicy.latest(), ReleasePolicy.MAX_RELEASE_JSON_BYTES))
         val manifestBytes = http.fetch(
-            UpdateUrlPolicy.asset(release.tag, ReleasePolicy.MANIFEST),
+            UpdateUrlPolicy.asset(release.tag, ReleaseContract.MANIFEST),
             ReleasePolicy.MAX_MANIFEST_BYTES.toLong()
         )
         val sums = ReleaseManifest.checksums(
             http.fetch(
-                UpdateUrlPolicy.asset(release.tag, ReleasePolicy.SUMS),
+                UpdateUrlPolicy.asset(release.tag, ReleaseContract.SUMS),
                 ReleasePolicy.MAX_SUMS_BYTES.toLong()
             )
         )
         val manifest = ReleaseManifest.decode(manifestBytes)
         ReleasePolicy.validate(manifest, release.tag, pin)
         ReleasePolicy.validateChecksums(sums, manifestBytes, manifest)
-        val apk = manifest.artifacts.getValue(ReleasePolicy.APK)
-        if (release.assets.getValue(ReleasePolicy.APK).size != apk.size ||
-            release.assets.getValue(ReleasePolicy.MANIFEST).size != manifestBytes.size.toLong()
+        val apk = manifest.artifacts.getValue(ReleaseContract.APK)
+        if (release.assets.getValue(ReleaseContract.APK).size != apk.size ||
+            release.assets.getValue(ReleaseContract.MANIFEST).size != manifestBytes.size.toLong()
         ) {
             throw UpdateFailure(UpdateProblem.Malformed)
         }
@@ -66,9 +69,9 @@ class GitHubReleaseSource(private val http: UpdateHttpClient, private val pin: S
                     versionName = manifest.versionName,
                     versionCode = manifest.versionCode,
                     minSdk = manifest.minSdk.toInt(),
-                    manifestAssetId = release.assets.getValue(ReleasePolicy.MANIFEST).id,
-                    sumsAssetId = release.assets.getValue(ReleasePolicy.SUMS).id,
-                    apkAssetId = release.assets.getValue(ReleasePolicy.APK).id,
+                    manifestAssetId = release.assets.getValue(ReleaseContract.MANIFEST).id,
+                    sumsAssetId = release.assets.getValue(ReleaseContract.SUMS).id,
+                    apkAssetId = release.assets.getValue(ReleaseContract.APK).id,
                     manifestSha256 = ReleasePolicy.sha256(manifestBytes),
                     apkSize = apk.size,
                     apkSha256 = apk.sha256,
@@ -100,12 +103,12 @@ class GitHubReleaseSource(private val http: UpdateHttpClient, private val pin: S
             }
         }
         val same = release.id == candidate.releaseId && release.tag == candidate.tag &&
-            release.assets[ReleasePolicy.APK]?.id == candidate.apkAssetId &&
-            release.assets[ReleasePolicy.MANIFEST]?.id == candidate.manifestAssetId &&
-            release.assets[ReleasePolicy.SUMS]?.id == candidate.sumsAssetId
+            release.assets[ReleaseContract.APK]?.id == candidate.apkAssetId &&
+            release.assets[ReleaseContract.MANIFEST]?.id == candidate.manifestAssetId &&
+            release.assets[ReleaseContract.SUMS]?.id == candidate.sumsAssetId
         if (!same) throw UpdateFailure(UpdateProblem.Changed)
         val manifest = http.fetch(
-            UpdateUrlPolicy.asset(candidate.tag, ReleasePolicy.MANIFEST),
+            UpdateUrlPolicy.asset(candidate.tag, ReleaseContract.MANIFEST),
             ReleasePolicy.MAX_MANIFEST_BYTES.toLong()
         )
         if (ReleasePolicy.sha256(manifest) !=
@@ -115,43 +118,34 @@ class GitHubReleaseSource(private val http: UpdateHttpClient, private val pin: S
         }
     }
 
-    private fun release(bytes: ByteArray): Release {
-        val root = try {
-            StrictJson.parse(bytes) as? Map<*, *>
-        } catch (_: StrictJson.Invalid) {
-            null
-        } ?: malformed()
-        val id = root["id"] as? Long ?: malformed()
-        val tag = root["tag_name"] as? String ?: malformed()
-        if (id <= 0 || root["draft"] != false || root["prerelease"] != false ||
-            !ReleasePolicy.isStableTag(tag)
+    private fun release(bytes: ByteArray): Release = try {
+        decodeRelease(JsonObject.parse(bytes))
+    } catch (_: StrictJson.Invalid) {
+        malformed()
+    }
+
+    private fun decodeRelease(root: JsonObject): Release {
+        val id = root.long("id")
+        val tag = root.string("tag_name")
+        if (id <= 0 || root.bool("draft") || root.bool("prerelease") ||
+            !ReleaseContract.isStableTag(tag)
         ) {
             malformed()
         }
-        val assets = (root["assets"] as? List<*> ?: malformed()).map { item ->
-            val a = item as? Map<*, *> ?: malformed()
-            val asset = Asset(
-                a["id"] as? Long ?: malformed(),
-                a["name"] as? String ?: malformed(),
-                a["size"] as? Long ?: malformed()
-            )
-            val url = a["browser_download_url"] as? String ?: malformed()
-            val state = a["state"]
+        val assets = root.objects("assets").map { a ->
+            val asset = Asset(a.long("id"), a.string("name"), a.long("size"))
+            val url = a.string("browser_download_url")
+            val state = a.raw("state")
+            val name = asset.name.takeIf { it in ReleaseContract.RELEASE_ASSETS } ?: malformed()
             if (asset.id <= 0 || asset.size <= 0 || (state != null && state != "uploaded") ||
-                url !=
-                UpdateUrlPolicy.asset(
-                    tag,
-                    asset.name.takeIf {
-                        it in ReleasePolicy.RELEASE_ASSETS
-                    } ?: malformed()
-                ).toString()
+                url != UpdateUrlPolicy.asset(tag, name).toString()
             ) {
                 malformed()
             }
             asset
         }
         val byName = assets.associateBy { it.name }
-        if (byName.size != assets.size || byName.keys != ReleasePolicy.RELEASE_ASSETS) malformed()
+        if (byName.size != assets.size || byName.keys != ReleaseContract.RELEASE_ASSETS) malformed()
         return Release(id, tag, byName)
     }
 

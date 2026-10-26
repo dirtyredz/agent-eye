@@ -1,4 +1,4 @@
-package local.agenteye.selfupdate.release
+package local.agenteye.json
 
 /**
  * Small strict JSON reader/writer for update metadata and updater records. Pure JVM, so the

@@ -6,12 +6,13 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 import java.security.MessageDigest
+import local.agenteye.json.StrictJson
+import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.download.ApkInspector
 import local.agenteye.selfupdate.download.PackageIdentity
 import local.agenteye.selfupdate.install.InstallerPort
 import local.agenteye.selfupdate.install.SessionState
 import local.agenteye.selfupdate.release.ReleasePolicy
-import local.agenteye.selfupdate.release.StrictJson
 import local.agenteye.selfupdate.transport.Backoff
 import local.agenteye.selfupdate.transport.HttpConnector
 import local.agenteye.selfupdate.transport.HttpExchange
@@ -30,7 +31,7 @@ object UpdateFixtures {
     /** Same synthetic bytes `update-fixtures.mjs` hashes. */
     fun synthetic(name: String) = "synthetic $name\n".toByteArray()
 
-    val apk get() = synthetic(ReleasePolicy.APK)
+    val apk get() = synthetic(ReleaseContract.APK)
 
     fun asset(name: String) = "$DOWNLOAD/$TAG/$name"
 
@@ -39,13 +40,13 @@ object UpdateFixtures {
         tag: String = TAG,
         draft: Boolean = false,
         prerelease: Boolean = false,
-        names: List<String> = ReleasePolicy.RELEASE_ASSETS.toList(),
-        assetId: (String) -> Long = { 100L + ReleasePolicy.RELEASE_ASSETS.indexOf(it) },
+        names: List<String> = ReleaseContract.RELEASE_ASSETS.toList(),
+        assetId: (String) -> Long = { 100L + ReleaseContract.RELEASE_ASSETS.indexOf(it) },
         url: (String) -> String = { "$DOWNLOAD/$tag/$it" }
     ): ByteArray {
         val sizes = mapOf(
-            ReleasePolicy.MANIFEST to manifest.size.toLong(),
-            ReleasePolicy.SUMS to sums.size.toLong()
+            ReleaseContract.MANIFEST to manifest.size.toLong(),
+            ReleaseContract.SUMS to sums.size.toLong()
         )
         val assets = names.map { n ->
             mapOf(

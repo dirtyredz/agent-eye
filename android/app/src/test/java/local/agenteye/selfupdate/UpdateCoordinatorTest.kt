@@ -27,17 +27,7 @@ class UpdateCoordinatorTest {
 
     private fun coordinator(): UpdateCoordinator {
         val store = UpdateStore(dir, replacingRename)
-        val http = UpdateHttpClient(
-            connector,
-            object : local.agenteye.selfupdate.transport.Backoff {
-                override var until: Long
-                    get() = store.backoffUntil
-                    set(value) {
-                        store.backoffUntil = value
-                    }
-            },
-            now = { clock }
-        )
+        val http = UpdateHttpClient(connector, store, now = { clock })
         return UpdateCoordinator(
             source = GitHubReleaseSource(http, UpdateFixtures.PIN),
             http = http,

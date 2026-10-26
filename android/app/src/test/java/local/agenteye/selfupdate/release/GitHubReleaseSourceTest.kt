@@ -6,6 +6,7 @@ import local.agenteye.selfupdate.MemoryBackoff
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateFixtures
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.transport.UpdateHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -56,15 +57,15 @@ class GitHubReleaseSourceTest {
             UpdateFixtures.releaseJson(prerelease = true),
             UpdateFixtures.releaseJson(tag = "v1.1.1-rc1"),
             UpdateFixtures.releaseJson(
-                names = ReleasePolicy.RELEASE_ASSETS.toList() - "SHA256SUMS"
+                names = ReleaseContract.RELEASE_ASSETS.toList() - "SHA256SUMS"
             ),
             UpdateFixtures.releaseJson(
                 names =
-                    ReleasePolicy.RELEASE_ASSETS.toList() + "agent-eye.apk"
+                    ReleaseContract.RELEASE_ASSETS.toList() + "agent-eye.apk"
             ),
             UpdateFixtures.releaseJson(
                 names =
-                    ReleasePolicy.RELEASE_ASSETS.toList() + "agent-eye-unsigned.apk"
+                    ReleaseContract.RELEASE_ASSETS.toList() + "agent-eye-unsigned.apk"
             ),
             UpdateFixtures.releaseJson(url = { "https://evil.example/$it" }),
             UpdateFixtures.releaseJson(url = {

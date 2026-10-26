@@ -3,6 +3,7 @@ package local.agenteye.selfupdate.release
 import java.security.MessageDigest
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.ReleaseContract
 
 /**
  * Pure release-contract checks, mirroring `src/android/releases/artifacts/contract.mjs`. The
@@ -10,15 +11,9 @@ import local.agenteye.selfupdate.UpdateProblem
  * the Node and these JVM tests. The signer pin is always the packaged one, never the network's.
  */
 object ReleasePolicy {
-    const val REPOSITORY = "dirtyredz/agent-eye"
     const val APPLICATION_ID = "local.agenteye"
     const val WORKFLOW = ".github/workflows/android-release.yml"
-    const val APK = "agent-eye.apk"
-    const val MANIFEST = "release.json"
-    const val SUMS = "SHA256SUMS"
-    val FINAL = setOf(APK, "agent-eye.aab", "mapping.txt")
     val UNSIGNED = setOf("agent-eye-unsigned.apk", "agent-eye-unsigned.aab", "mapping.txt")
-    val RELEASE_ASSETS = FINAL + MANIFEST + SUMS
     const val MAX_RELEASE_JSON_BYTES = 1L shl 20
     const val MAX_MANIFEST_BYTES = 64 * 1024
     const val MAX_SUMS_BYTES = 8 * 1024
@@ -26,13 +21,7 @@ object ReleasePolicy {
     const val MAX_VERSION_CODE = 2_100_000_000L
     private const val MAX_SDK = 1000L
 
-    private val stable = Regex("(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)")
     private val hex40 = Regex("[a-f0-9]{40}")
-    private val hex64 = Regex("[a-f0-9]{64}")
-
-    fun isStableTag(tag: String) = tag.startsWith("v") && stable.matches(tag.substring(1))
-
-    fun isPin(value: String) = hex64.matches(value)
 
     fun sha256(bytes: ByteArray): String = hex(MessageDigest.getInstance("SHA-256").digest(bytes))
 
@@ -40,23 +29,26 @@ object ReleasePolicy {
 
     /** Identity, version, provenance shape, artifact set and signer. Throws [UpdateFailure]. */
     fun validate(m: ReleaseManifest, releaseTag: String, pin: String) {
-        if (!isPin(pin)) throw UpdateFailure(UpdateProblem.Channel)
+        if (!ReleaseContract.isSha256(pin)) throw UpdateFailure(UpdateProblem.Channel)
         val identity =
-            m.schema == 1L && m.repository == REPOSITORY && m.applicationId == APPLICATION_ID
-        val version = stable.matches(m.versionName) && m.tag == "v${m.versionName}" &&
-            m.tag == releaseTag && m.versionCode in 1..MAX_VERSION_CODE
+            m.schema == 1L && m.repository == ReleaseContract.REPOSITORY &&
+                m.applicationId == APPLICATION_ID
+        val version =
+            ReleaseContract.isStableVersion(m.versionName) && m.tag == "v${m.versionName}" &&
+                m.tag == releaseTag && m.versionCode in 1..MAX_VERSION_CODE
         val provenance =
             hex40.matches(m.commit) && m.runId > 0 && m.runAttempt > 0 && m.workflow == WORKFLOW
         val sdk = m.minSdk in 1..MAX_SDK && m.targetSdk in m.minSdk..MAX_SDK &&
             m.compileSdk in m.targetSdk..MAX_SDK
-        val artifacts = m.artifacts.keys == FINAL &&
-            m.artifacts.values.all { it.size > 0 && hex64.matches(it.sha256) } &&
-            m.artifacts.getValue(APK).size <= MAX_APK_BYTES
+        val artifacts = m.artifacts.keys == ReleaseContract.FINAL &&
+            m.artifacts.values.all { it.size > 0 && ReleaseContract.isSha256(it.sha256) } &&
+            m.artifacts.getValue(ReleaseContract.APK).size <= MAX_APK_BYTES
         val unsigned =
-            m.unsignedHashes.keys == UNSIGNED && m.unsignedHashes.values.all { hex64.matches(it) }
+            m.unsignedHashes.keys == UNSIGNED &&
+                m.unsignedHashes.values.all { ReleaseContract.isSha256(it) }
         if (!(
                 identity && version && provenance && sdk && artifacts && unsigned &&
-                    hex64.matches(m.signerSha256)
+                    ReleaseContract.isSha256(m.signerSha256)
                 )
         ) {
             throw UpdateFailure(UpdateProblem.Malformed)
@@ -66,8 +58,10 @@ object ReleasePolicy {
 
     /** `SHA256SUMS` must cover exactly the final files plus `release.json`, and agree with both. */
     fun validateChecksums(sums: Map<String, String>, manifestBytes: ByteArray, m: ReleaseManifest) {
-        val consistent = sums.keys == FINAL + MANIFEST && sums[MANIFEST] == sha256(manifestBytes) &&
-            FINAL.all { sums[it] == m.artifacts[it]?.sha256 }
+        val consistent =
+            sums.keys == ReleaseContract.FINAL + ReleaseContract.MANIFEST &&
+                sums[ReleaseContract.MANIFEST] == sha256(manifestBytes) &&
+                ReleaseContract.FINAL.all { sums[it] == m.artifacts[it]?.sha256 }
         if (!consistent) throw UpdateFailure(UpdateProblem.Malformed)
     }
 

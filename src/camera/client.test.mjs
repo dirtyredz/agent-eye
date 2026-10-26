@@ -105,3 +105,33 @@ test('JPEG validation rejects incomplete frame and scan markers', () => {
   assert.doesNotThrow(() => validateJpeg(jpeg));
   for (let length = 0; length < jpeg.length; length++) assert.throws(() => validateJpeg(jpeg.subarray(0, length)));
 });
+
+function body(req) { return new Promise(resolve => { let text = ''; req.on('data', c => { text += c; }); req.on('end', () => resolve(text)); }); }
+
+test('pair POSTs the code unauthenticated and returns the token', async t => {
+  let seen;
+  const client = await fixture(t, async (req, res) => {
+    seen = { method: req.method, url: req.url, auth: req.headers.authorization, type: req.headers['content-type'], body: await body(req) };
+    const out = JSON.stringify({ token });
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(out) });
+    res.end(out);
+  });
+  assert.equal(await client.pair(base, '012345'), token);
+  assert.deepEqual(seen, { method: 'POST', url: '/pair', auth: undefined, type: 'application/json', body: '{"code":"012345"}' });
+});
+
+test('pair validates the code locally and explains a rejected code without echoing it', async t => {
+  const client = await fixture(t, (_, res) => { res.writeHead(403, { 'Content-Length': 0 }); res.end(); });
+  for (const bad of ['12345', '1234567', 'abcdef', '12 456', undefined]) await assert.rejects(client.pair(base, bad), /exactly 6 digits/);
+  await assert.rejects(client.pair(base, '123456'), error => /rejected, expired or already used/.test(error.message) && !error.message.includes('123456'));
+});
+
+test('pair rejects malformed token responses', async t => {
+  let index = 0;
+  const replies = [{ token: 'short' }, { nope: 1 }, { token: token.toUpperCase() }];
+  const client = await fixture(t, (_, res) => {
+    const out = JSON.stringify(replies[index++]);
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(out) }); res.end(out);
+  });
+  for (const _ of replies) await assert.rejects(client.pair(base, '123456'), /Invalid pairing response/);
+});

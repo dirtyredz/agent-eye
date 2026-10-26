@@ -7,6 +7,7 @@ import java.io.OutputStream
 import local.agenteye.selfupdate.Candidate
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.release.ReleasePolicy
 import local.agenteye.selfupdate.storage.TransferRecord
 import local.agenteye.selfupdate.storage.UpdateStore
@@ -60,7 +61,7 @@ class ApkDownloader(
                     }
                 }
                 http.stream(
-                    UpdateUrlPolicy.asset(candidate.tag, ReleasePolicy.APK),
+                    UpdateUrlPolicy.asset(candidate.tag, ReleaseContract.APK),
                     ReleasePolicy.MAX_APK_BYTES,
                     candidate.apkSize,
                     guarded,

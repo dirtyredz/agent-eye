@@ -104,7 +104,7 @@ class UpdateCoordinator(
             return
         }
         if (!verifier.eligible()) return publish(failed(state, UpdateProblem.Channel))
-        val until = store.backoffUntil
+        val until = store.until
         if (now() <
             until
         ) {

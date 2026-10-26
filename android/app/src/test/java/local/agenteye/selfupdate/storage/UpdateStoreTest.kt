@@ -29,8 +29,8 @@ class UpdateStoreTest {
             )
         store.saveInstall(install)
         assertEquals(install, store.readInstall())
-        store.backoffUntil = 99
-        assertEquals(99L, store.backoffUntil)
+        store.until = 99
+        assertEquals(99L, store.until)
         assertFalse(dir.listFiles()!!.any { it.name.endsWith(".tmp") })
     }
 
@@ -69,8 +69,8 @@ class UpdateStoreTest {
     }
 
     private object StrictJsonCandidate {
-        val json: String = local.agenteye.selfupdate.release.StrictJson.write(
-            UpdateStore.encode(UpdateFixtures.candidate())
+        val json: String = local.agenteye.json.StrictJson.write(
+            RecordCodec.encode(UpdateFixtures.candidate())
         )
     }
 }

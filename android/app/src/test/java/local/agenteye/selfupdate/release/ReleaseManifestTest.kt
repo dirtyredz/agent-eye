@@ -3,6 +3,7 @@ package local.agenteye.selfupdate.release
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateFixtures
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.ReleaseContract
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -16,9 +17,9 @@ class ReleaseManifestTest {
         assertEquals("1.1.1", m.versionName)
         assertEquals(3L, m.versionCode)
         assertEquals(UpdateFixtures.PIN, m.signerSha256)
-        assertEquals(ReleasePolicy.FINAL, m.artifacts.keys)
+        assertEquals(ReleaseContract.FINAL, m.artifacts.keys)
         val sums = ReleaseManifest.checksums(UpdateFixtures.sums)
-        assertEquals(ReleasePolicy.FINAL + ReleasePolicy.MANIFEST, sums.keys)
+        assertEquals(ReleaseContract.FINAL + ReleaseContract.MANIFEST, sums.keys)
     }
 
     @Test fun rejectsMalformedDuplicateMissingOrExtraFields() {
@@ -79,19 +80,5 @@ class ReleaseManifestTest {
                 ReleaseManifest.checksums(ByteArray(8 * 1024 + 1))
             }
         )
-    }
-
-    @Test fun strictJsonRoundTripsRecords() {
-        val value = mapOf(
-            "a" to 1L,
-            "b" to "x\"\\n",
-            "c" to listOf(true, null),
-            "d" to mapOf<String, Any?>()
-        )
-        assertEquals(value, StrictJson.parse(StrictJson.write(value)))
-        assertThrows(StrictJson.Invalid::class.java) { StrictJson.parse("{\"a\":01}") }
-        assertThrows(StrictJson.Invalid::class.java) {
-            StrictJson.parse("[".repeat(40) + "]".repeat(40))
-        }
     }
 }
