@@ -36,6 +36,7 @@ jobs:
           (yes || true) | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' "build-tools;$build_tools"
       - run: npm ci
+      - run: node src/android/icons/generate-icons.mjs --check
       - run: node --test
       - run: bash android/gradlew -p android ktlintCheck assembleDebug testDebugUnitTest --no-daemon
       - if: failure()

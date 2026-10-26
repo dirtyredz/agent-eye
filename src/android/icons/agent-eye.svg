@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+  <path id="background" fill="#101B2D" fill-rule="nonzero" d="M0,0H108V108H0Z"/>
+  <path id="ring" fill="#F4F7FA" fill-rule="evenodd" d="M24,54C38,31.33 70,31.33 84,54C70,76.67 38,76.67 24,54Z M32,54C42,39.33 66,39.33 76,54C66,68.67 42,68.67 32,54Z"/>
+  <path id="iris" fill="#2DD4BF" fill-rule="nonzero" d="M43,54A11,11 0 1 0 65,54A11,11 0 1 0 43,54Z"/>
+  <path id="pupil" fill="#101B2D" fill-rule="nonzero" d="M49,54A5,5 0 1 0 59,54A5,5 0 1 0 49,54Z"/>
+  <path id="highlight" fill="#F4F7FA" fill-rule="nonzero" d="M55,50A2,2 0 1 0 59,50A2,2 0 1 0 55,50Z"/>
+</svg>

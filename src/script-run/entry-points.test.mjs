@@ -18,6 +18,7 @@ const cases = [
   [src('camera/snapshot.mjs'), 'status', '--url', 'http://192.168.1.2:8765', '--dry-run'],
   [src('camera/snapshot.mjs'), 'pair', '--url', 'http://192.168.1.2:8765', '--code', '123456', '--dry-run'],
   [src('camera/snapshot.mjs'), 'unpair', '--dry-run'],
+  [src('android/icons/generate-icons.mjs'), '--dry-run'],
 ];
 for (const args of cases) {
   test(`runs from os.tmpdir(): ${args.slice(1).join(' ')}`, () => {
@@ -32,4 +33,8 @@ for (const args of cases) {
 test('owner commands log under .tmp/owner-runs', () => {
   const out = execFileSync(process.execPath, [cli, 'verify-key', '--dry-run'], { cwd: tmpdir(), encoding: 'utf8' });
   assert.match(out, /owner-runs/);
+});
+test('icon --check runs from os.tmpdir()', () => {
+  const out = execFileSync(process.execPath, [src('android/icons/generate-icons.mjs'), '--check'], { cwd: tmpdir(), encoding: 'utf8' });
+  assert.match(out.trim().split(/\r?\n/).at(-1), /^OK \(exit 0\) log: /);
 });
