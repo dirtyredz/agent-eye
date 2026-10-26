@@ -2,7 +2,7 @@
 id: dk-ae1cbb13
 type: bug
 created: 2026-10-26
-status: todo
+status: dropped
 since: 2026-10-26
 area: release
 priority: P2
