@@ -6,5 +6,5 @@ import local.agenteye.security.PairingCodes
 object PairingCopy {
     data class Value(val text: String, val showConfirmation: Boolean)
     fun current(code: PairingCodes.Code?, now: Long, sdk: Int): Value? =
-        code?.takeIf { it.expiresAt > now }?.let { Value(it.value, sdk < 33) }
+        code?.takeIf { it.isLive(now) }?.let { Value(it.value, sdk < 33) }
 }

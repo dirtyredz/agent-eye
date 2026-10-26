@@ -18,7 +18,9 @@ class PairingCodes(
     private val clientLimit: Int = 10,
     private val clientWindowMs: Long = 60_000
 ) {
-    data class Code(val value: String, val expiresAt: Long)
+    data class Code(val value: String, val expiresAt: Long) {
+        fun isLive(now: Long) = expiresAt > now
+    }
 
     private var code = newCode()
     private var failures = 0
@@ -31,7 +33,7 @@ class PairingCodes(
 
     /** The code to display; rotates first when it has expired. */
     @Synchronized fun current(): Code {
-        if (clock() >= code.expiresAt) code = newCode()
+        if (!code.isLive(clock())) code = newCode()
         return code
     }
 

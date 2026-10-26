@@ -2,17 +2,13 @@ package local.agenteye.ui
 
 import android.Manifest
 import android.app.Activity
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
 import android.view.Surface
 import android.view.WindowManager
@@ -31,8 +27,16 @@ class MainActivity : Activity() {
             if (visible) ticker.postDelayed(this, 1000)
         }
     }
-    private var service: CaptureService? = null
-    private var bound = false
+    private val link = CaptureServiceLink(
+        this,
+        onConnected = { capture ->
+            capture.observer = { refresh() }
+            if (visible) pushSurface()
+            refresh()
+        },
+        onDisconnected = { refresh() }
+    )
+    private val service get() = link.service
     private var visible = false
     private val displays by lazy { getSystemService(DisplayManager::class.java) }
     private val displayListener = object : DisplayManager.DisplayListener {
@@ -42,19 +46,6 @@ class MainActivity : Activity() {
     }
     private val layoutListener =
         android.view.View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> pushSurface() }
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-            service = (binder as CaptureService.LocalBinder).service
-            service?.observer = { refresh() }
-            if (visible) pushSurface()
-            refresh()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName) {
-            service = null
-            refresh()
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,26 +72,13 @@ class MainActivity : Activity() {
         ticker.post(tick)
         displays.registerDisplayListener(displayListener, ticker)
         screen.preview.addOnLayoutChangeListener(layoutListener)
-        bound =
-            bindService(
-                Intent(this, CaptureService::class.java),
-                connection,
-                Context.BIND_AUTO_CREATE
-            )
+        link.bind()
     }
 
     override fun onResume() {
         super.onResume()
         // Local reconciliation also runs on the camera screen; only Settings offers network actions.
-        updates.attach(this) {
-            val capture = service
-            if (capture == null) {
-                false
-            } else {
-                capture.stopSession()
-                true
-            }
-        }
+        link.attachUpdates(updates)
     }
 
     override fun onPause() {
@@ -115,9 +93,7 @@ class MainActivity : Activity() {
         screen.preview.removeOnLayoutChangeListener(layoutListener)
         service?.observer = null
         service?.attach(null)
-        if (bound) unbindService(connection)
-        bound = false
-        service = null
+        link.unbind()
         super.onStop()
     }
 

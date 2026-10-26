@@ -45,7 +45,7 @@ redirected snapshot directories.
 The bound CaptureService discovers CameraX logical lens directions even while stopped.
 The pure camera/LensSelection unit chooses a saved direction, otherwise back (or the first
 available direction on a device without back), cycles only available directions, and persists
-through an injected SharedPreferences writer. A lens change reuses CameraSession and its HTTP
+through an injected writer (`LensPreferences`: the `camera` SharedPreferences file, `lens` key). A lens change reuses CameraSession and its HTTP
 server closure: it preserves rotation, ViewPort, token, pairing code and capture sequence.
 Rebinding waits for an in-flight still callback to finish; readiness is false until the new
 camera opens. JPEG encoding applies CameraX rotation/crop without horizontal mirroring.

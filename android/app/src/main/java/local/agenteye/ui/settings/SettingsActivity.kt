@@ -1,16 +1,11 @@
 package local.agenteye.ui.settings
 
 import android.app.Activity
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
-import android.os.IBinder
 import android.view.WindowManager
 import local.agenteye.AgentEyeApplication
 import local.agenteye.selfupdate.UpdateState
-import local.agenteye.service.CaptureService
+import local.agenteye.ui.CaptureServiceLink
 import local.agenteye.ui.PrivacyPolicyDialog
 import local.agenteye.ui.update.UpdateAction
 import local.agenteye.ui.update.UpdatePresenter
@@ -19,18 +14,9 @@ import local.agenteye.ui.update.UpdatePresenter
 class SettingsActivity : Activity() {
     private lateinit var screen: SettingsScreen
     private val updates get() = (application as AgentEyeApplication).updates
-    private var capture: CaptureService? = null
-    private var bound = false
+    private val link = CaptureServiceLink(this)
     private val listener: (UpdateState) -> Unit = {
         screen.updates.render(UpdatePresenter.present(it, System.currentTimeMillis()))
-    }
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-            capture = (binder as CaptureService.LocalBinder).service
-        }
-        override fun onServiceDisconnected(name: ComponentName) {
-            capture = null
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,25 +29,12 @@ class SettingsActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
-        bound =
-            bindService(
-                Intent(this, CaptureService::class.java),
-                connection,
-                Context.BIND_AUTO_CREATE
-            )
+        link.bind()
     }
 
     override fun onResume() {
         super.onResume()
-        updates.attach(this) {
-            val service = capture
-            if (service == null) {
-                false
-            } else {
-                service.stopSession()
-                true
-            }
-        }
+        link.attachUpdates(updates)
         updates.coordinator.observe(listener)
     }
 
@@ -72,9 +45,7 @@ class SettingsActivity : Activity() {
     }
 
     override fun onStop() {
-        if (bound) unbindService(connection)
-        bound = false
-        capture = null
+        link.unbind()
         super.onStop()
     }
 

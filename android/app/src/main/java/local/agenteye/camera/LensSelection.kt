@@ -5,6 +5,11 @@ enum class Lens { BACK, FRONT, EXTERNAL }
 
 /** Persistence is injected so selection and restart/fallback behavior can be tested on the JVM. */
 class LensSelection(saved: String?, private val save: (String) -> Unit) {
+    companion object {
+        const val PREFS_NAME = "camera"
+        const val LENS_KEY = "lens"
+    }
+
     private var preferred = Lens.entries.find { it.name == saved } ?: Lens.BACK
     var available: List<Lens> = emptyList()
         private set

@@ -17,7 +17,8 @@ import local.agenteye.R
 import local.agenteye.camera.CameraSession
 import local.agenteye.camera.Lens
 import local.agenteye.camera.LensSelection
-import local.agenteye.camera.cameraSelector
+import local.agenteye.camera.availableLenses
+import local.agenteye.camera.fromPreferences
 import local.agenteye.http.StillServer
 import local.agenteye.network.LanAddress
 import local.agenteye.network.LanBinding
@@ -54,10 +55,7 @@ class CaptureService : LifecycleService() {
     private var viewPort: ViewPort? = null
     var observer: (() -> Unit)? = null
 
-    private val lenses by lazy {
-        val prefs = getSharedPreferences("camera", MODE_PRIVATE)
-        LensSelection(prefs.getString("lens", null)) { prefs.edit().putString("lens", it).apply() }
-    }
+    private val lenses by lazy { LensSelection.fromPreferences(this) }
     val availableLenses get() = lenses.available
     val selectedLens get() = lenses.selected
 
@@ -67,7 +65,7 @@ class CaptureService : LifecycleService() {
         future.addListener({
             runCatching {
                 val provider = future.get()
-                lenses.discover(Lens.entries.filter { provider.hasCamera(it.cameraSelector()) })
+                lenses.discover(provider.availableLenses())
                 lenses.selected?.let { camera?.selectLens(it) }
             }
             observer?.invoke()

@@ -75,7 +75,7 @@ class PairingPanel(
     }
 
     fun tick() {
-        val current = code()?.takeIf { it.expiresAt > now() }
+        val current = code()?.takeIf { it.isLive(now()) }
         copy.isEnabled = current != null
         if (current == null) {
             digits.text = "------"
