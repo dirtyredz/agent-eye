@@ -61,3 +61,20 @@ create one. The v1.0.0 release run (40267716974) failed on exactly this: the `dr
 re-fetch by tag 404'd; a retry would also have created a duplicate. Look drafts up with `github.releaseByTag(tag)`
 (`src/android/releases/github/github.mjs`), which lists releases and matches `tag_name` exactly (null if none, fails
 closed on more than one). `draftId` uses it too. Never reintroduce `releases/tags/` for release-pipeline lookups.
+
+## Self-update traps
+- **Bootstrap.** 1.0.0 has no updater: install 1.1.0 manually once over 1.0.0 (no uninstall; same
+  package and signer keeps data). Later updates can run in the app.
+- **Unknown-source permission.** Install needs the per-app "install unknown apps" setting (API 26+;
+  legacy unknown-sources on 24-25). Returning from settings starts nothing; tap Install again.
+- **Offline or rate-limited checks.** Check fails clearly without internet. GitHub 403/429 persists a
+  backoff (shown as distinct from "up to date"); 404 on latest means no published release.
+- **Lost installer confirmation.** If the process dies while Android's confirm screen is up, the app
+  offers "Retry installation" (abandons the waiting session); reopening reconciles locally.
+- **Signer incompatibility.** Debug or differently signed installs cannot self-update; the app shows an
+  incompatible-channel message and never offers uninstall.
+- **Forward-only recovery.** A bad release is fixed only by a higher version code; never downgrade.
+- **Installing stops the camera.** The session is stopped before staging and stays stopped after a
+  cancel until Start is pressed.
+- **Node 22:** `node --test src/dir/` fails on a directory argument; use globs or plain `node --test`.
+- **Windows:** `File.renameTo` will not replace an existing file; tests inject a rename.

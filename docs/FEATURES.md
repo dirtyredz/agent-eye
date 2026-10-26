@@ -9,6 +9,19 @@ button; `snapshot.mjs pair` stores the token owner-only) and system-bar/cutout i
 navigation bar no longer overlaps content. Phone-side behaviour of both is **not yet confirmed on
 a device**; the JVM and Node tests cover the state machine, server route and client/storage.
 
+v1.1.0 (versionCode 2, unpublished) also adds a user-initiated in-app updater (Check for updates /
+Update, verified download, Android installer hand-off) and a new launcher icon generated from a
+canonical SVG.
+
+| Capability | Status |
+|---|---|
+| In-app updater | Implemented. JVM and Node automated coverage (shared schema-1 fixtures). |
+| New launcher icon (adaptive, themed monochrome, legacy PNGs, Play 512px) | Implemented; CI `--check` guard. |
+| Phone acceptance of pairing, insets, updater and icon | **Pending: not yet run.** Procedure in [AGENT-EYE.md](AGENT-EYE.md). |
+
+v1.0.0 is the only published release (publication owner-confirmed). In-app update acceptance
+needs a later signed release (normally 1.1.1 / 3).
+
 Verification on 2026-10-25: Node 22 passed 17 tests; Android assembleDebug/testDebugUnitTest
 passed all 12 JVM tests and produced the debug APK (4,708,052 bytes). Original dependency pins
 resolved with owner-authorized downloads. Gradle 8.13's official distribution checksum is pinned.
@@ -26,7 +39,7 @@ Release verification on 2026-10-25: 71 Node tests and 12 JVM tests pass; ktlint,
 APK, release AAB and release lint pass (0 errors, 16 warnings). Real disposable-key signing
 verifies both artifacts and exact bundled privacy bytes. Both workflows pass actionlint locally.
 See the distribution runbook for commands, recovery fixtures and corrected initial failures.
-Real GitHub CI/draft creation, real key provisioning, public installation, minified CameraX
+Publication of v1.0.0 is owner-confirmed. Public installation on a phone, minified CameraX
 device checks, offline policy display and a second in-place signed update remain **not exercised**.
 
 The 2026-10-25 structure review separates CI/owner commands, artifact contracts, GitHub access,

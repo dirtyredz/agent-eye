@@ -119,6 +119,11 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    codes, phone model/API and every device check. Every later published code must increase,
    including Play uploads; never reuse a code or derive it from a workflow counter.
 
+   Sequence: v1.0.0 / 1 is the only published release (owner-confirmed). 1.1.0 / 2 carries pairing,
+   insets, the in-app updater and the new icon, and is unpublished. Because 1.0.0 has no updater,
+   1.1.0 is installed manually over 1.0.0 once. In-app update acceptance needs a later signed
+   release, normally 1.1.1 / 3 (never replace published artifacts or reuse a code).
+
    For this implementation worktree, the commands are:
 
    ```powershell
@@ -138,11 +143,31 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    git fetch origin main --tags
    git switch --detach v1.1.0
    powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.1.0 -Publish -DryRun
-   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.1 -Publish
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.1.0 -Publish
    ```
 
    Wait for CI success before signing, and respect
    any branch protection/review requirements when updating main.
+
+## In-app update contract
+
+The app updates itself only when the user taps Check for updates and Update (see
+[ARCHITECTURE.md](ARCHITECTURE.md) and [AGENT-EYE.md](AGENT-EYE.md)). Release requirements:
+
+- Endpoints: `GET https://api.github.com/repos/dirtyredz/agent-eye/releases/latest` and exact-tag
+  assets `https://github.com/dirtyredz/agent-eye/releases/download/<tag>/{release.json,SHA256SUMS,agent-eye.apk}`.
+- The release must be published, non-draft, non-prerelease, with a stable semver tag and exactly the
+  five final assets (`agent-eye.apk`, `agent-eye.aab`, `mapping.txt`, `release.json`, `SHA256SUMS`).
+- `release.json` is the existing publisher's schema-1 manifest (tag `v`+versionName, applicationId
+  `local.agenteye`, repository, artifact sizes and sha256, signerSha256 equal to the packaged pin
+  `f0d99c5825fbc240e7fefb68bb791d47cb61c37f13c42a5f9f81730168d6d6e2` from
+  `src/android/releases/signing-certificate.json`). Its raw bytes and the APK hash must agree with
+  `SHA256SUMS`. Fixtures: `src/android/releases/artifacts/fixtures/update-schema1/`.
+- Recovery from a bad release is forward-only: publish a higher versionCode. Never downgrade.
+- Felt target (to be measured at acceptance): Check, Update, Android Install in 3 taps; install
+  within 60 s on 10 Mbps or faster for an APK of 15 MiB or less.
+- Acceptance evidence needs two signed releases (1.1.0 / 2 installed manually, then 1.1.1 / 3 via the
+  app) and the phone procedure in AGENT-EYE.md. Not yet run.
 
 ## Gate and artifact contract
 
@@ -263,7 +288,7 @@ now packages the generated policy, verified in both signed artifacts. Initial fa
 tests also caught alias substitution, assets added during signing and termination during cleanup.
 No lint baseline or ignored failures were introduced.
 
-CI draft creation, real owner signing/publication, unauthenticated browser install, minified
-CameraX device procedure, offline policy display and 1.0.0-to-1.0.1 in-place update are **not yet
+Publication of v1.0.0 is owner-confirmed. Unauthenticated browser install on a phone, the minified
+CameraX device procedure, offline policy display and the 1.1.0-to-1.1.1 in-app update are **not yet
 exercised**. No remote is created by implementation. Local verification is recorded separately;
 a successful build or disposable-key smoke does not establish phone or GitHub acceptance.

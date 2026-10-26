@@ -127,7 +127,7 @@ consumer's own tool → fresh snapshot. Camera access does not change authorizat
 
 TCP port **8765**, bound only to the selected Wi-Fi IPv4 address. The socket peer and phone must
 both be RFC1918 and usable hosts in the phone's actual prefix (neither network nor broadcast).
-Unknown/ambiguous topology fails closed. No outbound connections, IPv6, VPN, cellular, Ethernet,
+Unknown/ambiguous topology fails closed. The camera path makes no outbound connections (the user-initiated updater is separate); no IPv6, VPN, cellular, Ethernet,
 hotspot support, wildcard binding or internet-validation requirement.
 
 `GET` routes require `Authorization: Bearer <session-token>` and `Host` using HTTP/1.1; `POST /pair` is the only unauthenticated route:
@@ -166,11 +166,39 @@ Source-rewriting routers/proxies can conceal external clients; this app cannot p
 LAN membership. Android's INTERNET permission is required; cleartext/network-security settings
 are not destination firewalls.
 
+### Updates (user-initiated)
+
+The main screen has **Check for updates** and, when a newer verified release exists, **Update**. Nothing
+runs at launch, on Start, in the background or on a timer. Disclosure on screen: "Camera and pairing
+stay on your local network. Only Check for updates and Update contact GitHub and its download
+servers. They receive your IP address and request information; photos and pairing credentials are
+never sent. Mobile data may be used." Install needs Android's per-app "install unknown apps" setting
+(a button opens it; tap Install again after returning). Installing stops the camera session.
+Failure messages: cancelled, blocked (permission), no space, incompatible/channel (debug or other
+signer), corrupt (bytes deleted), network, rate-limited (wait), release changed (check again), and
+installation interrupted (offers Retry installation). A failed install leaves the old app and data.
+
 ### Layout (insets)
 
 The app targets SDK 36 (edge-to-edge is enforced from API 35). The root layout is padded with the
 system-bar and display-cutout insets, so nothing sits under the status bar and the last control is
 fully above the gesture/3-button navigation bar.
+
+## Update and icon acceptance (v1.1.0) — NOT RUN
+
+Owner phone procedure; record phone/API, versions, APK size, network, taps and elapsed time.
+
+1. Manually install 1.1.0 over 1.0.0 without uninstalling. Check package/certificate continuity,
+   pairing, insets and the icon on the home screen.
+2. After 1.1.1 is published: Check, Update, Android Install in 3 taps or fewer. Reopen, verify the
+   version and icon, press Start explicitly, pair again and take a fresh photo.
+3. Cancel the install, and deny the install permission, in separate attempts.
+4. Rotate, background and interrupt the process during download and install: no duplicate sessions
+   or false success.
+5. WAN off with LAN on: capture, pairing and privacy still work, Check fails clearly, and no
+   requests occur at launch, Start or foreground.
+6. Launcher masks, themed monochrome icon, small-icon legibility, gesture and 3-button navigation,
+   large text.
 
 ## Physical acceptance — NOT RUN (no phone attached)
 

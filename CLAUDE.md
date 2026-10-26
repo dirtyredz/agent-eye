@@ -4,14 +4,18 @@
 project-specific (TVs etc.) belongs here; consumers live in their own repos.
 
 ## Rules
-- Local only is a hard requirement: no cloud endpoints, analytics, crash reporters, ads or
-  third-party SDKs. Accept clients from the private LAN subnet only.
+- Local-only camera is a hard requirement: accept camera clients from the private LAN subnet only.
+  The single outbound exception is the user-initiated GitHub update check/download (Check for
+  updates / Update buttons; see `docs/ARCHITECTURE.md`). Still no analytics, crash reporters, ads
+  or third-party SDKs, and no automatic or background network use.
 - CI builds unsigned, minified APK/AAB artifacts into draft releases. The owner signs
   locally through 1Password DesktopAuth (the agent runs the owner scripts, dry-run first; the owner approves the Windows Hello prompt) and publishes only verified assets.
   Play submission is future work; no signing credentials or unattended signing in CI.
 - Fast gate: `npm ci`, `node --test`, then
   `.\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest`.
-  Release tooling also requires `lintRelease releaseTools`; stop Gradle afterward.
+  Release tooling also requires `lintRelease releaseTools` (Gradle lint is `lintRelease`); stop Gradle
+  afterward. Icon resources are generated: also run `node src/android/icons/generate-icons.mjs --check`
+  (CI runs it too); fix drift with the same command without `--check`.
   See `docs/ANDROID-DISTRIBUTION.md` for the disposable-key smoke and owner operations.
 - Plan of record: `docs/plans/agent-eye-app.md` (written as "TV Eye" inside tv-tuneup; names and
   paths are superseded by this repo — see the note at its top).

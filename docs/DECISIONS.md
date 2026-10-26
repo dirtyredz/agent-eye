@@ -1,5 +1,27 @@
 # Decisions
 
+- **2026-10-26 — In-app updater: direct public GitHub, manual only.** The app queries the public
+  `dirtyredz/agent-eye` releases API and exact-tag asset URLs directly. Rejected: a Worker/proxy
+  (repo is public; it adds infrastructure and another data recipient). Checks happen only when
+  the user taps; rejected: launch/background/timer checks (privacy, battery, surprise network use).
+- **2026-10-26 — Verification boundary: pinned signer plus the platform.** `release.json` and
+  `SHA256SUMS` are not independently signed, so they only detect inconsistency. Executable
+  replacement is protected by the pinned signer (packaged from `signing-certificate.json`, no
+  second hand-written pin), a PackageManager archive preflight and Android's installer check.
+  Not provided: TUF-style freshness or protection against release suppression.
+- **2026-10-26 — No partial-download resume.** Interrupted transfers restart from zero (APK is
+  small; no Range protocol). Tradeoff: bandwidth versus the larger Range/validator protocol
+  Command Deck carries.
+- **2026-10-26 — Own strict JSON parser, not `org.json`.** Android's `org.json` silently keeps
+  duplicate keys and differs from the JVM test implementation, so the contract could be tested on
+  one parser and run on another. `StrictJson` rejects duplicates and is identical in app and tests.
+- **2026-10-26 — Icon generated from a canonical SVG with pinned sharp.** `agent-eye.svg` is the
+  source; VectorDrawables and legacy PNGs are generated (`sharp` 0.35.5 exact; reproducibility
+  environment Node 22.20.0, libvips 8.18.7, librsvg 2.63.2) and CI runs `--check` (XML bytes,
+  PNG pixels within 2/255). Rejected: hand-edited resources that drift from the Play asset.
+- **2026-10-26 — Release choice: 1.1.0 / 2, then 1.1.1 / 3.** Pairing, insets, updater and icon ship
+  as 1.1.0 / 2 (unpublished). 1.0.0 has no updater, so it is installed over manually once;
+  in-app update acceptance needs a later signed release, normally 1.1.1 / 3.
 - **2026-10-25 — General-purpose, local-only.** App Agent Eye, package `local.agenteye`,
   project `android/`, client `src/camera/`. No consumer-specific camera or control logic.
   `AGENT_EYE_TOKEN` and `.tmp/agent-eye/` replace the historical TV-specific names too.
