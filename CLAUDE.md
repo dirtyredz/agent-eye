@@ -7,7 +7,7 @@ project-specific (TVs etc.) belongs here; consumers live in their own repos.
 - Local only is a hard requirement: no cloud endpoints, analytics, crash reporters, ads or
   third-party SDKs. Accept clients from the private LAN subnet only.
 - CI builds unsigned, minified APK/AAB artifacts into draft releases. The owner signs
-  locally through attended 1Password DesktopAuth and publishes only verified assets.
+  locally through 1Password DesktopAuth (the agent runs the owner scripts, dry-run first; the owner approves the Windows Hello prompt) and publishes only verified assets.
   Play submission is future work; no signing credentials or unattended signing in CI.
 - Fast gate: `npm ci`, `node --test`, then
   `.\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest`.

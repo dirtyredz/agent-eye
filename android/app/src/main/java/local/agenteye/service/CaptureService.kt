@@ -16,6 +16,7 @@ import local.agenteye.http.StillServer
 import local.agenteye.network.LanAddress
 import local.agenteye.network.LanBinding
 import local.agenteye.network.SubnetPolicy
+import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
 import local.agenteye.ui.MainActivity
 import org.json.JSONObject
@@ -32,6 +33,7 @@ class CaptureService : LifecycleService() {
     private var power: SessionPower? = null
     private var server: StillServer? = null
     private var token: SessionToken? = null
+    private var pairing: PairingCodes? = null
     private var startedAt = 0L
 
     @Volatile private var running = false
@@ -64,6 +66,7 @@ class CaptureService : LifecycleService() {
             lastCapture = null
             error = "wifi_unavailable"
             token = SessionToken()
+            pairing = PairingCodes()
             power = SessionPower(this).also { it.acquire() }
             camera = CameraSession(this, this) { _, code ->
                 if (running) {
@@ -139,6 +142,7 @@ class CaptureService : LifecycleService() {
                     binding.address,
                     admit = { SubnetPolicy.allows(binding.address, binding.prefix, it) },
                     token = currentToken,
+                    pairing = pairing,
                     status = ::statusJson,
                     capture = {
                         val future = currentCamera.shot()
@@ -178,8 +182,12 @@ class CaptureService : LifecycleService() {
     } else {
         "${address ?: "Waiting for one private IPv4 Wi-Fi network"}\n" +
             "${if (camera?.ready == true) "Camera ready" else "Camera starting/unavailable"}\n" +
-            "${error ?: "Ready"}\n\nSession token (keep private):\n${token?.display().orEmpty()}"
+            (error ?: "Ready")
     }
+
+    /** The live pairing code (rotated when expired), or null when no session runs. */
+    fun pairingCode(): PairingCodes.Code? = if (running) pairing?.current() else null
+    fun newPairingCode(): PairingCodes.Code? = if (running) pairing?.refresh() else null
 
     private fun statusJson(): String = JSONObject().apply {
         put("protocolVersion", 1)
@@ -201,6 +209,7 @@ class CaptureService : LifecycleService() {
         camera = null
         token?.clear()
         token = null
+        pairing = null
         power?.close()
         power = null
         address = null

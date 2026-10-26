@@ -2,7 +2,12 @@
 
 Agent Eye implements a sideloaded Android camera foreground service with live preview,
 Start/Stop and session credentials; fresh, bounded JPEG capture; exact-subnet Wi-Fi binding;
-authenticated status and snapshot endpoints; and a Node CLI with status, shot, smoke and clean.
+authenticated status and snapshot endpoints; and a Node CLI with pair, status, shot, smoke, unpair and clean.
+
+v1.0.1 adds short-code pairing (six-digit, two-minute, single-use code with countdown and New code
+button; `snapshot.mjs pair` stores the token owner-only) and system-bar/cutout inset handling so the
+navigation bar no longer overlaps content. Phone-side behaviour of both is **not yet confirmed on
+a device**; the JVM and Node tests cover the state machine, server route and client/storage.
 
 Verification on 2026-10-25: Node 22 passed 17 tests; Android assembleDebug/testDebugUnitTest
 passed all 12 JVM tests and produced the debug APK (4,708,052 bytes). Original dependency pins

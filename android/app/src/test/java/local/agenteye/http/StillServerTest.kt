@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -173,6 +174,60 @@ class StillServerTest {
                 val received = socket.getInputStream().readBytes()
                 assertTrue("blocked write exceeded deadline", received.size < 8 * 1024 * 1024)
             }
+        }
+    }
+
+    private fun post(server: StillServer, body: String, path: String = "/pair"): String =
+        Socket(local, server.localPort).use {
+            it.soTimeout = 2000
+            it.getOutputStream().write(
+                (
+                    "POST $path HTTP/1.1\r\nHost: phone\r\n" +
+                        "Content-Length: ${body.length}\r\n\r\n$body"
+                    ).toByteArray()
+            )
+            it.getInputStream().readBytes().toString(Charsets.ISO_8859_1)
+        }
+
+    private fun json(code: String) = """{"code":"$code"}"""
+
+    @Test fun pairingExchangesCodeForTokenOnceAndBurnsAfterWrongGuesses() {
+        val token = SessionToken()
+        val pairing = PairingCodes()
+        StillServer(local, 0, { true }, token, { "{}" }, {
+            CompletableFuture.completedFuture(Shot(jpeg, 1, 1))
+        }, pairing = pairing).use { server ->
+            val code = pairing.current().value
+            val ok = post(server, json(code))
+            assertTrue(ok.startsWith("HTTP/1.1 200"))
+            assertTrue(ok.contains("""{"token":"${token.display()}"}"""))
+            // Single use: a replay is refused and never carries the token.
+            val again = post(server, json(code))
+            assertTrue(again.startsWith("HTTP/1.1 403"))
+            assertFalse(again.contains(token.display()))
+            assertTrue(post(server, "not json").startsWith("HTTP/1.1 400"))
+            // Five wrong guesses burn the live code; the right one then fails too.
+            val live = pairing.current().value
+            val wrong = if (live == "000000") "000001" else "000000"
+            repeat(5) { post(server, json(wrong)) }
+            assertTrue(post(server, json(live)).startsWith("HTTP/1.1 403"))
+        }
+    }
+
+    @Test fun pairingDisabledWithoutGateAndClientRateLimited() {
+        StillServer(local, 0, { true }, SessionToken(), { "{}" }, {
+            CompletableFuture.completedFuture(Shot(jpeg, 1, 1))
+        }).use { server ->
+            assertTrue(post(server, json("123456")).startsWith("HTTP/1.1 404"))
+        }
+        val pairing = PairingCodes(clientLimit = 2, maxAttempts = 100)
+        StillServer(local, 0, { true }, SessionToken(), { "{}" }, {
+            CompletableFuture.completedFuture(Shot(jpeg, 1, 1))
+        }, pairing = pairing).use { server ->
+            val wrong = json(if (pairing.current().value == "000000") "000001" else "000000")
+            assertTrue(post(server, wrong).startsWith("HTTP/1.1 403"))
+            assertTrue(post(server, wrong).startsWith("HTTP/1.1 403"))
+            assertTrue(post(server, wrong).startsWith("HTTP/1.1 429"))
         }
     }
 }

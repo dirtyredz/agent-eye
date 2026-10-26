@@ -4,7 +4,7 @@ Turns an old Android phone into a **local-only camera for an AI agent**: the pho
 JPEG snapshots over the home LAN (screen off, plugged in), and a small PC client saves them so an
 agent can look at something physical — a TV screen, a device display — and act on it.
 
-- No cloud, no accounts, no ads, no third-party SDKs. LAN subnet only, per-session token.
+- No cloud, no accounts, no ads, no third-party SDKs. LAN subnet only, per-session token exchanged through a short on-screen pairing code.
 - Sideloaded APK (`android/`), PC client in Node (`src/camera/`).
 
 Signed downloads will be available at [GitHub Releases](https://github.com/dirtyredz/agent-eye/releases/latest).
@@ -13,7 +13,7 @@ The public repository and first release are owner-run steps and are not yet publ
 See [Android distribution](docs/ANDROID-DISTRIBUTION.md) for signing, updates and recovery,
 and [Privacy](docs/PRIVACY.md) for LAN transfer and snapshot retention details.
 
-Owner quick-start (signing; each script takes `-DryRun`, works from any directory, logs to `.tmp\owner-runs\`):
+Signing quick-start (the agent runs these and the owner approves the Windows Hello prompt; each script takes `-DryRun`, works from any directory, logs to `.tmp\owner-runs\`):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\provision.ps1 [-DryRun]

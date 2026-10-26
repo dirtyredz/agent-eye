@@ -50,4 +50,17 @@ class HttpRequestTest {
         }
         rejects(405, "POST / HTTP/1.1\r\nHost: p\r\n\r\n")
     }
+
+    @Test fun parsesBoundedPairBodyAndRejectsOtherPosts() {
+        val body = """{"code":"123456"}"""
+        val head = "POST /pair HTTP/1.1\r\nHost: p\r\n"
+        val request = read(head + "Content-Length: ${body.length}\r\n\r\n$body")
+        assertEquals("POST", request.method)
+        assertEquals(body, request.body)
+        rejects(400, head + "\r\n")
+        rejects(400, head + "Content-Length: 65\r\n\r\n" + "a".repeat(65))
+        rejects(400, head + "Content-Length: 20\r\n\r\nshort")
+        rejects(405, "POST /shot.jpg HTTP/1.1\r\nHost: p\r\nContent-Length: 2\r\n\r\n{}")
+        rejects(400, "GET /pair HTTP/1.1\r\nHost: p\r\nContent-Length: 2\r\n\r\n{}")
+    }
 }

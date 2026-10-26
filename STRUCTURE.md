@@ -30,11 +30,11 @@
 The Kotlin package root is `android/app/src/main/java/local/agenteye/`.
 `ui` owns preview presentation and permissions; `service` owns session coordination and
 power locks; `camera` owns CameraX and JPEG encoding; `network` owns Wi-Fi selection and
-pure subnet admission; `http` owns bounded parsing and serving; `security` owns tokens.
+pure subnet admission; `http` owns bounded parsing and serving; `security` owns tokens and the pairing-code state machine (`PairingCodes`); `ui` also holds `PairingPanel`.
 Local JVM tests mirror these packages under `app/src/test/java/`.
 
-The PC CLI is `snapshot.mjs`; `client.mjs` owns direct HTTP validation;
-`snapshot-store.mjs` owns atomic replacement and cleanup. Tests are adjacent `.test.mjs` files.
+The PC CLI is `snapshot.mjs` (argument parsing and token resolution in `snapshot-args.mjs`); `client.mjs` owns direct HTTP validation and `pair`;
+`snapshot-store.mjs` owns atomic replacement and cleanup; `token-store.mjs` owns the owner-only paired-token file. Tests are adjacent `.test.mjs` files.
 There is no device-control integration in this repository.
 
 ```text

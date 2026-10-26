@@ -16,6 +16,14 @@ selected address, never a wildcard. Each accepted socket must pass the exact sub
 before HTTP parsing; every endpoint then requires the session bearer token. A network/address/
 prefix change closes all old connections before rebinding. No outbound connections are made.
 
+Pairing: the service owns a `PairingCodes` state machine (security package) next to the session
+token. It holds one six-digit SecureRandom code valid two minutes and usable once; five wrong
+guesses burn it, a per-client sliding window (10 requests/minute) throttles guessing, and the
+comparison is constant-time. `POST /pair` is the only unauthenticated route and sits behind the
+same subnet admission and connection limits; it returns the token. The Activity's `PairingPanel`
+polls the code once a second for the countdown. Stop discards the gate with the token. The PC
+`pair` command stores the token in an owner-only `.tmp/agent-eye/token.json`.
+
 The HTTP server has four connection slots, an 8 KiB strict header parser and a scheduled socket
 close at ten seconds, covering slow reads and blocked writes. A single fresh capture has a
 five-second deadline and a one-second start interval. The camera also enforces serialization

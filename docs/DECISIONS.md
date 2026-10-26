@@ -18,11 +18,18 @@
   no wildcard listeners. IPv6, Ethernet, cellular, hotspots and ambiguous topology are excluded.
 - **Session authentication.** 256 random bits per Start, required on both endpoints, cleared on
   Stop. No token in URLs, notifications or logs. The app blocks screenshots/recents thumbnails.
+- **2026-10-26 — Short-code pairing (v1.0.1).** The 64-hex token was unreadable by hand and the app
+  blocks screenshots (FLAG_SECURE, kept). The phone shows a six-digit code (two minutes, single use,
+  5 attempts, per-client rate limit) that `POST /pair` exchanges for the token. The token is no longer
+  shown at all (no "show token" toggle: less exposure, and `pair` makes it unnecessary);
+  `AGENT_EYE_TOKEN`/`--token` remain for scripts. Rejected: QR code (needs a second device screenshot
+  path), longer codes (typing cost), unlimited retries. Pairing is HTTP like the rest, so a LAN
+  observer could sniff the token exactly as before.
 - **Plain HTTP.** Simple local interoperability at the cost of LAN observers seeing frames and
   tokens. No port forwarding or remote proxies. Source rewriting prevents proof of physical LAN
   membership. Android INTERNET permission and cleartext policy do not implement a firewall.
 - **Bounded custom server.** No runtime web-server dependency; narrow GET-only API, strict limits,
-  no request bodies or keep-alive, and JVM tests for observable behavior.
+  no request bodies (except the 64-byte pairing body) or keep-alive, and JVM tests for observable behavior.
 - **Transient images.** No phone archive or gallery writes, only on-demand JPEGs. One PC image,
   explicit cleanup after consumption; atomic replacement preserves the old image on failure.
 - **2026-10-25 — Distribution boundary.** CI produces unsigned R8/resource-shrunk APK/AAB

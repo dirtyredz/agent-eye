@@ -24,6 +24,14 @@
 - HTTP exposes frames and tokens on the trusted LAN. Do not port-forward or add a remote proxy.
   A proxy/router rewriting peer addresses can conceal external origin. Do not treat network
   security config or the INTERNET permission as a destination firewall.
+- Edge-to-edge is enforced at targetSdk 35+: the framework Activity no longer insets content, so the
+  root view must apply `systemBars()|displayCutout()` insets as padding (MainActivity does). Anything
+  new that bypasses the root container must handle insets itself.
+- Pairing codes are only 20 bits: security rests on the 2-minute life, 5 attempts per code and the
+  per-client rate limit, on top of subnet admission. Never log codes or tokens; the `--code` argv value
+  and 64-hex tokens are redacted by pattern in `snapshot.mjs` logs. Re-pair after every phone Start.
+- The stored token file's Windows ACL is set with `icacls`; if that fails the CLI warns and the file
+  keeps inherited permissions.
 - Only one unambiguous RFC1918 IPv4 Wi-Fi interface is supported. VPNs, IPv6-only networks,
   hotspots, Ethernet and routed clients outside the phone's exact prefix are unsupported.
 - Failed snapshots exit nonzero and may leave an older `latest.jpg`. Only a successful command's

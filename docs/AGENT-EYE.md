@@ -87,20 +87,27 @@ $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 Record phone model, Android version and serial in your device acceptance record. SDK must be at
 least 24. Open **Agent Eye**, grant camera access, choose notification permission, and tap
 **Start** while the app is visible. The app shows the preview, camera status, current base URL
-and token. Notification denial is handled separately from camera authorization. Stop from the
+and a six-digit pairing code with a countdown (the token itself is never shown). Notification denial is handled separately from camera authorization. Stop from the
 Activity or ongoing notification. Force-stop/reboot require reopening and pressing Start.
 
 On the PC, use the displayed URL, not a guessed prefix. The fixture `192.168.68.0/24` is not
-configuration. Set the token in the process environment, never in a command URL:
+configuration. Pair once per phone session with the code shown on the phone (valid about two
+minutes, single use; **New code** replaces it immediately). The token is stored, never printed, in
+the git-ignored `.tmp/agent-eye/token.json` (owner-only: mode 0600, or an icacls ACL granting only
+the current user on Windows). Later commands use it, and the paired URL, automatically:
 
 ```powershell
-$env:AGENT_EYE_TOKEN = 'COPY_CURRENT_TOKEN_FROM_APP'
-node src/camera/snapshot.mjs status --url http://192.168.68.20:8765
-node src/camera/snapshot.mjs smoke --url http://192.168.68.20:8765
-node src/camera/snapshot.mjs shot --url http://192.168.68.20:8765
-node src/camera/snapshot.mjs clean
-Remove-Item Env:AGENT_EYE_TOKEN
+node src/camera/snapshot.mjs pair --url http://192.168.68.20:8765 --code 123456
+node src/camera/snapshot.mjs status
+node src/camera/snapshot.mjs smoke
+node src/camera/snapshot.mjs shot
+node src/camera/snapshot.mjs unpair   # forget the stored token
+node src/camera/snapshot.mjs clean    # remove the snapshot
 ```
+
+Token precedence: `--token`, then `AGENT_EYE_TOKEN`, then the stored token; `--url` overrides the
+paired URL. Each Start (and each phone-side Stop/Start) issues a new token, so re-pair after
+restarting the phone session. The pairing code and token are redacted from the run logs.
 
 `status` prints readiness; `shot` prints JSON containing absolute saved path, capture timestamp
 and sequence. `smoke` requires ready status then fetches/saves one frame. Exit 0 means success;
@@ -123,15 +130,17 @@ both be RFC1918 and usable hosts in the phone's actual prefix (neither network n
 Unknown/ambiguous topology fails closed. No outbound connections, IPv6, VPN, cellular, Ethernet,
 hotspot support, wildcard binding or internet-validation requirement.
 
-Both routes require `Authorization: Bearer <session-token>` and `Host` using HTTP/1.1:
+`GET` routes require `Authorization: Bearer <session-token>` and `Host` using HTTP/1.1; `POST /pair` is the only unauthenticated route:
 
 | Route | Successful response |
 | --- | --- |
 | `GET /status` | JSON: `protocolVersion`, `sessionReady`, `cameraReady`, `boundAddress`, `uptimeMs`, `lastCaptureTime` (epoch ms or null), `error` (code or null) |
+| `POST /pair` | Body `{"code":"123456"}` (max 64 bytes, `Content-Length` required) -> `{"token":"<64 hex>"}`. Single use; wrong/expired code 403; 5 wrong guesses burn the code; more than 10 requests per minute per client address 429; no pairing gate 404 |
 | `GET /shot.jpg` | Fresh ordinary SDR `image/jpeg`, normalized pixel rotation, `Content-Length`, `Cache-Control: no-store`, `X-Capture-Timestamp` (epoch ms), `X-Capture-Sequence` (positive session sequence) |
 
-The 256-bit random token changes each Start and is not returned by HTTP or put in notifications.
-Requests have an 8 KiB header limit; no body, transfer encoding, duplicate headers, keep-alive
+The 256-bit random token changes each Start and is returned only by a successful `POST /pair`; it is
+never shown on screen or put in notifications.
+Requests have an 8 KiB header limit; no body except the 64-byte `POST /pair` body, no transfer encoding, duplicate headers, keep-alive
 or pipelining. `Content-Length: 0` is accepted. Connections close after one response.
 
 | Result | Meaning |
@@ -157,6 +166,12 @@ Source-rewriting routers/proxies can conceal external clients; this app cannot p
 LAN membership. Android's INTERNET permission is required; cleartext/network-security settings
 are not destination firewalls.
 
+### Layout (insets)
+
+The app targets SDK 36 (edge-to-edge is enforced from API 35). The root layout is padded with the
+system-bar and display-cutout insets, so nothing sits under the status bar and the last control is
+fully above the gesture/3-button navigation bar.
+
 ## Physical acceptance — NOT RUN (no phone attached)
 
 Do not claim screen-off support based solely on JVM/client tests. On the chosen phone:
@@ -164,7 +179,7 @@ Do not claim screen-off support based solely on JVM/client tests. On the chosen 
 1. Record model, API/version, Wi-Fi IP/prefix, charging state, battery settings and APK version.
 2. Deny camera permission and verify Start explains the requirement without opening a listener.
    Grant camera access; separately deny notifications once and confirm Start/Stop remain usable.
-3. Start and confirm preview, current address, token and status readiness. Run `smoke`, open the
+3. Start and confirm preview, current address, pairing code with countdown and status readiness. Run `pair` with the code, then `smoke`, open the
    saved image and verify correct rotation and readable detail. Rotate phone and repeat.
 4. Change the observed scene between two shots (at least one second apart). Inspect both before
    replacement; verify changed content, increasing timestamps/sequences, and no stale fallback.
@@ -186,7 +201,7 @@ Do not claim screen-off support based solely on JVM/client tests. On the chosen 
 7. Stop via notification, then repeat using the Activity. Confirm HTTP cannot connect and the
    camera privacy indicator clears; another camera app can use the rear camera. Inspect
    `adb -s SERIAL shell dumpsys power` and `adb -s SERIAL shell dumpsys wifi` for released
-   `AgentEye:session` locks. Start again and confirm the old token is rejected.
+   `AgentEye:session` locks. Start again and confirm the old token is rejected. Also confirm: an expired code and a reused code are refused, **New code** invalidates the previous code, and five wrong codes burn the shown code.
 8. Disconnect Wi-Fi during a request. Verify old sockets close, status shows unavailable, and
    cellular receives no listener. Reconnect (change DHCP prefix/address if possible), verify
    the new URL and capture. Verify VPN interfaces are never selected and ambiguous Wi-Fi
@@ -197,7 +212,7 @@ Do not claim screen-off support based solely on JVM/client tests. On the chosen 
     not be required. Confirm client isolation is disabled if clients cannot reach each other.
 11. Toggle camera privacy/use another camera app and verify errors rather than an older frame.
     Force-stop and reboot: there must be no automatic camera/listener restart.
-12. Run `clean`, clear the PC token, Stop the phone session, and record all results/limitations.
+12. Run `clean` and `unpair`, clear any PC token, Stop the phone session, and record all results/limitations.
 
 Optional battery-only acceptance is separate: forced idle can suspend networking despite wake
 locks/FGS. If testing with `adb shell dumpsys deviceidle force-idle`, restore with

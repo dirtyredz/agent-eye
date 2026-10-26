@@ -11,17 +11,29 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Surface
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.camera.view.PreviewView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import local.agenteye.service.CaptureService
 
 class MainActivity : Activity() {
     private lateinit var preview: PreviewView
     private lateinit var status: TextView
+    private lateinit var pairingPanel: PairingPanel
+    private val ticker = Handler(Looper.getMainLooper())
+    private val tick = object : Runnable {
+        override fun run() {
+            pairingPanel.tick()
+            if (visible) ticker.postDelayed(this, 1000)
+        }
+    }
     private var service: CaptureService? = null
     private var bound = false
     private var visible = false
@@ -44,11 +56,20 @@ class MainActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Token and camera preview should not enter screenshots or the recents thumbnail.
+        // The pairing code and camera preview should not enter screenshots or the recents thumbnail.
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
+            setPadding(PAD, PAD, PAD, PAD)
+        }
+        // targetSdk 35+ is edge-to-edge: keep content clear of the status bar, cutout and
+        // gesture/3-button navigation bar by padding the root with the system insets.
+        ViewCompat.setOnApplyWindowInsetsListener(layout) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(PAD + bars.left, PAD + bars.top, PAD + bars.right, PAD + bars.bottom)
+            insets
         }
         layout.addView(
             TextView(this).apply {
@@ -84,6 +105,12 @@ class MainActivity : Activity() {
                 setOnClickListener { PrivacyPolicyDialog.show(this@MainActivity) }
             }
         )
+        pairingPanel = PairingPanel(
+            this,
+            code = { service?.pairingCode() },
+            renew = { service?.newPairingCode() }
+        )
+        layout.addView(pairingPanel)
         status = TextView(this).apply {
             textSize = 16f
             setTextIsSelectable(true)
@@ -92,7 +119,7 @@ class MainActivity : Activity() {
             ScrollView(this).apply {
                 addView(status)
             },
-            LinearLayout.LayoutParams(-1, 260)
+            LinearLayout.LayoutParams(-1, 200)
         )
         layout.addView(
             TextView(this).apply {
@@ -101,10 +128,12 @@ class MainActivity : Activity() {
             }
         )
         setContentView(layout)
+        ViewCompat.requestApplyInsets(layout)
     }
     override fun onStart() {
         super.onStart()
         visible = true
+        ticker.post(tick)
         bound =
             bindService(
                 Intent(this, CaptureService::class.java),
@@ -114,6 +143,7 @@ class MainActivity : Activity() {
     }
     override fun onStop() {
         visible = false
+        ticker.removeCallbacks(tick)
         service?.observer = null
         service?.attach(null)
         if (bound) unbindService(connection)
@@ -124,6 +154,7 @@ class MainActivity : Activity() {
     private fun refresh() {
         status.text =
             service?.displayStatus() ?: "Stopped · Press Start to begin"
+        pairingPanel.tick()
     }
     private fun requestStart() {
         val permissions = mutableListOf<String>()
@@ -175,5 +206,9 @@ class MainActivity : Activity() {
             status.text =
                 "Cannot start camera session. Reopen the app and try again."
         }
+    }
+
+    private companion object {
+        const val PAD = 24
     }
 }

@@ -42,9 +42,10 @@ export function validateJpeg(data) {
 }
 
 export function createClient({ request = http.request, timeoutMs = 10000 } = {}) {
-  async function fetch(base, token, path, limit) {
+  // `post` (pairing only) sends a tiny JSON body and no bearer token; everything else is an authenticated GET.
+  async function fetch(base, token, path, limit, post) {
     const url = destination(base);
-    if (typeof token !== 'string' || !/^[\x21-\x7e]{16,256}$/.test(token)) throw new Error('Set AGENT_EYE_TOKEN to the displayed session token');
+    if (!post && (typeof token !== 'string' || !/^[\x21-\x7e]{16,256}$/.test(token))) throw new Error('No session token: run `pair --url ... --code ...` or set AGENT_EYE_TOKEN');
     url.pathname = path;
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -59,12 +60,13 @@ export function createClient({ request = http.request, timeoutMs = 10000 } = {})
       };
       const timer = setTimeout(() => finish(new Error('Request deadline exceeded')), timeoutMs);
       try {
-        req = request(url, { method: 'GET', agent: false, maxHeaderSize: 8192,
-          headers: { Authorization: `Bearer ${token}`, Connection: 'close' } }, res => {
+        req = request(url, { method: post ? 'POST' : 'GET', agent: false, maxHeaderSize: 8192,
+          headers: post ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(post), Connection: 'close' }
+            : { Authorization: `Bearer ${token}`, Connection: 'close' } }, res => {
           response = res;
           res.on('error', () => finish(new Error('Response failed')));
           res.on('aborted', () => finish(new Error('Truncated response')));
-          if (res.statusCode !== 200) return finish(new Error(`HTTP ${res.statusCode}`));
+          if (res.statusCode !== 200) return finish(new Error(post && res.statusCode === 403 ? 'Pairing code rejected, expired or already used: read the current code on the phone' : `HTTP ${res.statusCode}`));
           const lengthText = res.headers['content-length'];
           if (!/^\d+$/.test(lengthText ?? '') || res.headers['transfer-encoding']) return finish(new Error('Missing or invalid response length'));
           const length = Number(lengthText);
@@ -82,11 +84,21 @@ export function createClient({ request = http.request, timeoutMs = 10000 } = {})
           });
         });
         req.on('error', () => finish(new Error('Connection failed')));
-        req.end();
+        req.end(post);
       } catch { finish(new Error('Connection failed')); }
     });
   }
   return {
+    // Exchange the 6-digit code shown on the phone for the session token. Never log the result.
+    async pair(base, code) {
+      if (typeof code !== 'string' || !/^\d{6}$/.test(code)) throw new Error('Pairing code must be exactly 6 digits');
+      const { bytes, headers } = await fetch(base, undefined, '/pair', 256, JSON.stringify({ code }));
+      if (headers['content-type'] !== 'application/json') throw new Error('Expected JSON pairing response');
+      let token;
+      try { token = JSON.parse(bytes.toString('utf8')).token; } catch { /* fall through */ }
+      if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) throw new Error('Invalid pairing response');
+      return token;
+    },
     async status(base, token) {
       const { bytes, headers } = await fetch(base, token, '/status', 16384);
       if (headers['content-type'] !== 'application/json') throw new Error('Expected JSON status');

@@ -4,7 +4,7 @@ CI builds unsigned optimized APK/AAB artifacts and creates a **draft**. The owne
 locally using 1Password DesktopAuth/Windows Hello. No custom GitHub secrets, PAT,
 service-account token, keystore or password belongs in CI. Camera runtime remains local-only.
 
-## Owner steps, in order
+## Release steps, in order
 
 **Owner steps are checked-in PowerShell scripts** in `scripts/release/` (`provision.ps1`,
 `sign-release.ps1`), not npm/node commands. They work from any directory (cmd, PowerShell 5.1/7, even
@@ -14,8 +14,9 @@ ending with one line, `OK (exit 0) log: <path>` or `FAILED (exit N) log: <path>`
 log (authoritative; the script's short wrapper log is named on the line before). Agents read that log themselves. Exit codes are in each script's help (`Get-Help <script>.ps1 -Full`). The Node CLI
 (`node <repo>\src\android\releases\cli\cli.mjs <command> --dry-run`) stays for agents and CI.
 
-Agents never run key generation/verification or release-sign (1Password + Windows Hello are
-owner-run). Agents DO push, tag and dispatch releases once the review gate passes.
+The agent runs these scripts itself (`provision.ps1`, `sign-release.ps1`, `vault-repair.ps1`), dry-run
+first; the owner only approves the 1Password / Windows Hello prompt that a real run raises. Agents
+also push, tag and dispatch releases once the review gate passes.
 All CLI commands default to dry-run. Dry-run performs no subprocess calls, network access,
 SDK initialization, secret reads or writes. `--execute` is explicit; conflicting flags fail.
 

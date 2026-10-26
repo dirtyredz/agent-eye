@@ -16,6 +16,8 @@ const cases = [
   [src('android/signing/signing-smoke.mjs'), '--dry-run'],
   [src('camera/snapshot.mjs'), 'clean', '--dry-run'],
   [src('camera/snapshot.mjs'), 'status', '--url', 'http://192.168.1.2:8765', '--dry-run'],
+  [src('camera/snapshot.mjs'), 'pair', '--url', 'http://192.168.1.2:8765', '--code', '123456', '--dry-run'],
+  [src('camera/snapshot.mjs'), 'unpair', '--dry-run'],
 ];
 for (const args of cases) {
   test(`runs from os.tmpdir(): ${args.slice(1).join(' ')}`, () => {

@@ -12,7 +12,7 @@ The companion PC client retains its latest photograph until replacement or expli
 cleanup (`node src/camera/snapshot.mjs clean`). Downstream consumers may copy,
 retain or transmit photographs under their own policies; review those separately.
 
-Each Start creates a session token. Stop ends the camera session, closes connections
+Each Start creates a session token, handed to the PC only in exchange for the short pairing code shown on the phone. Stop ends the camera session, closes connections
 and clears the token. Tokens and photographs travel over plain HTTP, without
 encryption in transit, and can be observed on the LAN. Use only a trusted private
 network; never expose the port to the internet. Stop the session and delete PC

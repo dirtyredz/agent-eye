@@ -3,8 +3,15 @@ package local.agenteye.http
 import java.io.InputStream
 
 class HttpFailure(val status: Int) : Exception()
-data class HttpRequest(val path: String, val authorization: String?) {
+data class HttpRequest(
+    val path: String,
+    val authorization: String?,
+    val method: String = "GET",
+    val body: String = ""
+) {
     companion object {
+        const val PAIR_PATH = "/pair"
+        const val MAX_BODY = 64
         fun read(input: InputStream): HttpRequest {
             val bytes = ArrayList<Byte>()
             while (true) {
@@ -37,11 +44,36 @@ data class HttpRequest(val path: String, val authorization: String?) {
                 }
             }
             if (headers["host"].isNullOrBlank() || "transfer-encoding" in headers ||
-                ("content-length" in headers && headers["content-length"] != "0") ||
                 "expect" in headers
             ) {
                 throw HttpFailure(400)
             }
+            val length = headers["content-length"]
+            if (first[0] == "POST" && first[1] == PAIR_PATH) {
+                // The only request with a body: a tiny JSON pairing request.
+                if (length == null || !length.matches(Regex("[0-9]{1,3}")) ||
+                    length.toInt() !in 1..MAX_BODY
+                ) {
+                    throw HttpFailure(400)
+                }
+                val body = ByteArray(length.toInt())
+                var got = 0
+                while (got < body.size) {
+                    val n = input.read(body, got, body.size - got)
+                    if (n < 0) throw HttpFailure(400)
+                    got += n
+                }
+                if (body.any { it < 32 || it > 126 }) {
+                    throw HttpFailure(400)
+                }
+                return HttpRequest(
+                    first[1],
+                    headers["authorization"],
+                    "POST",
+                    body.toString(Charsets.US_ASCII)
+                )
+            }
+            if (length != null && length != "0") throw HttpFailure(400)
             if (first[0] != "GET") throw HttpFailure(405)
             return HttpRequest(first[1], headers["authorization"])
         }
