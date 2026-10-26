@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-const src = relative => fileURLToPath(new URL(`../../${relative}`, import.meta.url));
+const src = relative => fileURLToPath(new URL(`../${relative}`, import.meta.url));
 const cli = src('android/releases/cli/cli.mjs');
 const cases = [
   [cli, 'setup', '--dry-run'], [cli, 'setup-vault', '--dry-run'], [cli, 'provision', '--dry-run'],

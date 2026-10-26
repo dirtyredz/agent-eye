@@ -1,12 +1,12 @@
 import { createClient } from './client.mjs';
 import { createStore } from './snapshot-store.mjs';
-import { runScript } from '../android/tooling/script-run.mjs';
+import { runScript } from '../script-run/script-run.mjs';
 
 // Runs from any directory: the snapshot store is rooted by this file's location.
-// --dry-run (last argument) validates the command and prints the plan without touching the phone or disk.
-async function main(args, log) {
-  const dryRun = args.at(-1) === '--dry-run';
-  const [command, flag, base, ...extra] = dryRun ? args.slice(0, -1) : args;
+// --dry-run (anywhere, via log.dryRun) validates the command and prints the plan without touching the phone or disk.
+async function main(log) {
+  const { dryRun } = log;
+  const [command, flag, base, ...extra] = log.args;
   if (command === 'clean' && !flag) {
     if (dryRun) { console.log(JSON.stringify({ mode: 'dry-run', command })); return; }
     log.step('clean snapshots');
@@ -30,5 +30,4 @@ async function main(args, log) {
   console.log(JSON.stringify({ path: saved, capturedAt: shot.capturedAt, sequence: shot.sequence }));
 }
 
-const argv = process.argv.slice(2);
-await runScript({ name: 'snapshot', from: import.meta.url, secrets: ['AGENT_EYE_TOKEN'], argv }, log => main(argv, log));
+await runScript({ name: 'snapshot', from: import.meta.url, secrets: ['AGENT_EYE_TOKEN'] }, main);

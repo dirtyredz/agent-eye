@@ -5,13 +5,14 @@ import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { onTermination, run as bareRun } from '../tooling/process.mjs';
-import { runScript } from '../tooling/script-run.mjs';
+import { runScript } from '../../script-run/script-run.mjs';
 import { tooling } from '../tooling/android-tools.mjs';
 import { readVersion, PASS_ENV } from '../releases/artifacts/contract.mjs';
 import { keyCertificate } from './key-provisioning.mjs';
 import { main } from '../releases/cli/cli.mjs';
 
-async function smoke(log, dryRun) {
+async function smoke(log) {
+  const { dryRun } = log;
   const root = log.root;
   const run = log.wrapRun(bareRun);
   const version = readVersion(await readFile(join(root, 'android/version.properties'), 'utf8'));
@@ -52,5 +53,4 @@ async function smoke(log, dryRun) {
   }
 }
 
-const argv = process.argv.slice(2);
-await runScript({ name: 'signing-smoke', from: import.meta.url, argv }, log => smoke(log, argv.includes('--dry-run')));
+await runScript({ name: 'signing-smoke', from: import.meta.url }, smoke);

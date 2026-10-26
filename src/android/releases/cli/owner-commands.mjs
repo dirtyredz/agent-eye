@@ -5,6 +5,7 @@ import { setup } from './owner-setup.mjs';
 import { releaseSign } from '../local/release-sign.mjs';
 import { localRelease } from '../local/local-release.mjs';
 import { setupVault } from '../../signing/vault-setup.mjs';
+import { provisionFlow } from '../../signing/provision-flow.mjs';
 import { openVault } from '../../signing/vault.mjs';
 import { provision, recoverKey } from '../../signing/key-provisioning.mjs';
 import { tooling } from '../../tooling/android-tools.mjs';
@@ -12,14 +13,16 @@ import { tooling } from '../../tooling/android-tools.mjs';
 export async function ownerCommand({ root, run, gh, localVersion, log }, options) {
   const pinPath = join(root, 'src/android/releases/signing-certificate.json');
   const vault = async () => openVault(JSON.parse(await readFile(join(root, 'android/signing.local.json'), 'utf8')));
+  const keyOptions = { pinPath, firstVersionCode: localVersion.versionCode };
   if (options.command === 'setup') return setup(run, root);
-  if (['setup-vault', 'provision'].includes(options.command)) {
+  if (options.command === 'setup-vault') {
     const result = await setupVault({ root, account: options.account, log });
     console.log(`Signing vault: ${result.status}.`);
-    if (options.command === 'setup-vault') return result;
+    return result;
   }
-  if (['generate-key', 'provision'].includes(options.command)) {
-    const pin = await provision({ root, run, vault }, { pinPath, firstVersionCode: localVersion.versionCode });
+  if (options.command === 'provision') return provisionFlow({ root, run, vault, account: options.account, log, ...keyOptions });
+  if (options.command === 'generate-key') {
+    const pin = await provision({ root, run, vault }, keyOptions);
     console.log(`Vault recovery verified. Commit only this public certificate: ${JSON.stringify(pin)}`);
     return pin;
   }

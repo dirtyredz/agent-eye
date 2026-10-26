@@ -1,6 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import { requireThat } from '../artifacts/contract.mjs';
-import { runScript } from '../../tooling/script-run.mjs';
+import { runScript } from '../../../script-run/script-run.mjs';
+import { OWNER_COMMANDS, CI_COMMANDS } from './command-names.mjs';
 import { setupPlan } from './owner-setup.mjs';
 import { vaultPlan } from '../../signing/vault-setup.mjs';
 
@@ -15,6 +16,8 @@ const plans = {
   draft: ['Create or resume same draft/tag/commit; refuse published releases and conflicting assets.'],
   'validate-tag': ['Validate tag/version and ancestry from main.'],
 };
+// Every known command has a plan and vice versa: the sets in command-names.mjs are the single source.
+if (Object.keys(plans).sort().join() !== [...OWNER_COMMANDS, ...CI_COMMANDS].sort().join()) throw new Error('plans and command-names.mjs disagree');
 export function parse(args) {
   const [command, ...rest] = args;
   requireThat(Object.hasOwn(plans, command), 'Unknown command');
@@ -49,6 +52,6 @@ export async function main(args, { output = console.log, execute = async (option
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const argv = process.argv.slice(2);
-  const owner = ['setup', 'setup-vault', 'provision', 'generate-key', 'verify-key', 'release-sign'].includes(argv[0]);
-  await runScript({ name: owner ? argv[0] : `release-${argv[0] ?? 'cli'}`, from: import.meta.url, ownerRun: owner, argv }, log => main(argv, { log }));
+  const owner = OWNER_COMMANDS.has(argv[0]);
+  await runScript({ name: owner ? argv[0] : `release-${argv[0] ?? 'cli'}`, from: import.meta.url, kind: owner ? 'owner' : 'script', argv }, log => main(argv, { log }));
 }

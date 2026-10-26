@@ -4,10 +4,9 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { requireThat } from '../releases/artifacts/contract.mjs';
 import { desktopClient } from './vault.mjs';
+import { DEFAULT_ACCOUNT } from './owner-account.mjs';
 
 export const VAULT_TITLE = 'Agent Eye Signing';
-// The owner's 1Password account (same one command-deck uses); override with --account or OP_ACCOUNT_ID.
-export const DEFAULT_ACCOUNT = 'ETCB7LGCDNEP7PUD3FDNS5JXBU';
 export const CONFIG_FILE = 'android/signing.local.json';
 export const vaultPlan = [
   `Resolve the 1Password account (--account, OP_ACCOUNT_ID, existing ${CONFIG_FILE}, else the owner default) and sign in with DesktopAuth (Windows Hello).`,
