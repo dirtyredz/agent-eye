@@ -6,12 +6,13 @@ service-account token, keystore or password belongs in CI. Camera runtime remain
 
 ## Owner steps, in order
 
-**Commands work from any directory** (cmd, PowerShell, even `C:\Windows\System32`):
-`npm --prefix C:\Users\dirty\projects\agent-eye run secrets -- <command> ...` or
-`node <repo>\src\android\releases\cli\cli.mjs <command> ...`. Paths resolve from the script's
-location, never the current directory. Every run writes a timestamped, secret-redacted log
-(owner commands: `<repo>\.tmp\owner-runs\`, other scripts: `<repo>\.tmp\logs\`) and ends with one line,
-`OK (exit 0) log: <path>` or `FAILED (exit N) log: <path>`. Agents read that log themselves.
+**Owner steps are checked-in PowerShell scripts** in `scripts/release/` (`provision.ps1`,
+`sign-release.ps1`), not npm/node commands. They work from any directory (cmd, PowerShell 5.1/7, even
+`C:\Windows\System32`), find the repo from their own path and call the Node CLI underneath. Each takes
+`-DryRun` (changes nothing) and writes a timestamped, secret-redacted log to `<repo>\.tmp\owner-runs\`,
+ending with one line, `OK (exit 0) log: <path>` or `FAILED (exit N) log: <path>`. Agents read that log
+themselves. Exit codes are in each script's help (`Get-Help <script>.ps1 -Full`). The Node CLI
+(`node <repo>\src\android\releases\cli\cli.mjs <command> --dry-run`) stays for agents and CI.
 
 Agents never run key generation/verification or release-sign (1Password + Windows Hello are
 owner-run). Agents DO push, tag and dispatch releases once the review gate passes.
@@ -24,11 +25,11 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    Configure `ANDROID_HOME` or `android/local.properties`. Run:
 
    ```powershell
-   npm ci
-   npm run secrets -- provision --dry-run
-   npm run secrets -- provision --execute
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\provision.ps1 -DryRun
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\provision.ps1
    ```
 
+   The script runs `npm ci` when `node_modules` is missing, then `provision`, then `verify-key`.
    `provision` is the whole owner flow: `setup-vault` creates the dedicated "Agent Eye Signing"
    vault if absent and writes the ignored `android/signing.local.json` itself (account from
    `--account`, `OP_ACCOUNT_ID`, an existing config, else the owner's default account), then
@@ -37,14 +38,11 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    a config pointing at another vault is never overwritten. If the installed SDK cannot create
    vaults the command says so and asks for the one vault to be created once.
 
-2. Review then provision exactly once. This creates an RSA-4096 PKCS12 key (10950 days),
-   stores a Document and separate password item, reads them back and verifies recovery:
+2. Provisioning (step 1) happens exactly once. It creates an RSA-4096 PKCS12 key (10950 days),
+   stores a Document and separate password item, reads them back and verifies recovery
+   (`provision.ps1` already ran `generate-key` and `verify-key`). Only the public pin is left to commit:
 
    ```powershell
-   npm run secrets -- generate-key --dry-run
-   npm run secrets -- generate-key --execute
-   npm run secrets -- verify-key --dry-run
-   npm run secrets -- verify-key --execute
    git add src/android/releases/signing-certificate.json
    git commit -m "Pin Agent Eye release certificate"
    ```
@@ -64,8 +62,8 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    adds the intended origin, pushes HEAD to main and configures read-only default workflow permissions:
 
    ```powershell
-   npm run release -- setup --dry-run
-   npm run release -- setup --execute
+   node src\android\releases\cli\cli.mjs setup --dry-run
+   node src\android\releases\cli\cli.mjs setup --execute
    git fetch origin main
    ```
 
@@ -98,14 +96,13 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    ```powershell
    git fetch origin main --tags
    git switch --detach v1.0.0
-   .\android\gradlew.bat -p android releaseTools
-   .\android\gradlew.bat --stop
-   npm run secrets -- release-sign --tag v1.0.0 --release-id DRAFT_ID --dry-run --publish
-   npm run secrets -- release-sign --tag v1.0.0 --release-id DRAFT_ID --execute --publish
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.0 -Publish -DryRun
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.0 -Publish
    ```
 
-   Replace `DRAFT_ID` with the positive numeric ID. Omitting `--publish` leaves a complete,
-   signed draft; rerunning with `--publish` verifies it again and publishes last.
+   The script runs `gradlew releaseTools` (then `--stop`; `-SkipReleaseTools` skips it), looks the
+   numeric draft ID up with `gh` (override with `-ReleaseId`), then calls `release-sign`. Omitting
+   `-Publish` leaves a complete, signed draft; rerunning with `-Publish` verifies it again and publishes last.
 
 6. On the phone, open https://github.com/dirtyredz/agent-eye/releases/latest without signing
    in. Download **agent-eye.apk**, allow installation from that browser when Android asks,
@@ -138,11 +135,11 @@ SDK initialization, secret reads or writes. `--execute` is explicit; conflicting
    gh release view v1.0.1 --repo dirtyredz/agent-eye --json databaseId,isDraft,targetCommitish
    git fetch origin main --tags
    git switch --detach v1.0.1
-   npm run secrets -- release-sign --tag v1.0.1 --release-id SECOND_DRAFT_ID --dry-run --publish
-   npm run secrets -- release-sign --tag v1.0.1 --release-id SECOND_DRAFT_ID --execute --publish
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.1 -Publish -DryRun
+   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.1 -Publish
    ```
 
-   Substitute the second numeric draft ID, wait for CI success before signing, and respect
+   Wait for CI success before signing, and respect
    any branch protection/review requirements when updating main.
 
 ## Gate and artifact contract

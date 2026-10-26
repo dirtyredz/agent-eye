@@ -12,6 +12,7 @@
 - `src/android/signing/` — APK/AAB signing, disposable smoke, attended DesktopAuth, signing-vault creation (`vault-setup.mjs`), key provisioning (`provision-flow.mjs`, `key-provisioning.mjs`) and key isolation.
 - `src/android/tooling/` — Android SDK/tool discovery, bounded secret-redacting subprocess execution (`process.mjs`) and the workflow guard test (no bare `sdkmanager` in `.github/workflows/`).
 - `src/script-run/` — `script-run.mjs`, the standard script wrapper (repo-root resolution, per-run redacted log, OK/FAILED line, v1.1.0). Deliberately ONE dependency-free file: the canonical copy is copied verbatim to other repos and extended through options only. Holds its tests and the repo-wide all-entry-points-from-tmpdir test.
+- `scripts/release/` — owner-run PowerShell entry points (`provision.ps1`, `sign-release.ps1`), shared plumbing (`owner-run.ps1`: repo root, `.tmp/owner-runs/` log, OK/FAILED line) and their dry-run tests (`release-scripts.test.ps1`, run by `release-scripts.test.mjs` under pwsh/powershell). They call `cli.mjs` and hold no release logic.
 - `.github/workflows/` — read-only verification/builds and separately privileged draft creation.
 - `docs/ANDROID-DISTRIBUTION.md`, `docs/PRIVACY.md`, `docs/PLAY-LISTING.md` — owner distribution, bundled privacy and future Play checklist.
 - `docs/AGENT-EYE.md` — build, operation, API and physical acceptance runbook.

@@ -13,6 +13,13 @@ The public repository and first release are owner-run steps and are not yet publ
 See [Android distribution](docs/ANDROID-DISTRIBUTION.md) for signing, updates and recovery,
 and [Privacy](docs/PRIVACY.md) for LAN transfer and snapshot retention details.
 
+Owner quick-start (signing; each script takes `-DryRun`, works from any directory, logs to `.tmp\owner-runs\`):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\provision.ps1 [-DryRun]
+powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\dirty\projects\agent-eye\scripts\release\sign-release.ps1 -Tag v1.0.0 [-Publish] [-DryRun]
+```
+
 See [the Agent Eye runbook](docs/AGENT-EYE.md) for builds, sideloading, the HTTP contract,
 PC commands and the physical-device acceptance checklist. Component map: [STRUCTURE.md](STRUCTURE.md).
 
