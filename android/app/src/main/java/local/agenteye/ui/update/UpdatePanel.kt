@@ -16,11 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import local.agenteye.R
+import local.agenteye.ui.theme.AgentEyeSpacing
 
 @Composable
 fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            Modifier.padding(AgentEyeSpacing.screen),
+            verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)
+        ) {
             Text(stringResource(R.string.updates), style = MaterialTheme.typography.titleLarge)
             Text(view.version)
             Text(view.status)
@@ -30,7 +34,10 @@ fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
                 }, modifier = Modifier.fillMaxWidth())
                 Text(stringResource(R.string.download_percent, it))
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section),
+                verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.compact)
+            ) {
                 view.primary?.let { button ->
                     Button(onClick = { onAction(button.action) }) { Text(button.label) }
                 }

@@ -36,7 +36,7 @@ private val Light = lightColorScheme(
 @Composable
 fun AgentEyeTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val scheme = colorSchemeFor(dark)
-    MaterialTheme(colorScheme = scheme) {
+    MaterialTheme(colorScheme = scheme, shapes = AgentEyeShapes) {
         // A bare Text outside any Scaffold/Surface reads LocalContentColor (black by default);
         // the root Surface makes every screen inherit onBackground.
         Surface(color = scheme.background, contentColor = scheme.onBackground, content = content)

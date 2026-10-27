@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -15,18 +16,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import local.agenteye.R
 import local.agenteye.camera.Lens
+import local.agenteye.ui.theme.AgentEyeSpacing
 
 @Composable
 fun CameraControls(state: CameraState, onToggle: () -> Unit, onSwitch: () -> Unit) {
-    Surface {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp
+    ) {
         FlowRow(
-            Modifier.fillMaxWidth().padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier.fillMaxWidth().padding(AgentEyeSpacing.content),
+            horizontalArrangement = Arrangement.spacedBy(AgentEyeSpacing.compact),
+            verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.compact)
         ) {
             Button(
                 onClick = onToggle,
                 enabled = state.running || state.canRequestStart,
-                modifier = Modifier.heightIn(min = 48.dp)
+                modifier = Modifier.heightIn(min = AgentEyeSpacing.touchTarget)
             ) {
                 Text(stringResource(if (state.running) R.string.stop else R.string.start))
             }
@@ -41,7 +48,7 @@ fun CameraControls(state: CameraState, onToggle: () -> Unit, onSwitch: () -> Uni
             OutlinedButton(
                 onClick = onSwitch,
                 enabled = state.canSwitch,
-                modifier = Modifier.heightIn(min = 48.dp)
+                modifier = Modifier.heightIn(min = AgentEyeSpacing.touchTarget)
             ) {
                 Text(stringResource(R.string.switch_camera, lens))
             }

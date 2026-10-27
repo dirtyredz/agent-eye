@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import local.agenteye.R
 import local.agenteye.ui.privacy.PrivacyPolicyDialog
+import local.agenteye.ui.theme.AgentEyeSpacing
 import local.agenteye.ui.theme.AgentEyeTheme
 import local.agenteye.ui.update.UpdateAction
 import local.agenteye.ui.update.UpdatePanel
@@ -57,21 +58,23 @@ fun SettingsScreen(view: UpdateView, onBack: () -> Unit, onAction: (UpdateAction
             Column(
                 Modifier.widthIn(
                     max = 640.dp
-                ).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                ).fillMaxWidth().verticalScroll(rememberScrollState()).padding(
+                    AgentEyeSpacing.screen
+                ),
+                verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)
             ) {
                 UpdatePanel(view, onAction)
                 Card(onClick = { privacy = true }, modifier = Modifier.fillMaxWidth()) {
                     Text(
                         stringResource(R.string.privacy_policy),
-                        Modifier.padding(20.dp),
+                        Modifier.padding(AgentEyeSpacing.screen),
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        Modifier.padding(AgentEyeSpacing.screen),
+                        verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)
                     ) {
                         Text(
                             stringResource(R.string.about),

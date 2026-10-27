@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -34,6 +35,7 @@ import local.agenteye.R
 import local.agenteye.camera.Lens
 import local.agenteye.ui.pairing.PairingCard
 import local.agenteye.ui.pairing.PairingState
+import local.agenteye.ui.theme.AgentEyeSpacing
 import local.agenteye.ui.theme.AgentEyeTheme
 
 @Composable
@@ -47,16 +49,19 @@ fun CameraScreen(
     onRenew: () -> Unit,
     preview: @Composable (Modifier) -> Unit
 ) {
-    BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
-        val wide = maxWidth >= 600.dp && maxWidth > maxHeight
-        val panelHeight = minOf(300.dp, maxHeight * 0.5f)
-        val topHeight = maxOf(64.dp, 48.dp * LocalDensity.current.fontScale + 16.dp)
+    BoxWithConstraints(
+        Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding().padding(
+            horizontal = AgentEyeSpacing.screen,
+            vertical = AgentEyeSpacing.compact
+        )
+    ) {
+        val layout = cameraLayout(maxWidth, maxHeight, LocalDensity.current.fontScale)
         // Stable bars keep controls off the frame. Ticks/status do not resize the preview.
         val frame = Modifier.fillMaxSize().padding(
-            top = topHeight,
-            end = if (wide) 332.dp else 0.dp,
-            bottom = if (wide) 0.dp else panelHeight
-        )
+            top = layout.topHeight + AgentEyeSpacing.section,
+            end = if (layout.wide) layout.panelWidth + AgentEyeSpacing.section else 0.dp,
+            bottom = if (layout.wide) 0.dp else layout.panelHeight + AgentEyeSpacing.section
+        ).clip(MaterialTheme.shapes.medium).background(Color.Black)
         preview(frame)
         if (!state.running) {
             Box(frame.background(Color(0xFF101418)), contentAlignment = Alignment.Center) {
@@ -68,12 +73,17 @@ fun CameraScreen(
             }
         }
         Surface(
-            Modifier.align(Alignment.TopCenter).fillMaxWidth().height(topHeight),
-            color = Color(0xEB161B21),
-            contentColor = Color.White
+            Modifier.align(Alignment.TopCenter).fillMaxWidth().height(layout.topHeight),
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 2.dp
         ) {
             Row(
-                Modifier.padding(start = 16.dp, end = 8.dp),
+                Modifier.padding(
+                    start = AgentEyeSpacing.content,
+                    end = AgentEyeSpacing.compact
+                ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -91,12 +101,14 @@ fun CameraScreen(
                 }
             }
         }
-        val panel = if (wide) {
-            Modifier.align(Alignment.CenterEnd).width(320.dp).fillMaxSize().padding(top = topHeight)
+        val panel = if (layout.wide) {
+            Modifier.align(Alignment.CenterEnd).width(layout.panelWidth).fillMaxSize().padding(
+                top = layout.topHeight + AgentEyeSpacing.section
+            )
         } else {
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(panelHeight)
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(layout.panelHeight)
         }
-        Column(panel.padding(8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(panel, verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 PairingCard(pairing, state.address, onCopy, onRenew)
             }
