@@ -3,8 +3,10 @@ package local.agenteye.ui.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -13,11 +15,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,13 +68,6 @@ fun SettingsScreen(view: UpdateView, onBack: () -> Unit, onAction: (UpdateAction
                 verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)
             ) {
                 UpdatePanel(view, onAction)
-                Card(onClick = { privacy = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        stringResource(R.string.privacy_policy),
-                        Modifier.padding(AgentEyeSpacing.screen),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
                 Card(Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.padding(AgentEyeSpacing.screen),
@@ -80,7 +77,24 @@ fun SettingsScreen(view: UpdateView, onBack: () -> Unit, onAction: (UpdateAction
                             stringResource(R.string.about),
                             style = MaterialTheme.typography.titleLarge
                         )
-                        Text(stringResource(R.string.usage_guidance))
+                        Text(
+                            stringResource(R.string.usage_guidance),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        TextButton(
+                            onClick = { privacy = true },
+                            modifier = Modifier.fillMaxWidth().heightIn(
+                                min = AgentEyeSpacing.touchTarget
+                            ),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text(
+                                stringResource(R.string.privacy_policy),
+                                Modifier.fillMaxWidth(),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
                     }
                 }
             }

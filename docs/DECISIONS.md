@@ -6,14 +6,20 @@
   screenshot or recents thumbnail. That exposure is accepted because the code expires after two
   minutes, works only once and can be exchanged only by a client on the supported private LAN.
   Session tokens are still never displayed.
+- **2026-10-27 — Content-sized unified camera panel and FIT-image rounding.** Pairing and
+  Start/Stop/lens controls share one bottom panel in portrait and one trailing panel in landscape,
+  with a divider between sections. The panel measures its content instead of reserving 216dp, and
+  the preview receives the remaining space. The live CameraX implementation is clipped at its
+  transformed FIT image bounds with the theme-owned 16dp radius, so letterboxing and the full-frame
+  ViewPort remain unchanged. Settings uses one card-title style and one paragraph style; Privacy
+  policy is part of About.
 - **2026-10-26 — One rounded-container and spacing language for Compose UI (1.3.1 / 6).**
   Main and Settings use one theme-owned 16dp corner radius for the preview frame, status,
   pairing, controls, buttons and cards. Spacing follows a 4dp grid: 16dp screen margins, 12dp
-  section/content spacing, 8dp compact gaps and 48dp minimum touch targets. The pairing panel is
-  216dp at normal text size and grows only with font scale (within a bounded share of portrait
-  height), returning the former fixed dead space to the whole-frame FIT preview. Pairing actions
-  stay in the code row, with a visible Copy label and accessibility-labeled renewal icon; large
-  text may wrap the action group without clipping the code.
+  section/content spacing, 8dp compact gaps and 48dp minimum touch targets. Pairing actions stay
+  in the code row, with a visible Copy label and accessibility-labeled renewal icon; large text may
+  wrap the action group without clipping the code. The fixed pairing-panel sizing in this decision
+  is superseded by the 2026-10-27 content-sized unified-panel decision above.
 - **2026-10-26 — Move the UI to Compose + Material 3 (1.3.0 / 5).** Matches the sibling apps (Command Deck, family-command-center) and replaces hand-built views. Keeps two Activities (`MainActivity`, `SettingsActivity`) and service-owned capture; no navigation framework, extended icon pack or custom fonts. ComponentActivity propagates handled configuration changes to Compose; `PreviewFeed` stays a non-Compose, started-only geometry feed. Cost, measured on the unsigned minified APK: 1,074,018 → 2,121,596 bytes (+1,047,578; +97.54%, about +1 MB); R8/resource shrinking remain enabled, no blanket keep rules. Retain shared viewport ownership pending dk-afb1348d.
 - **2026-10-26 — Static amber theme, no dynamic colour.** Follows Command Deck's amber system light/dark scheme and default typography. Material You dynamic colour is rejected: it would make the app's look vary per wallpaper and add no function to a camera control surface.
 - **2026-10-26 — Whole-frame FIT preview with full-frame snapshots.** Owner decision (plan §8) overrides the plan's full-bleed assumption: FIT_CENTER produces `ViewPort.FIT`, so preview and still share the full camera frame instead of cropping to screen aspect. Stable bottom/trailing control bars keep the frame unobstructed, and secondary content scrolls at large text sizes. `CameraSession.attach` and JPEG encoding are unchanged. Front preview remains mirrored and front JPEG unmirrored; matching refers to field of view.

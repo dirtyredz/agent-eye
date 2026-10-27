@@ -87,15 +87,14 @@ Keep both manifest Activity entries and their existing security/export settings.
 
    - Full-bleed preview as the stable background.
    - Safe-inset top row: concise status at the leading edge, Settings icon at the trailing edge.
-   - Bottom pairing card: “Pairing code,” six large digits preserving leading zeros, labeled Copy action, countdown/single-use explanation and New code.
-   - Persistent bottom control row: one prominent labeled Start/Stop button and labeled camera-switch action showing the selected direction.
+   - One content-sized bottom panel: “Pairing code,” six large digits preserving leading zeros, labeled Copy action, countdown/single-use explanation and New code, followed by a divider and the persistent Start/Stop and camera-switch controls. The preview takes the remaining height; the panel has no fixed-height text clipping boundary.
    - Display the current LAN URL as selectable text in the pairing/status region. Show a clear Wi-Fi explanation when unavailable.
    - Before Start, show an intentional neutral camera placeholder with brief guidance. Do not activate the camera to decorate the idle screen.
 
    **Main, landscape:**
 
    - Keep the same preview node filling the background.
-   - Move pairing and controls into a trailing panel approximately 280–320dp wide, constrained to leave most of the preview unobscured.
+   - Move pairing and controls into one content-sized trailing panel approximately 280–320dp wide, separated by a subtle divider and constrained to leave most of the preview unobscured.
    - Use a short-height layout with scrolling secondary information and a persistent Start/Stop action.
    - Choose layout using available dimensions, not orientation alone. Narrow multi-window layouts use the stacked arrangement.
 
@@ -106,8 +105,8 @@ Keep both manifest Activity entries and their existing security/export settings.
    - Material top app bar with Back.
    - Updates card first: installed version/code, status, progress and existing phase-specific actions.
    - Keep the complete existing network disclosure visible within the scrolling page.
-   - Privacy policy row opens selectable local text with Close.
-   - About/usage section explains Agent Eye, trusted Wi-Fi, plain HTTP, plugged-in screen-off use and explicit Stop.
+   - The About card explains Agent Eye, trusted Wi-Fi, plain HTTP, plugged-in screen-off use and explicit Stop, and contains the Privacy policy row that opens selectable local text with Close.
+   - Card titles share one title style and explanatory paragraphs share one body style.
    - Use a centered, width-constrained scrolling column; landscape does not require another navigation model.
 
    Use 16dp outer spacing, roughly 12dp section gaps, at least 48dp touch targets and accessible icon descriptions. Support large text without clipping codes or actions. Countdown changes must not trigger a TalkBack announcement every second.

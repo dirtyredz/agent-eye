@@ -26,13 +26,16 @@ fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)
         ) {
             Text(stringResource(R.string.updates), style = MaterialTheme.typography.titleLarge)
-            Text(view.version)
-            Text(view.status)
+            Text(view.version, style = MaterialTheme.typography.bodyMedium)
+            Text(view.status, style = MaterialTheme.typography.bodyMedium)
             view.progress?.let {
                 LinearProgressIndicator(progress = {
                     it / 100f
                 }, modifier = Modifier.fillMaxWidth())
-                Text(stringResource(R.string.download_percent, it))
+                Text(
+                    stringResource(R.string.download_percent, it),
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section),
@@ -47,7 +50,7 @@ fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
             }
             Text(
                 stringResource(R.string.update_disclosure),
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }
