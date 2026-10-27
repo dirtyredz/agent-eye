@@ -15,14 +15,19 @@ export async function stageRelease({ root, dir, localVersion, tag, commit, runId
     await bundle.unsigned(join(directory, UNSIGNED[1]), expected);
   } });
 }
-export async function draftRelease({ root, dir, run, gh, localVersion, tag, commit, runId, runAttempt }) {
+export async function draftRelease({ root, dir, run, gh, localVersion, tag, commit, runId, runAttempt,
+  sleep = delay => new Promise(resolve => setTimeout(resolve, delay)) }) {
   const m = manifest(JSON.parse(await readFile(join(dir, UNSIGNED_MANIFEST), 'utf8')));
   requireThat(m.tag === tag && m.commit === commit && m.runId === runId && m.runAttempt <= runAttempt, 'Draft staging identity mismatch');
   await verifyFiles(dir, m);
   let rel = await gh.releaseByTag(tag);
   if (!rel) {
     await run('gh', ['release', 'create', tag, '--repo', REPOSITORY, '--draft', '--verify-tag', '--target', commit, '--title', `Agent Eye ${localVersion.versionName}`, '--notes', `Unsigned build of ${commit}. Owner-attended local signing required.`]);
-    rel = await gh.releaseByTag(tag);
+    for (const delay of [0, 1_000, 2_000, 4_000, 8_000]) {
+      if (delay) await sleep(delay);
+      rel = await gh.releaseByTag(tag);
+      if (rel) break;
+    }
   }
   requireThat(rel, `Draft ${tag} not found after creation`);
   assertDraft(rel, tag, rel.id);

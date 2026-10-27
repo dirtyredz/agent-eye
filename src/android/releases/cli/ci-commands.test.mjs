@@ -99,6 +99,33 @@ test('draftRelease creates a missing draft then finds it via the list endpoint',
   assert.equal(calls.filter(c => c[1] === 'release' && c[2] === 'create').length, 1);
 });
 
+test('draftRelease retries a missing post-create lookup and then succeeds', async t => {
+  const { deps, events, release } = await fixture(t);
+  let lookups = 0;
+  const delays = [];
+  deps.gh.releaseByTag = async () => {
+    events.push('lookup');
+    lookups++;
+    return lookups === 3 ? release : null;
+  };
+  deps.sleep = async delay => { delays.push(delay); };
+  await draftRelease(deps);
+  assert.equal(lookups, 3);
+  assert.deepEqual(delays, [1_000]);
+  assert.deepEqual(events, ['lookup', 'create', 'lookup', 'lookup', 'assets', ...UNSIGNED, UNSIGNED_MANIFEST]);
+});
+
+test('draftRelease keeps the existing failure after post-create retries are exhausted', async t => {
+  const { deps } = await fixture(t);
+  let lookups = 0;
+  const delays = [];
+  deps.gh.releaseByTag = async () => { lookups++; return null; };
+  deps.sleep = async delay => { delays.push(delay); };
+  await assert.rejects(draftRelease(deps), /Draft v1\.0\.0 not found after creation/);
+  assert.equal(lookups, 6);
+  assert.deepEqual(delays, [1_000, 2_000, 4_000, 8_000]);
+});
+
 for (const field of ['tag', 'commit', 'runId', 'runAttempt']) test(`draftRelease rejects staged ${field} mismatch before GitHub`, async t => {
   const { deps, events } = await fixture(t);
   deps[field] = field === 'runId' ? 99 : field === 'runAttempt' ? 0 : 'different';

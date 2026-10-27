@@ -58,11 +58,12 @@
   schedule a subproject's check before its formatter and report stale formatting errors.
 
 ## GitHub's get-release-by-tag never returns drafts
-`GET repos/<repo>/releases/tags/<tag>` (and so `gh api` on it) returns 404 for DRAFT releases, even right after you
-create one. The v1.0.0 release run (40267716974) failed on exactly this: the `draft` step created the draft, then its
-re-fetch by tag 404'd; a retry would also have created a duplicate. Look drafts up with `github.releaseByTag(tag)`
-(`src/android/releases/github/github.mjs`), which lists releases and matches `tag_name` exactly (null if none, fails
-closed on more than one). `draftId` uses it too. Never reintroduce `releases/tags/` for release-pipeline lookups.
+`GET repos/<repo>/releases/tags/<tag>` (and so `gh api` on it) returns 404 for DRAFT releases. Look drafts up with
+`github.releaseByTag(tag)` (`src/android/releases/github/github.mjs`), which lists releases and matches `tag_name`
+exactly (null if none, fails closed on more than one). The list is eventually consistent immediately after creation:
+release runs 40413735326 (v1.2.0) and 40436158413 (v1.3.0) created a draft, then failed to find it; rerunning reused
+the now-visible draft. `draftRelease` therefore retries only its post-create lookup with bounded backoff. `draftId`
+uses the non-retrying lookup. Never reintroduce `releases/tags/` for release-pipeline lookups.
 
 ## Self-update traps
 - **Bootstrap.** 1.0.0 has no updater: install 1.1.0 manually once over 1.0.0 (no uninstall; same
