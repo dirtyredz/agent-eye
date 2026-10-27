@@ -12,10 +12,16 @@ internal val AgentEyeShapes = Shapes(
     large = ContainerShape
 )
 
-object AgentEyeSpacing {
+internal object AgentEyeSpacing {
     val screen = 16.dp
+
+    // Section separates peers; content pads children inside a container.
     val section = 12.dp
     val content = 12.dp
     val compact = 8.dp
     val touchTarget = 48.dp
+}
+
+internal object AgentEyeElevation {
+    val container = 2.dp
 }

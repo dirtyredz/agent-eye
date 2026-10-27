@@ -22,8 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import local.agenteye.R
+import local.agenteye.ui.theme.AgentEyeElevation
 import local.agenteye.ui.theme.AgentEyeSpacing
 
 @Composable
@@ -31,7 +31,7 @@ fun PairingCard(state: PairingState, address: String?, onCopy: () -> Unit, onRen
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        tonalElevation = 2.dp
+        tonalElevation = AgentEyeElevation.container
     ) {
         Column(
             Modifier.fillMaxWidth().padding(

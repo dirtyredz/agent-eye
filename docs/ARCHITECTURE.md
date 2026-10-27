@@ -48,7 +48,7 @@ server closure: it preserves rotation, ViewPort, token, pairing code and capture
 Rebinding waits for an in-flight still callback to finish; readiness is false until the new
 camera opens. JPEG encoding applies CameraX rotation/crop without horizontal mirroring.
 
-The Compose main screen has one factory-owned PreviewView, Start/Stop, lens switching, pairing (Copy/New code) and typed status. A credential-free CaptureSnapshot feeds pure CameraStateHolder; binding differs from stopped, and Stop survives camera/network failures. Permission returns recheck visibility, camera grant and the latest install phase. Pairing digits are Activity-owned, never saved, and cleared on stop/disconnect. Stable control bars reserve space around the whole-frame preview; status/countdown cannot resize it.
+The Compose main screen has one factory-owned PreviewView, Start/Stop, lens switching, pairing (Copy/New code) and typed status. Pure `CameraLayout`, covered by `CameraLayoutTest`, chooses portrait/landscape panel sizing from the available bounds and font scale. A credential-free CaptureSnapshot feeds pure CameraStateHolder; binding differs from stopped, and Stop survives camera/network failures. Permission returns recheck visibility, camera grant and the latest install phase. Pairing digits are Activity-owned, never saved, and cleared on stop/disconnect. Stable control bars reserve space around the whole-frame preview; status/countdown cannot resize it.
 PairingClipboard resolves Copy at tap time, rejects inactive/expired codes, and marks ClipData
 sensitive. Only API <33 gets an app toast; Android 13+ provides its own clipboard confirmation.
 SettingsActivity under ui/settings owns a scrollable update/privacy/guidance screen and has

@@ -14,9 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import local.agenteye.R
 import local.agenteye.camera.Lens
+import local.agenteye.ui.theme.AgentEyeElevation
 import local.agenteye.ui.theme.AgentEyeSpacing
 
 @Composable
@@ -24,7 +24,7 @@ fun CameraControls(state: CameraState, onToggle: () -> Unit, onSwitch: () -> Uni
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        tonalElevation = 2.dp
+        tonalElevation = AgentEyeElevation.container
     ) {
         FlowRow(
             Modifier.fillMaxWidth().padding(AgentEyeSpacing.content),

@@ -35,6 +35,8 @@ import local.agenteye.R
 import local.agenteye.camera.Lens
 import local.agenteye.ui.pairing.PairingCard
 import local.agenteye.ui.pairing.PairingState
+import local.agenteye.ui.theme.AgentEyeElevation
+import local.agenteye.ui.theme.AgentEyePreviewBackground
 import local.agenteye.ui.theme.AgentEyeSpacing
 import local.agenteye.ui.theme.AgentEyeTheme
 
@@ -64,9 +66,13 @@ fun CameraScreen(
         ).clip(MaterialTheme.shapes.medium).background(Color.Black)
         preview(frame)
         if (!state.running) {
-            Box(frame.background(Color(0xFF101418)), contentAlignment = Alignment.Center) {
+            Box(
+                frame.background(AgentEyePreviewBackground),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     stringResource(R.string.camera_idle),
+                    // One-off edge buffer for centered placeholder copy, not layout rhythm.
                     Modifier.padding(24.dp),
                     color = Color.White
                 )
@@ -77,7 +83,7 @@ fun CameraScreen(
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
             contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 2.dp
+            tonalElevation = AgentEyeElevation.container
         ) {
             Row(
                 Modifier.padding(

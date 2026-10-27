@@ -11,12 +11,13 @@ import androidx.compose.ui.graphics.Color
 
 private val Accent = Color(0xFFE08A3C)
 private val Danger = Color(0xFFE5534B)
+internal val AgentEyePreviewBackground = Color(0xFF101418)
 
 private val Dark = darkColorScheme(
     primary = Accent,
     onPrimary = Color(0xFF1B1209),
     secondary = Color(0xFF8FB8DE),
-    background = Color(0xFF101418),
+    background = AgentEyePreviewBackground,
     surface = Color(0xFF161B21),
     surfaceVariant = Color(0xFF212833),
     onBackground = Color(0xFFE8E4DC),
