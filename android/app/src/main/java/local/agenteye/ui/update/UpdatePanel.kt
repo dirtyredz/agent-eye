@@ -1,61 +1,47 @@
 package local.agenteye.ui.update
 
-import android.content.Context
-import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import local.agenteye.R
 
-/** Update controls and the always-visible network disclosure. Renders an [UpdateView]. */
-class UpdatePanel(context: Context) : LinearLayout(context) {
-    var onAction: (UpdateAction) -> Unit = {}
-    private val version = TextView(context).apply { textSize = 14f }
-    private val status = TextView(context).apply { textSize = 14f }
-    private val progress = ProgressBar(
-        context,
-        null,
-        android.R.attr.progressBarStyleHorizontal
-    ).apply {
-        max =
-            100
-    }
-    private val primary = Button(context)
-    private val secondary = Button(context)
-
-    init {
-        orientation = VERTICAL
-        addView(version)
-        addView(status)
-        addView(progress, LayoutParams(-1, -2))
-        addView(
-            LinearLayout(context).apply {
-                addView(primary)
-                addView(secondary)
+@Composable
+fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.updates), style = MaterialTheme.typography.titleLarge)
+            Text(view.version)
+            Text(view.status)
+            view.progress?.let {
+                LinearProgressIndicator(progress = {
+                    it / 100f
+                }, modifier = Modifier.fillMaxWidth())
+                Text(stringResource(R.string.download_percent, it))
             }
-        )
-        addView(
-            TextView(context).apply {
-                setText(R.string.update_disclosure)
-                textSize = 12f
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                view.primary?.let { button ->
+                    Button(onClick = { onAction(button.action) }) { Text(button.label) }
+                }
+                view.secondary?.let { button ->
+                    TextButton(onClick = { onAction(button.action) }) { Text(button.label) }
+                }
             }
-        )
-    }
-
-    fun render(view: UpdateView) {
-        version.text = view.version
-        status.text = view.status
-        progress.visibility = if (view.progress == null) View.GONE else View.VISIBLE
-        progress.progress = view.progress ?: 0
-        bind(primary, view.primary)
-        bind(secondary, view.secondary)
-    }
-
-    private fun bind(button: Button, model: UpdateButton?) {
-        button.visibility = if (model == null) View.GONE else View.VISIBLE
-        if (model == null) return
-        button.text = model.label
-        button.setOnClickListener { onAction(model.action) }
+            Text(
+                stringResource(R.string.update_disclosure),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }

@@ -1,4 +1,4 @@
-package local.agenteye.ui
+package local.agenteye.ui.pairing
 
 import local.agenteye.security.PairingCodes
 import org.junit.Assert.assertEquals

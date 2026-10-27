@@ -212,13 +212,14 @@ class CaptureService : LifecycleService() {
         if (surface != null && port != null) viewPort = port
         camera?.attach(surface, rotation, port)
     }
-    fun displayStatus(): String = if (!running) {
-        "Stopped${error?.let { " · $it" } ?: ""}"
-    } else {
-        "${address ?: "Waiting for one private IPv4 Wi-Fi network"}\n" +
-            "${if (camera?.ready == true) "Camera ready" else "Camera starting/unavailable"}\n" +
-            (error ?: "Ready")
-    }
+    fun snapshot() = CaptureSnapshot(
+        running,
+        camera?.ready == true,
+        address,
+        error,
+        availableLenses.toList(),
+        selectedLens
+    )
 
     /** The live pairing code (rotated when expired), or null when no session runs. */
     fun pairingCode(): PairingCodes.Code? = if (running) pairing?.current() else null
