@@ -1,6 +1,6 @@
 # Agent Eye privacy policy
 
-Effective October 26, 2026.
+Effective October 27, 2026.
 
 Agent Eye collects no data for its developer. The app has no accounts, analytics,
 advertising, crash reporting or cloud uploads of camera data. Camera permission enables a live
@@ -17,6 +17,8 @@ and clears the token. Tokens and photographs travel over plain HTTP, without
 encryption in transit, and can be observed on the LAN. Use only a trusted private
 network; never expose the port to the internet. Stop the session and delete PC
 snapshots when finished. Revoking camera permission prevents further captures.
+Screenshots and recents thumbnails are allowed, so the two-minute, single-use pairing code may be
+visible in them. Session tokens are never shown by the app.
 
 Updates: the app contacts the internet only when you tap Check for updates or Update. It never
 checks automatically (not at launch, in the background, on a timer or at boot). Those requests

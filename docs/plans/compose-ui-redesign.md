@@ -1,3 +1,7 @@
+> Superseded security note (2026-10-27): the owner now requires screenshots and recents
+> thumbnails to be allowed on every screen so UI problems can be captured. References below to
+> preserving secure-window restrictions or blocked screenshots describe the historical plan.
+
 ## 1. Goal
 
 Redesign Agent Eye as a polished Compose + Material 3 camera utility for **v1.3.0**, preserving its service-owned capture, pairing, lens selection and manual updater behavior.
@@ -32,7 +36,7 @@ Paths below are relative to `android/app/src/main/java/local/agenteye/` unless s
 | `ui/settings/SettingsActivity.kt` — change | `ComponentActivity`; retain updater ownership, service binding and Android install/permission launches. |
 | `ui/settings/SettingsScreen.kt` — rewrite | Compose Settings layout, scrolling, back navigation and local privacy-dialog visibility. |
 | `ui/update/UpdatePanel.kt` — rewrite | Stateless Material rendering of existing `UpdateView` and `UpdateAction`. |
-| `ui/privacy/PrivacyPolicyDialog.kt` — move/rewrite | Secure Material dialog displaying bundled, selectable policy text. Replaces the root-level View dialog. |
+| `ui/privacy/PrivacyPolicyDialog.kt` — move/rewrite | Material dialog displaying bundled, selectable policy text. Replaces the root-level View dialog. |
 | `ui/theme/Theme.kt` — new | Static light/dark Material schemes, default typography and root Surface, following Command Deck’s theme structure. |
 | `service/CaptureSnapshot.kt` — new | Immutable, Android-free capture facts: running, camera readiness, address, error and available/selected lenses. Contains no credentials. |
 | `service/CaptureService.kt` — narrow change | Expose that snapshot; remove `displayStatus()` after migrating its sole caller, MainActivity. Preserve session orchestration. |
@@ -165,7 +169,7 @@ Keep both manifest Activity entries and their existing security/export settings.
    - Main removes its capture observer, detaches preview and unbinds on stop.
    - Installation still stops bound capture through `CaptureServiceLink`; an unbound link rejects handoff.
 
-   Do not move updater ownership into composition disposal or start/stop effects. Preserve `FLAG_SECURE` before content creation in both Activities; privacy dialogs inherit the secure-window policy.
+   Do not move updater ownership into composition disposal or start/stop effects. Screenshots and recents thumbnails are allowed in both Activities and privacy dialogs under the superseding 2026-10-27 owner decision.
 
    Load bundled `PRIVACY.md` once per dialog/content lifetime, retaining offline, scrollable, selectable text.
 
@@ -220,7 +224,7 @@ Confirm on the phone, including a minified build:
 - Copy preserves leading zeros, rejects stale state and confirms correctly below/above API 33; renewal and Stop update immediately.
 - Main → Settings → Back retains the capture session and restores preview; background/screen-off capture follows the existing runbook.
 - Opening Settings produces no network request; explicit update operations, cancellation, permission return and install handoff retain their behavior.
-- Privacy works offline; screenshots/recents remain blocked, including dialogs.
+- Privacy works offline; screenshots/recents are allowed, including dialogs (superseding owner decision, 2026-10-27).
 - Gesture navigation, three-button navigation and cutouts do not obscure controls in either theme.
 
 Use the existing `docs/AGENT-EYE.md` pairing/status/shot procedure. Record unavailable hardware cases as pending rather than passed.

@@ -11,8 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.SecureFlagPolicy
 import local.agenteye.R
 
 @Composable
@@ -24,7 +22,6 @@ fun PrivacyPolicyDialog(onClose: () -> Unit) {
         }
     AlertDialog(
         onDismissRequest = onClose,
-        properties = DialogProperties(securePolicy = SecureFlagPolicy.SecureOn),
         title = { Text(stringResource(R.string.privacy_policy)) },
         text = {
             SelectionContainer { Text(policy, Modifier.verticalScroll(rememberScrollState())) }

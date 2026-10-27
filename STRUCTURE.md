@@ -23,7 +23,7 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `android/app/src/main/java/local/agenteye/ui/capture/` — capture screen: `CameraScreen`/`CameraControls` (Compose), pure `CameraLayout` (portrait/landscape panel sizing, JVM-tested by `CameraLayoutTest`), `CaptureScreenModel` (the one owner of `CameraState`/`PairingState` and the 1 s countdown), `SessionStarter` (permission and Start flow), pure `CameraStateHolder` (snapshot to display state) and `CameraStatus` (status enum resolved from string resources).
 - `android/app/src/main/java/local/agenteye/ui/preview/` — `CameraPreview` (stable AndroidView) and `PreviewFeed`, a non-Compose geometry feed (display and layout listeners pushing rotation and ViewPort to the service while started).
 - `android/app/src/main/java/local/agenteye/ui/pairing/` — `PairingCard`, pure `PairingState` (countdown), `PairingCopy` (tap-time copy policy) and the sensitive `PairingClipboard`.
-- `android/app/src/main/java/local/agenteye/ui/privacy/` — secure local privacy-policy dialog.
+- `android/app/src/main/java/local/agenteye/ui/privacy/` — local privacy-policy dialog.
 - `android/app/src/main/java/local/agenteye/ui/theme/` — `Theme` provides the static amber Material 3 light/dark theme (no dynamic color); `DesignTokens` owns shared shape, spacing and elevation tokens.
 - `android/app/src/main/java/local/agenteye/ui/settings/` — `SettingsActivity` (updater lifecycle and install handoff) and `SettingsScreen` (update panel, usage guidance and privacy-policy entry).
 - `android/app/src/main/java/local/agenteye/ui/update/` — `UpdatePanel` view and its pure `UpdatePresenter`.

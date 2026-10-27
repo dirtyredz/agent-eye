@@ -1,5 +1,9 @@
 # Features and verification status
 
+v1.3.2 / 7 allows screenshots and recents thumbnails on the camera, Settings and privacy-policy
+screens so UI problems can be captured. This can include the two-minute, single-use pairing code;
+session tokens remain absent from the UI.
+
 v1.3.0 / 5 migrates camera, pairing, Settings, updater and privacy presentation to Compose Material 3. Static amber light/dark follows the system. The stable FIT preview shows the whole shared camera frame with letterboxing; snapshots are not cropped to the screen ratio. Start/Stop stays visible, including while camera/Wi-Fi is unavailable. Typed state distinguishes service binding and stopped; permission returns recheck install and visibility. Pairing Copy rereads live credentials, and digits clear when Main stops. Settings preserves manual-only update actions and the complete network disclosure. Portrait, landscape and large-text fixture previews are included.
 
 The v1.3.0 offline fast gate passed: npm ci; 155 Node tests; icon check; ktlint; debug/release APKs; release AAB; 116 JVM tests; release lint (0 errors, 19 warnings). Android gate took 6m 27s. Equivalent unsigned minified APK grew from 1,074,018 to 2,121,596 bytes: +1,047,578 bytes (+97.54%, about 1.00 MiB).

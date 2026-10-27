@@ -1,5 +1,11 @@
 # Decisions
 
+- **2026-10-27 — Allow screenshots and recents thumbnails (1.3.2 / 7).** Owner decision:
+  screenshots are needed to capture and communicate UI problems, so neither Activity nor the
+  privacy dialog sets a secure-window policy. The active pairing code can therefore appear in a
+  screenshot or recents thumbnail. That exposure is accepted because the code expires after two
+  minutes, works only once and can be exchanged only by a client on the supported private LAN.
+  Session tokens are still never displayed.
 - **2026-10-26 — One rounded-container and spacing language for Compose UI (1.3.1 / 6).**
   Main and Settings use one theme-owned 16dp corner radius for the preview frame, status,
   pairing, controls, buttons and cards. Spacing follows a 4dp grid: 16dp screen margins, 12dp
@@ -77,14 +83,16 @@
 - **IPv4 Wi-Fi only.** Exact LinkProperties subnet, private phone and peer addresses, no VPN,
   no wildcard listeners. IPv6, Ethernet, cellular, hotspots and ambiguous topology are excluded.
 - **Session authentication.** 256 random bits per Start, required on both endpoints, cleared on
-  Stop. No token in URLs, notifications or logs. The app blocks screenshots/recents thumbnails.
+  Stop. No token in URLs, notifications, logs or the UI. Screenshots and recents thumbnails are
+  allowed by the 2026-10-27 owner decision above.
 - **2026-10-26 — Short-code pairing (v1.1.0).** The 64-hex token was unreadable by hand and the app
-  blocks screenshots (FLAG_SECURE, kept). The phone shows a six-digit code (two minutes, single use,
+  originally blocked screenshots. The phone shows a six-digit code (two minutes, single use,
   5 attempts, per-client rate limit) that `POST /pair` exchanges for the token. The token is no longer
   shown at all (no "show token" toggle: less exposure, and `pair` makes it unnecessary);
   `AGENT_EYE_TOKEN`/`--token` remain for scripts. Rejected: QR code (needs a second device screenshot
   path), longer codes (typing cost), unlimited retries. Pairing is HTTP like the rest, so a LAN
-  observer could sniff the token exactly as before.
+  observer could sniff the token exactly as before. Screenshot blocking was superseded by the
+  2026-10-27 decision above.
 - **Plain HTTP.** Simple local interoperability at the cost of LAN observers seeing frames and
   tokens. No port forwarding or remote proxies. Source rewriting prevents proof of physical LAN
   membership. Android INTERNET permission and cleartext policy do not implement a firewall.

@@ -2,7 +2,6 @@ package local.agenteye.ui.settings
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,7 +27,6 @@ class SettingsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
         view = UpdatePresenter.present(updates.coordinator.state, System.currentTimeMillis())
         setContent { AgentEyeTheme { SettingsScreen(view, { finish() }, ::act) } }

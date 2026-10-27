@@ -211,7 +211,7 @@ Use the existing pair/status/shot procedure below. Record phone/API and the sign
 - Check one-tap Start/Stop and Settings; deny camera versus notifications separately. Return from permission UI after backgrounding: no unexpected Start. Stop remains usable during Wi-Fi/camera failure.
 - Leading-zero Copy, New code, expiry and single-use renewal; API <33 app toast versus API 33+ platform confirmation. Stop/disconnect/background clears displayed code. TalkBack does not announce every tick.
 - Main ? Settings ? Back and screen-off capture preserve the session. Opening Settings is offline/local; explicit update, cancellation, permission return, Continue installation and recovery retain their actions. Installation stops capture and requires explicit Start afterward.
-- Both themes, font/display size changes, narrow multi-window, cutouts and gesture/three-button navigation: controls reachable, secondary content scrolls, code/actions do not clip. Privacy text scrolls/selects offline; screenshots and recents remain blocked, including the dialog.
+- Both themes, font/display size changes, narrow multi-window, cutouts and gesture/three-button navigation: controls reachable, secondary content scrolls, code/actions do not clip. Privacy text scrolls/selects offline. Screenshots and recents thumbnails work on Main, Settings and the privacy dialog; verify that no session token is visible (the short-lived pairing code may be).
 
 ## Physical acceptance — NOT RUN (no phone attached)
 

@@ -63,6 +63,9 @@ Tests mirror the new Kotlin packages under `T`; test names and coverage appear b
 
 Do not put updater code in `CaptureService`, `LanBinding`, `SubnetPolicy`, `StillServer` or the PC client. Preserve the notification-specific `ic_camera_notification.xml`.
 
+> Superseded security note (2026-10-27): the owner now requires screenshots and recents
+> thumbnails to be allowed on every screen. The secure-window instruction below is historical.
+
 ## 3. Sequence
 
 1. **Establish the integration base and release identity.**
@@ -71,7 +74,7 @@ Do not put updater code in `CaptureService`, `LanBinding`, `SubnetPolicy`, `Stil
 
    Before implementation work-item writes, run `docket guide`, locate the relevant item through filtered `dk list --json`/`dk show --json`, and claim it in the implementation worktree.
 
-   Extract `CameraScreen` first, changing only its caller, `MainActivity`. Preserve `FLAG_SECURE`, inset handling, pairing countdown, Start/Stop, preview attachment and privacy access. No updater behavior is introduced in this step.
+   Extract `CameraScreen` first, changing only its caller, `MainActivity`. Allow screenshots and recents thumbnails under the superseding 2026-10-27 owner decision; preserve inset handling, pairing countdown, Start/Stop, preview attachment and privacy access. No updater behavior is introduced in this step.
 
 2. **Define the update experience against the references.**
 
