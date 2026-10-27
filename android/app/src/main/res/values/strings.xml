@@ -24,6 +24,15 @@
     <string name="wifi_guidance">Connect to one private IPv4 Wi-Fi network to pair.</string>
     <string name="download_percent">%1$d%% downloaded</string>
     <string name="camera_permission_required">Camera permission is required. Grant it in app settings or press Start to retry.</string>
-    <string name="session_start_failed">Cannot start camera session. Reopen the app and try again.</string>
+    <string name="status_connecting">Connecting to camera service</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_installing">Update installation in progress</string>
+    <string name="status_ready">Camera ready</string>
+    <string name="status_starting">Camera starting</string>
+    <string name="status_camera_unavailable">Camera starting or unavailable</string>
+    <string name="status_capture_failed">Capture failed. Try another snapshot.</string>
+    <string name="status_bind_failed">Wi-Fi connection failed. Reconnect to retry.</string>
+    <string name="status_wifi_unavailable">Wi-Fi unavailable. Connect to your private Wi-Fi network.</string>
+    <string name="session_start_failed">Could not start. Press Start to retry.</string>
     <string name="update_disclosure">Camera and pairing stay on your local network. Only Check for updates and Update contact GitHub and its download servers. They receive your IP address and request information; photos and pairing credentials are never sent. Mobile data may be used.</string>
 </resources>

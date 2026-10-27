@@ -19,13 +19,18 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `android/app/src/main/java/local/agenteye/selfupdate/` — user-initiated GitHub self-update: `contract/` (leaf release vocabulary), `release/` (policy, discovery), `transport/` (URL policy, bounded HTTPS), `download/` (transfer, verification), `storage/` (private files and records), `install/` (PackageInstaller sessions and recovery); details below.
 - `android/app/src/main/java/local/agenteye/json/` — neutral strict JSON: `StrictJson` parser/writer and the typed `JsonObject` view (one decode error, `StrictJson.Invalid`).
 - `android/app/src/main/java/local/agenteye/security/` — session token, `PairingCodes` state machine and `PairHandler` (the `POST /pair` body checks and code-for-token exchange).
-- `android/app/src/main/java/local/agenteye/ui/settings/` — SettingsActivity (updater lifecycle and install handoff) and SettingsScreen (scrolling update/privacy/guidance).
-- `android/app/src/main/java/local/agenteye/camera/` — CameraX session, capture geometry (crop maths), JPEG encoding; `LensSelection` (pure, JVM-tested lens policy), `LensPreferences` (`camera`/`lens` SharedPreferences factory) and `LensCameraSelector` (CameraX adapter and provider discovery; the experimental external-lens opt-in lives only here).
-- `android/app/src/main/java/local/agenteye/ui/` ? `MainActivity` (permissions, session commands, lifecycle) and `CaptureServiceLink` (binding and updater install preflight). Responsibility folders: `capture/` (Compose screen, controls, pure CameraStateHolder), `preview/` (stable AndroidView and PreviewFeed geometry/listeners), `pairing/` (card, pure countdown/copy policy, sensitive clipboard), `settings/`, `update/`, `privacy/` (secure local dialog), `theme/` (static system light/dark amber).
+- `android/app/src/main/java/local/agenteye/ui/` — `MainActivity` (lifecycle, service link, preview wiring) and `CaptureServiceLink` (binding and updater install preflight); the rest lives in the responsibility folders below.
+- `android/app/src/main/java/local/agenteye/ui/capture/` — capture screen: `CameraScreen`/`CameraControls` (Compose), `CaptureScreenModel` (the one owner of `CameraState`/`PairingState` and the 1 s countdown), `SessionStarter` (permission and Start flow), pure `CameraStateHolder` (snapshot to display state) and `CameraStatus` (status enum resolved from string resources).
+- `android/app/src/main/java/local/agenteye/ui/preview/` — `CameraPreview` (stable AndroidView) and `PreviewFeed`, a non-Compose geometry feed (display and layout listeners pushing rotation and ViewPort to the service while started).
+- `android/app/src/main/java/local/agenteye/ui/pairing/` — `PairingCard`, pure `PairingState` (countdown), `PairingCopy` (tap-time copy policy) and the sensitive `PairingClipboard`.
+- `android/app/src/main/java/local/agenteye/ui/privacy/` — secure local privacy-policy dialog.
+- `android/app/src/main/java/local/agenteye/ui/theme/` — static amber Material 3 light/dark theme (no dynamic color).
+- `android/app/src/main/java/local/agenteye/ui/settings/` — `SettingsActivity` (updater lifecycle and install handoff) and `SettingsScreen` (update panel, usage guidance and privacy-policy entry).
+- `android/app/src/main/java/local/agenteye/ui/update/` — `UpdatePanel` view and its pure `UpdatePresenter`.
+- `android/app/src/main/java/local/agenteye/camera/` — CameraX session, capture geometry (crop maths), JPEG encoding; `CaptureError` (the closed failure set); `LensSelection` (pure, JVM-tested lens policy), `LensPreferences` (`camera`/`lens` SharedPreferences factory) and `LensCameraSelector` (CameraX adapter and provider discovery; the experimental external-lens opt-in lives only here).
 - `android/app/src/main/java/local/agenteye/http/` — bounded request parser and `StillServer` routes.
 - `android/app/src/main/java/local/agenteye/network/` — Wi-Fi/LAN binding and pure subnet admission.
-- `android/app/src/main/java/local/agenteye/service/` — `CaptureService` session coordination, credential-free immutable `CaptureSnapshot`, and `SessionPower` locks.
-- `android/app/src/main/java/local/agenteye/ui/update/` — update panel view and its pure presenter.
+- `android/app/src/main/java/local/agenteye/service/` — `CaptureService` session coordination, credential-free immutable `CaptureSnapshot` (carrying a typed `CaptureError?`), and `SessionPower` locks.
 - `src/android/icons/` — canonical `agent-eye.svg`, `icon-assets.mjs` (restricted SVG to VectorDrawable plus sharp rendering), `generate-icons.mjs` (standard `runScript` CLI: writes by default, `--dry-run`, `--check` compares XML bytes and PNG pixels within 2/255), `icon-assets.test.mjs` and `play-store-512.png`. Generated, not hand-edited: `android/app/src/main/res/drawable/ic_launcher_{background,foreground,monochrome}.xml`, `mipmap-anydpi-v26` and `-v33` (adds monochrome) and legacy `mipmap-*dpi` PNGs for API 24-25. `ic_camera_notification.xml` is unchanged.
 - `src/android/releases/artifacts/fixtures/update-schema1/` — shared schema-1 update fixtures generated by `update-fixtures.mjs` from the real publisher; a Node test proves they match and the JVM tests consume them.
 - `src/script-run/` — `script-run.mjs`, the standard script wrapper (repo-root resolution, per-run redacted log, OK/FAILED line, v1.1.0). Deliberately ONE dependency-free file: the canonical copy is copied verbatim to other repos and extended through options only. Holds its tests and the repo-wide all-entry-points-from-tmpdir test.
@@ -42,9 +47,9 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `.tmp/` — ignored build inputs, verification artifacts and transient snapshots.
 
 The Kotlin package root is `android/app/src/main/java/local/agenteye/`.
-`ui` owns preview presentation and permissions; `service` owns session coordination and
+`ui` owns presentation, the Start permission flow and the display state (`ui/capture/`); `service` owns session coordination, `CaptureSnapshot` (the UI read model) and
 power locks; `camera` owns CameraX and JPEG encoding; `network` owns Wi-Fi selection and
-pure subnet admission; `http` owns bounded parsing and serving; `security` owns tokens and the pairing-code state machine (`PairingCodes`); `ui/pairing` presents pairing. `POST /pair` is the only route with a request body: `StillServer` supplies the route policy (`bodyLimit`) to the generic `HttpRequest.read` and routes to `PairHandler`, which owns the body shape (ASCII, `{"code":"dddddd"}`) and returns status plus body.
+pure subnet admission; `http` owns bounded parsing and serving; `security` owns tokens and the pairing-code state machine (`PairingCodes`); `ui/pairing` presents pairing. `camera` also owns `CaptureError`, the closed failure set carried by the snapshot and mapped to the `/status` wire code only in `CaptureService.statusJson`. `POST /pair` is the only route with a request body: `StillServer` supplies the route policy (`bodyLimit`) to the generic `HttpRequest.read` and routes to `PairHandler`, which owns the body shape (ASCII, `{"code":"dddddd"}`) and returns status plus body.
 Local JVM tests mirror these packages under `app/src/test/java/`.
 
 Self-update (user-initiated, outbound) lives under `selfupdate/`: `UpdateRuntime` (wiring, lazily
@@ -54,7 +59,7 @@ owned by `AgentEyeApplication`), `UpdateCoordinator` (state machine) and `Update
 `ReleasePolicy`, `GitHubReleaseSource`); `transport/` (`UpdateUrlPolicy`, `UpdateHttpClient`,
 `HttpsConnector`); `download/` (`ApkDownloader`, pure `ApkVerifier`, `AndroidApkInspector`);
 `storage/` (`UpdateStore`: paths, atomic write, cleanup, and the persisted `Backoff`; `RecordCodec`: record <-> map); `install/` (`PackageInstallerGateway` policy, `AndroidInstallerPort`,
-pure `InstallRecovery`, `InstallResultReceiver`). `ui/capture/CameraScreen.kt` presents capture controls around a stable FIT preview. `ui/settings/` and `ui/update/` (Compose panel, pure presenter) present updates. Tests mirror under `app/src/test/java/local/agenteye/selfupdate/**`
+pure `InstallRecovery`, `InstallResultReceiver`). `ui/settings/` and `ui/update/` (Compose panel, pure presenter) present updates. Tests mirror under `app/src/test/java/local/agenteye/selfupdate/**`
 and `ui/update/`, with fakes in `selfupdate/UpdateFakes.kt`. The signer pin is not hand-written in
 Kotlin: Gradle task `generateUpdatePinAsset` packages `signing-certificate.json` as `update-signer.txt`.
 
@@ -90,7 +95,7 @@ docs/                   living docs, runbooks, plans/, items/
 ```text
 android/app/src/main/java/local/agenteye/
 ├── AgentEyeApplication.kt   owns the lazy UpdateRuntime
-├── camera/          CameraX session, capture geometry, JPEG encoding, LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
+├── camera/          CameraX session, capture geometry, JPEG encoding, CaptureError (failure set), LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
 ├── http/            HttpRequest (bounded parser), StillServer (routes, POST /pair)
 ├── json/            StrictJson, JsonObject
 ├── network/         LAN binding, subnet policy
@@ -102,7 +107,7 @@ android/app/src/main/java/local/agenteye/
 │   ├── download/    ApkDownloader, ApkVerifier, AndroidApkInspector
 │   ├── storage/     UpdateStore, RecordCodec
 │   └── install/     PackageInstaller gateway, recovery, result receiver
-├── service/         CaptureService, SessionPower
+├── service/         CaptureService, CaptureSnapshot (UI read model), SessionPower
 └── ui/              MainActivity, CaptureServiceLink; capture/, preview/, pairing/, settings/, update/, privacy/, theme/
 ```
 
@@ -119,7 +124,7 @@ owns SDK discovery and the build-tools version used by both workflows and signin
 `signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 
-Structural review: 2026-10-25. No code file exceeds 800 lines.
+Structural review: 2026-10-25 (findings applied 2026-10-26: typed errors, status resources, ui/capture state owner). No code file exceeds 800 lines.
 Last full review: 2026-10-26
 
 ## Structural debt

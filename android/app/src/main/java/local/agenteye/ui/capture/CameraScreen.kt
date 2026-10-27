@@ -77,7 +77,7 @@ fun CameraScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    state.status,
+                    stringResource(state.status.text),
                     Modifier.weight(1f),
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 2,
@@ -114,7 +114,7 @@ private fun CameraFixture() {
         CameraScreen(
             CameraState(
                 true,
-                "Camera ready",
+                CameraStatus.Ready,
                 "http://192.168.1.10:8765",
                 canSwitch = true,
                 lens = Lens.BACK

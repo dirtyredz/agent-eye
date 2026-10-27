@@ -15,3 +15,6 @@ node_modules/
 *.keystore
 android/signing.local.json
 .release-sign.lock
+
+# Agent-run artifacts beside plans
+docs/plans/*.md.*

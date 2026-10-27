@@ -26,7 +26,7 @@ class CameraSession(
     context: Context,
     private val owner: LifecycleOwner,
     private var lens: Lens,
-    private val state: (Boolean, String?) -> Unit
+    private val state: (Boolean, CaptureError?) -> Unit
 ) : AutoCloseable {
     private val main = ContextCompat.getMainExecutor(context)
     private val encoder = Executors.newSingleThreadExecutor()
@@ -71,7 +71,7 @@ class CameraSession(
                     _: Exception
                 ) {
                     ready = false
-                    state(false, "camera_unavailable")
+                    state(false, CaptureError.CameraUnavailable)
                 }
             }
         }, main)
@@ -104,12 +104,12 @@ class CameraSession(
             cameraState?.observe(owner) { currentState ->
                 if (!closed.get() && !rebindPending) {
                     ready = currentState.type == CameraState.Type.OPEN && currentState.error == null
-                    state(ready, if (ready) null else "camera_unavailable")
+                    state(ready, if (ready) null else CaptureError.CameraUnavailable)
                 }
             }
         } catch (_: Exception) {
             ready = false
-            state(false, "camera_unavailable")
+            state(false, CaptureError.CameraUnavailable)
         }
     }
 
@@ -138,7 +138,7 @@ class CameraSession(
         if (next == lens || closed.get()) return
         lens = next
         ready = false
-        state(false, "camera_unavailable")
+        state(false, CaptureError.CameraUnavailable)
         rebindPending = true
         if (!busy.get()) bind()
     }
@@ -162,7 +162,7 @@ class CameraSession(
             (lastStart != Long.MIN_VALUE && now - lastStart < 1_000_000_000L) ||
             !busy.compareAndSet(false, true)
         ) {
-            result.completeExceptionally(IllegalStateException("camera_unavailable"))
+            result.completeExceptionally(IllegalStateException(CaptureError.CameraUnavailable.code))
             return result
         }
         lastStart = now
@@ -192,7 +192,7 @@ class CameraSession(
                                     _: Exception
                                 ) {
                                     result.completeExceptionally(
-                                        IllegalStateException("capture_failed")
+                                        IllegalStateException(CaptureError.CaptureFailed.code)
                                     )
                                 } finally {
                                     image.close()
@@ -201,14 +201,16 @@ class CameraSession(
                             }
                             override fun onError(exception: ImageCaptureException) {
                                 result.completeExceptionally(
-                                    IllegalStateException("capture_failed")
+                                    IllegalStateException(CaptureError.CaptureFailed.code)
                                 )
                                 captureFinished()
                             }
                         }
                     )
                 } catch (_: Exception) {
-                    result.completeExceptionally(IllegalStateException("capture_failed"))
+                    result.completeExceptionally(
+                        IllegalStateException(CaptureError.CaptureFailed.code)
+                    )
                     captureFinished()
                 }
             }

@@ -1,37 +1,36 @@
 package local.agenteye.ui.capture
 
+import local.agenteye.camera.CaptureError
 import local.agenteye.camera.Lens
 import local.agenteye.selfupdate.UpdatePhase
 import local.agenteye.service.CaptureSnapshot
 
 data class CameraState(
     val running: Boolean = false,
-    val status: String = "Connecting to camera service",
+    val status: CameraStatus = CameraStatus.Connecting,
     val address: String? = null,
     val canRequestStart: Boolean = false,
     val canSwitch: Boolean = false,
     val lens: Lens? = null
 )
 
-/** Pure presentation; being offline or losing camera readiness never removes Stop. */
+/**
+ * Pure snapshot -> display mapping; being offline or losing camera readiness never removes Stop.
+ * A [notice] (a start-flow outcome the service never saw) overrides the derived status.
+ */
 object CameraStateHolder {
-    fun present(snapshot: CaptureSnapshot?, visible: Boolean, phase: UpdatePhase): CameraState {
-        if (snapshot == null) return CameraState()
+    fun present(
+        snapshot: CaptureSnapshot?,
+        visible: Boolean,
+        phase: UpdatePhase,
+        notice: CameraStatus? = null
+    ): CameraState {
+        if (snapshot == null) return CameraState(status = notice ?: CameraStatus.Connecting)
         val installing =
             phase == UpdatePhase.Installing || phase == UpdatePhase.AwaitingConfirmation
-        val status = when {
-            !snapshot.running && installing -> "Update installation in progress"
-            snapshot.error == "session_start_failed" -> "Could not start. Press Start to retry."
-            !snapshot.running -> "Stopped"
-            snapshot.error == "capture_failed" -> "Capture failed. Try another snapshot."
-            snapshot.error == "bind_failed" -> "Wi-Fi connection failed. Reconnect to retry."
-            snapshot.error == "camera_unavailable" -> "Camera starting or unavailable"
-            snapshot.cameraReady -> "Camera ready"
-            else -> "Camera starting"
-        }
         return CameraState(
             running = snapshot.running,
-            status = status,
+            status = notice ?: status(snapshot, installing),
             address = snapshot.address,
             canRequestStart = visible && !snapshot.running && !installing,
             canSwitch = visible && snapshot.availableLenses.size > 1,
@@ -39,10 +38,23 @@ object CameraStateHolder {
         )
     }
 
-    fun canStart(
-        snapshot: CaptureSnapshot?,
-        visible: Boolean,
-        cameraGranted: Boolean,
-        phase: UpdatePhase
-    ) = cameraGranted && present(snapshot, visible, phase).canRequestStart
+    private fun status(snapshot: CaptureSnapshot, installing: Boolean): CameraStatus = when {
+        !snapshot.running && installing -> CameraStatus.Installing
+
+        !snapshot.running ->
+            if (snapshot.error == CaptureError.SessionStartFailed) {
+                CameraStatus.StartFailed
+            } else {
+                CameraStatus.Stopped
+            }
+
+        else -> when (snapshot.error) {
+            CaptureError.SessionStartFailed -> CameraStatus.StartFailed
+            CaptureError.CaptureFailed -> CameraStatus.CaptureFailed
+            CaptureError.BindFailed -> CameraStatus.BindFailed
+            CaptureError.WifiUnavailable -> CameraStatus.WifiUnavailable
+            CaptureError.CameraUnavailable -> CameraStatus.CameraUnavailable
+            null -> if (snapshot.cameraReady) CameraStatus.Ready else CameraStatus.Starting
+        }
+    }
 }
