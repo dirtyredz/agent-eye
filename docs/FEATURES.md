@@ -1,5 +1,9 @@
 # Features and verification status
 
+v1.3.3 / 8 combines pairing and controls in one content-sized panel so pairing text is not clipped,
+rounds the live FIT preview, applies consistent Settings card typography, and moves Privacy policy
+into About.
+
 v1.3.2 / 7 allows screenshots and recents thumbnails on the camera, Settings and privacy-policy
 screens so UI problems can be captured. This can include the two-minute, single-use pairing code;
 session tokens remain absent from the UI.

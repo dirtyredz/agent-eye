@@ -17,8 +17,8 @@ class CameraLayoutTest {
         assertEquals(normal.panelWidth, large.panelWidth)
         assertTrue(large.topHeight > normal.topHeight)
 
-        val shortPanel = cameraBodyGeometry(393, 700, 393, 180, 12, wide = false)
-        val wrappedPanel = cameraBodyGeometry(393, 700, 393, 240, 12, wide = false)
+        val shortPanel = cameraBodyGeometry(BodyMeasure(393, 700, 393, 180, 12, wide = false))
+        val wrappedPanel = cameraBodyGeometry(BodyMeasure(393, 700, 393, 240, 12, wide = false))
         assertEquals(508, shortPanel.previewHeight)
         assertEquals(448, wrappedPanel.previewHeight)
         assertEquals(460, wrappedPanel.panelY)

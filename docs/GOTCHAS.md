@@ -106,3 +106,8 @@ uses the non-retrying lookup. Never reintroduce `releases/tags/` for release-pip
   globally when changing this adapter.
 
 - **Compose pairing:** never save digits or copy rendered text. PairingClipboard rereads the service at tap time. Clear presentation on Activity stop/disconnect; countdown is not an accessibility live region. Screens and dialogs no longer block screenshots (DECISIONS 2026-10-27); `tooling/window-policy.test.mjs` fails the build if FLAG_SECURE or SecureOn returns.
+- **Rounded FIT preview:** CameraX 1.5.3 exposes transforms but not the rendered FIT image rectangle, so
+  `RoundedPreviewFrame` reads `PreviewView`'s single internal implementation child, its view matrix
+  and offsets. A CameraX upgrade or implementation-mode change can alter that child structure or
+  transform contract. The lookup then fails safe by drawing without the rounded clip; verify the
+  live preview's corners and letterboxing whenever CameraX or `PreviewView.implementationMode` changes.

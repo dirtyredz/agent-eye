@@ -51,7 +51,8 @@ fun PairingCard(state: PairingState, address: String?, onCopy: () -> Unit, onRen
                             state.seconds % 60
                         ),
                         Modifier.padding(start = AgentEyeSpacing.compact),
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
+                        fontFamily = FontFamily.Monospace
                     )
                 }
             }

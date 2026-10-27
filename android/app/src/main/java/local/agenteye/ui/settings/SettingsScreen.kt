@@ -37,6 +37,8 @@ import local.agenteye.R
 import local.agenteye.ui.privacy.PrivacyPolicyDialog
 import local.agenteye.ui.theme.AgentEyeSpacing
 import local.agenteye.ui.theme.AgentEyeTheme
+import local.agenteye.ui.theme.SettingsBody
+import local.agenteye.ui.theme.SettingsCardTitle
 import local.agenteye.ui.update.UpdateAction
 import local.agenteye.ui.update.UpdatePanel
 import local.agenteye.ui.update.UpdateView
@@ -73,14 +75,8 @@ fun SettingsScreen(view: UpdateView, onBack: () -> Unit, onAction: (UpdateAction
                         Modifier.padding(AgentEyeSpacing.screen),
                         verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)
                     ) {
-                        Text(
-                            stringResource(R.string.about),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            stringResource(R.string.usage_guidance),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        SettingsCardTitle(stringResource(R.string.about))
+                        SettingsBody(stringResource(R.string.usage_guidance))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         TextButton(
                             onClick = { privacy = true },

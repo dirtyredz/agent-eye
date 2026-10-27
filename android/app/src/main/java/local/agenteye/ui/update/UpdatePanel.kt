@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -17,6 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import local.agenteye.R
 import local.agenteye.ui.theme.AgentEyeSpacing
+import local.agenteye.ui.theme.SettingsBody
+import local.agenteye.ui.theme.SettingsCardTitle
 
 @Composable
 fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
@@ -25,17 +26,14 @@ fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
             Modifier.padding(AgentEyeSpacing.screen),
             verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section)
         ) {
-            Text(stringResource(R.string.updates), style = MaterialTheme.typography.titleLarge)
-            Text(view.version, style = MaterialTheme.typography.bodyMedium)
-            Text(view.status, style = MaterialTheme.typography.bodyMedium)
+            SettingsCardTitle(stringResource(R.string.updates))
+            SettingsBody(view.version)
+            SettingsBody(view.status)
             view.progress?.let {
                 LinearProgressIndicator(progress = {
                     it / 100f
                 }, modifier = Modifier.fillMaxWidth())
-                Text(
-                    stringResource(R.string.download_percent, it),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                SettingsBody(stringResource(R.string.download_percent, it))
             }
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(AgentEyeSpacing.section),
@@ -48,10 +46,7 @@ fun UpdatePanel(view: UpdateView, onAction: (UpdateAction) -> Unit) {
                     TextButton(onClick = { onAction(button.action) }) { Text(button.label) }
                 }
             }
-            Text(
-                stringResource(R.string.update_disclosure),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SettingsBody(stringResource(R.string.update_disclosure))
         }
     }
 }

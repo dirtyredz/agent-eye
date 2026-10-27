@@ -6,7 +6,7 @@
   screenshot or recents thumbnail. That exposure is accepted because the code expires after two
   minutes, works only once and can be exchanged only by a client on the supported private LAN.
   Session tokens are still never displayed.
-- **2026-10-27 — Content-sized unified camera panel and FIT-image rounding.** Pairing and
+- **2026-10-27 — Content-sized unified camera panel and FIT-image rounding (1.3.3 / 8).** Pairing and
   Start/Stop/lens controls share one bottom panel in portrait and one trailing panel in landscape,
   with a divider between sections. The panel measures its content instead of reserving 216dp, and
   the preview receives the remaining space. The live CameraX implementation is clipped at its
