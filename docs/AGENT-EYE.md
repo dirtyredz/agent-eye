@@ -8,7 +8,7 @@ dependencies beyond Android.
 ## Build and fast gate
 
 Use JDK 21, Node 22 and Android SDK platform 36/build-tools 35.0.0. Dependencies are pinned in
-`android/build.gradle.kts` and `android/app/build.gradle.kts`. Use the wrapper only.
+`android/gradle/libs.versions.toml` (library/plugin versions) and the Gradle scripts (SDK/tool configuration). Use the wrapper only.
 The owner authorized build dependency downloads from services.gradle.org, Google Maven
 (dl.google.com / maven.google.com), Maven Central and plugins.gradle.org. Keep caches in the
 normal user Gradle directory. SDK installs require a missing required platform/build-tools version.
@@ -89,6 +89,8 @@ least 24. Open **Agent Eye**, grant camera access, choose notification permissio
 **Start** while the app is visible. The app shows the preview, camera status, current base URL
 and a six-digit pairing code with a countdown (the token itself is never shown). Notification denial is handled separately from camera authorization. Stop from the
 Activity or ongoing notification. Force-stop/reboot require reopening and pressing Start.
+
+In v1.3.0 the preview is FIT/letterboxed: the full shared camera frame is visible, independent of screen shape. Controls occupy stable bottom/trailing bars. Tap the Settings gear for manual updates, offline privacy and usage guidance; Back restores preview in the same session. System light/dark follows the amber theme. A running session retains Stop even when camera or Wi-Fi fails.
 
 On the PC, use the displayed URL, not a guessed prefix. The fixture `192.168.68.0/24` is not
 configuration. Pair once per phone session with the code shown on the phone (valid about two
@@ -199,6 +201,17 @@ Owner phone procedure; record phone/API, versions, APK size, network, taps and e
    requests occur at launch, Start or foreground.
 6. Launcher masks, themed monochrome icon, small-icon legibility, gesture and 3-button navigation,
    large text.
+
+## Compose acceptance (v1.3.0) ? NOT RUN
+
+Use the existing pair/status/shot procedure below. Record phone/API and the signed minified build.
+
+- Portrait, landscape and 180-degree flips: frame an object with both edges visible, take a shot and compare both edges and orientation (dk-d5e272e1). Dark bars are intentional; JPEG must not inherit the screen aspect ratio. Front preview is mirrored; front JPEG text stays readable/unmirrored.
+- Rotate during a shot; token/server survive and readiness recovers. Wait through countdown ticks and Wi-Fi status changes: preview must not restart or resize. Switch lenses live and stopped; check saved direction after restart.
+- Check one-tap Start/Stop and Settings; deny camera versus notifications separately. Return from permission UI after backgrounding: no unexpected Start. Stop remains usable during Wi-Fi/camera failure.
+- Leading-zero Copy, New code, expiry and single-use renewal; API <33 app toast versus API 33+ platform confirmation. Stop/disconnect/background clears displayed code. TalkBack does not announce every tick.
+- Main ? Settings ? Back and screen-off capture preserve the session. Opening Settings is offline/local; explicit update, cancellation, permission return, Continue installation and recovery retain their actions. Installation stops capture and requires explicit Start afterward.
+- Both themes, font/display size changes, narrow multi-window, cutouts and gesture/three-button navigation: controls reachable, secondary content scrolls, code/actions do not clip. Privacy text scrolls/selects offline; screenshots and recents remain blocked, including the dialog.
 
 ## Physical acceptance — NOT RUN (no phone attached)
 

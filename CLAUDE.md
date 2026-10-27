@@ -17,6 +17,7 @@ project-specific (TVs etc.) belongs here; consumers live in their own repos.
   afterward. Icon resources are generated: also run `node src/android/icons/generate-icons.mjs --check`
   (CI runs it too); fix drift with the same command without `--check`.
   See `docs/ANDROID-DISTRIBUTION.md` for the disposable-key smoke and owner operations.
+- UI plan of record: `docs/plans/compose-ui-redesign.md`, including section 8 whole-frame FIT override.
 - Plan of record: `docs/plans/agent-eye-app.md` (written as "TV Eye" inside tv-tuneup; names and
   paths are superseded by this repo — see the note at its top).
 

@@ -25,8 +25,7 @@
   A proxy/router rewriting peer addresses can conceal external origin. Do not treat network
   security config or the INTERNET permission as a destination firewall.
 - Edge-to-edge is enforced at targetSdk 35+: the framework Activity no longer insets content, so the
-  root view must apply `systemBars()|displayCutout()` insets as padding (MainActivity does). Anything
-  new that bypasses the root container must handle insets itself.
+  Compose camera root applies safeDrawing insets, and Settings uses Scaffold insets. Do not add a second Activity/View inset listener. Both Activities call enableEdgeToEdge on creation and handled configuration changes.
 - Pairing codes are only 20 bits: security rests on the 2-minute life, 5 attempts per code and the
   per-client rate limit, on top of subnet admission. Never log codes or tokens; the `--code` argv value
   and 64-hex tokens are redacted by pattern in `snapshot.mjs` logs. Re-pair after every phone Start.
@@ -87,9 +86,9 @@ closed on more than one). `draftId` uses it too. Never reintroduce `releases/tag
 - **Windows:** `File.renameTo` will not replace an existing file; tests inject a rename.
 - **Rotation (v1.1.1).** `MainActivity` declares `configChanges`, so turning the phone never recreates
   it or touches the service-held session (token, pairing code, camera). Rotation reaches CameraX only
-  as `targetRotation`, pushed from a `DisplayManager` listener; never read it from `PreviewView.display`
+  as `targetRotation`, pushed by PreviewFeed from a started-only `DisplayManager` listener; never read it from `PreviewView.display`
   (null before the view is attached, which made stills portrait-only). Preview and still share one
-  `UseCaseGroup` `ViewPort` taken from the `PreviewView`, so the still has the preview's field of view;
+  `UseCaseGroup` FIT `ViewPort` taken from the `PreviewView`. FIT_CENTER is required in v1.3.0: changing it to FILL reintroduces screen-aspect snapshot cropping;
   `JpegEncoder` applies `cropRect` itself if CameraX leaves the crop as metadata. Rebind only when the
   surface or view port changes: needless rebinds race `takePicture` and leave `cameraReady:false`.
   Physical-device acceptance (portrait, landscape, 180 flip, rotate mid-session) is still owed.
@@ -104,3 +103,5 @@ closed on more than one). `draftId` uses it too. Never reintroduce `releases/tag
 - CameraX 1.5.3 marks external lens facing experimental. The opt-in is confined to
   `camera/LensCameraSelector.kt`; back/front selection uses the stable API. Do not suppress lint
   globally when changing this adapter.
+
+- **Compose pairing:** never save digits or copy rendered text. PairingClipboard rereads the service at tap time. Clear presentation on Activity stop/disconnect; countdown is not an accessibility live region. Privacy dialogs explicitly use SecureOn.

@@ -2,7 +2,7 @@
 id: dk-0cec3e0e
 type: task
 created: 2026-10-26
-status: todo
+status: done
 since: 2026-10-26
 area: android
 priority: P2

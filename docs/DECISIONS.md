@@ -1,5 +1,9 @@
 # Decisions
 
+- **2026-10-26 ? Compose Material 3, whole-frame FIT (1.3.0 / 5).** Follow Command Deck's static amber system light/dark theme and default typography; no dynamic color, navigation framework, extended icon pack or custom fonts. Keep two Activities and service-owned capture. ComponentActivity propagates handled configuration changes to Compose; PreviewFeed owns started-only display/layout listeners. Pure typed capture/pairing presentation keeps credentials out of saved state. Retain shared viewport ownership pending dk-afb1348d.
+  Owner section 8 overrides the plan's full-bleed assumption: FIT_CENTER produces ViewPort.FIT, preserving the shared camera frame instead of cropping to screen aspect. Stable bottom/trailing control bars keep the frame visible, with secondary content scrolling at large text sizes. CameraSession.attach and JPEG encoding are unchanged. Front preview remains mirrored and front JPEG unmirrored, as before; matching refers to field of view. Measured unsigned minified APK cost: 1,074,018 ? 2,121,596 bytes (+1,047,578; +97.54%). R8/resource shrinking remain enabled; no blanket keep rules.
+
+
 - **2026-10-26 — Split Settings from capture controls; persist logical lens direction (1.2.0 / 4).**
   A separate non-exported SettingsActivity keeps update/privacy/guidance out of the capture screen.
   It uses the same in-place configChanges policy and a scrolling inset-aware layout. Updater
@@ -50,12 +54,12 @@
 - **2026-10-25 — General-purpose, local-only.** App Agent Eye, package `local.agenteye`,
   project `android/`, client `src/camera/`. No consumer-specific camera or control logic.
   `AGENT_EYE_TOKEN` and `.tmp/agent-eye/` replace the historical TV-specific names too.
-- **Pinned toolchain.** AGP 8.13.2, Gradle 8.13, Kotlin 2.3.10, CameraX 1.5.3;
+- **Pinned toolchain.** AGP 8.13.2, Gradle 8.13, Kotlin 2.3.21, CameraX 1.5.3;
   min/compile/target SDK 24/36/36, Java and Kotlin bytecode 17, build JDK 21.
-  Core KTX 1.16.0, lifecycle-service 2.8.1, JUnit 4.13.2. Node 22 as directed by the
+  Compose BOM 2026.03.01, Activity Compose 1.12.4, Core KTX 1.17.0, lifecycle-service 2.10.0, JUnit 4.13.2. Node 22 as directed by the
   implementation brief (supersedes the plan's Node 24 preparation line).
   Gradle 8.13's published binary ZIP SHA-256 is pinned in the wrapper properties.
-  Kotlin uses the typed `compilerOptions` DSL to retain JVM 17 compatibility on Kotlin 2.3.10.
+  Kotlin uses the typed `compilerOptions` DSL to retain JVM 17 compatibility on Kotlin 2.3.21.
 - **Dependencies.** Kotlin and required AndroidX/CameraX are permitted platform components.
   No cloud, advertising, analytics, crash reporting or unrelated runtime SDKs.
   Unsigned CI artifacts, attended local signing and future Play preparation supersede debug-only distribution.

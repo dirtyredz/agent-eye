@@ -5,9 +5,8 @@ ImageCapture → authenticated private Wi-Fi HTTP → transient PC JPEG → agen
 Any action taken after inspection belongs to the consuming application and its authorization rules.
 
 The camera Activity owns no capture lifecycle. It binds to the service to attach/detach Preview and pushes the display
-rotation and the preview ViewPort (DisplayManager + layout listeners); Preview and ImageCapture are
-bound as one UseCaseGroup so the still matches the preview framing. The Activity declares
-`configChanges` and is not recreated on rotation. ImageCapture remains bound when the Activity stops. The service starts only on explicit Start,
+rotation and the FIT preview ViewPort through `ui/preview/PreviewFeed` (started-only DisplayManager and layout listeners). Preview and ImageCapture share one UseCaseGroup. FIT retains the shared camera frame, independent of screen aspect ratio; the owner sees the full delivered frame letterboxed. JPEG crop metadata handling is retained for shared-use-case alignment, never a screen-shaped crop. The Activity declares
+`configChanges` and is not recreated on rotation. Preview detachment can rebind to still-only capture, preserving the service-owned session and last framing. The service starts only on explicit Start,
 posts an ongoing notification with Stop, acquires session power locks, creates a fresh token,
 and observes Wi-Fi. Stop tears down listener/connections, pending captures, camera, token and locks.
 The service is not sticky and no boot receiver is present.
@@ -23,8 +22,7 @@ Pairing: the service owns a `PairingCodes` state machine (security package) next
 token. It holds one six-digit SecureRandom code valid two minutes and usable once; five wrong
 guesses burn it, a per-client sliding window (10 requests/minute) throttles guessing, and the
 comparison is constant-time. `POST /pair` is the only unauthenticated route and sits behind the
-same subnet admission and connection limits; `StillServer` routes it to `PairHandler` (body checks, code-for-token exchange) and it returns the token. The Activity's `PairingPanel`
-polls the code once a second for the countdown. Stop discards the gate with the token. The PC
+same subnet admission and connection limits; `StillServer` routes it to `PairHandler` (body checks, code-for-token exchange) and it returns the token. Main polls the live code once per second while started; pure `PairingStateHolder` calculates the display countdown. Stop discards the gate with the token. The PC
 `pair` command stores the token in an owner-only `.tmp/agent-eye/token.json`.
 
 The HTTP server has four connection slots, an 8 KiB strict header parser and a scheduled socket
@@ -50,11 +48,11 @@ server closure: it preserves rotation, ViewPort, token, pairing code and capture
 Rebinding waits for an in-flight still callback to finish; readiness is false until the new
 camera opens. JPEG encoding applies CameraX rotation/crop without horizontal mirroring.
 
-The main screen has preview, Start/Stop, lens switching, pairing (Copy/New code) and status.
-PairingPanel resolves Copy at tap time, rejects inactive/expired codes, and marks ClipData
+The Compose main screen has one factory-owned PreviewView, Start/Stop, lens switching, pairing (Copy/New code) and typed status. A credential-free CaptureSnapshot feeds pure CameraStateHolder; binding differs from stopped, and Stop survives camera/network failures. Permission returns recheck visibility, camera grant and the latest install phase. Pairing digits are Activity-owned, never saved, and cleared on stop/disconnect. Stable control bars reserve space around the whole-frame preview; status/countdown cannot resize it.
+PairingClipboard resolves Copy at tap time, rejects inactive/expired codes, and marks ClipData
 sensitive. Only API <33 gets an app toast; Android 13+ provides its own clipboard confirmation.
 SettingsActivity under ui/settings owns a scrollable update/privacy/guidance screen and has
-its own insets and configChanges declaration. Both activities attach the updater on resume
+a Material Scaffold applying insets once and its existing configChanges declaration. Both ComponentActivities forward configuration to Compose and refresh system-bar styling; Main also refreshes settled preview geometry. Static amber light/dark schemes follow the system. Both activities attach the updater on resume
 and detach on pause, avoiding overlapping owners during navigation. Settings binds the service
 only to stop capture before install. Rotation does not recreate either activity; leaving the
 camera screen detaches preview while the service keeps still capture and its last geometry.

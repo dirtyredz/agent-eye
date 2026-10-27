@@ -1,5 +1,12 @@
 # Features and verification status
 
+v1.3.0 / 5 migrates camera, pairing, Settings, updater and privacy presentation to Compose Material 3. Static amber light/dark follows the system. The stable FIT preview shows the whole shared camera frame with letterboxing; snapshots are not cropped to the screen ratio. Start/Stop stays visible, including while camera/Wi-Fi is unavailable. Typed state distinguishes service binding and stopped; permission returns recheck install and visibility. Pairing Copy rereads live credentials, and digits clear when Main stops. Settings preserves manual-only update actions and the complete network disclosure. Portrait, landscape and large-text fixture previews are included.
+
+The v1.3.0 offline fast gate passed: npm ci; 155 Node tests; icon check; ktlint; debug/release APKs; release AAB; 116 JVM tests; release lint (0 errors, 19 warnings). Android gate took 6m 27s. Equivalent unsigned minified APK grew from 1,074,018 to 2,121,596 bytes: +1,047,578 bytes (+97.54%, about 1.00 MiB).
+
+Phone acceptance remains pending, including dk-d5e272e1's edge-to-edge object test. The FIT implementation addresses screen-ratio cropping, but this does not certify device framing. See the implementation verification record in docs/plans/compose-ui-verification.md.
+
+
 v1.2.0 / 4 adds available-lens switching on the camera screen (back/front/external logical
 directions, saved locally across restarts), sensitive clipboard Copy for the active pairing
 code, and a separate Settings screen for updates, privacy and operating guidance. Switching
