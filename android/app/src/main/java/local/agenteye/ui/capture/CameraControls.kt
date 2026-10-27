@@ -2,6 +2,7 @@ package local.agenteye.ui.capture
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -33,7 +34,8 @@ fun CameraControls(state: CameraState, onToggle: () -> Unit, onSwitch: () -> Uni
             Button(
                 onClick = onToggle,
                 enabled = state.running || state.canRequestStart,
-                modifier = Modifier.heightIn(min = AgentEyeSpacing.touchTarget)
+                modifier = Modifier.heightIn(min = AgentEyeSpacing.touchTarget),
+                contentPadding = PaddingValues(horizontal = AgentEyeSpacing.content)
             ) {
                 Text(stringResource(if (state.running) R.string.stop else R.string.start))
             }
@@ -48,7 +50,8 @@ fun CameraControls(state: CameraState, onToggle: () -> Unit, onSwitch: () -> Uni
             OutlinedButton(
                 onClick = onSwitch,
                 enabled = state.canSwitch,
-                modifier = Modifier.heightIn(min = AgentEyeSpacing.touchTarget)
+                modifier = Modifier.heightIn(min = AgentEyeSpacing.touchTarget),
+                contentPadding = PaddingValues(horizontal = AgentEyeSpacing.content)
             ) {
                 Text(stringResource(R.string.switch_camera, lens))
             }

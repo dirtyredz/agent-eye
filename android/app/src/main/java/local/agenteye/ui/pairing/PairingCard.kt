@@ -3,6 +3,7 @@ package local.agenteye.ui.pairing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,7 +34,10 @@ fun PairingCard(state: PairingState, address: String?, onCopy: () -> Unit, onRen
         tonalElevation = 2.dp
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(AgentEyeSpacing.content),
+            Modifier.fillMaxWidth().padding(
+                horizontal = AgentEyeSpacing.content,
+                vertical = AgentEyeSpacing.compact
+            ),
             verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.compact)
         ) {
             Text(stringResource(R.string.pairing_code), style = MaterialTheme.typography.labelLarge)
@@ -68,7 +72,8 @@ fun PairingCard(state: PairingState, address: String?, onCopy: () -> Unit, onRen
                         modifier = Modifier.sizeIn(
                             minWidth = AgentEyeSpacing.touchTarget,
                             minHeight = AgentEyeSpacing.touchTarget
-                        )
+                        ),
+                        contentPadding = PaddingValues(horizontal = AgentEyeSpacing.compact)
                     ) {
                         Text(stringResource(R.string.copy))
                     }
@@ -84,17 +89,23 @@ fun PairingCard(state: PairingState, address: String?, onCopy: () -> Unit, onRen
                     }
                 }
             }
-            Text(
-                stringResource(
-                    if (state.live) R.string.pairing_single_use else R.string.pairing_idle
-                ),
-                style = MaterialTheme.typography.bodySmall
-            )
-            SelectionContainer {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(AgentEyeSpacing.compact),
+                verticalArrangement = Arrangement.spacedBy(AgentEyeSpacing.compact),
+                itemVerticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    address ?: stringResource(R.string.wifi_guidance),
+                    stringResource(
+                        if (state.live) R.string.pairing_single_use else R.string.pairing_idle
+                    ),
                     style = MaterialTheme.typography.bodySmall
                 )
+                SelectionContainer {
+                    Text(
+                        address ?: stringResource(R.string.wifi_guidance),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }
