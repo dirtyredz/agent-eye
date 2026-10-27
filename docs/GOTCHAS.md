@@ -105,4 +105,4 @@ uses the non-retrying lookup. Never reintroduce `releases/tags/` for release-pip
   `camera/LensCameraSelector.kt`; back/front selection uses the stable API. Do not suppress lint
   globally when changing this adapter.
 
-- **Compose pairing:** never save digits or copy rendered text. PairingClipboard rereads the service at tap time. Clear presentation on Activity stop/disconnect; countdown is not an accessibility live region. Privacy dialogs explicitly use SecureOn.
+- **Compose pairing:** never save digits or copy rendered text. PairingClipboard rereads the service at tap time. Clear presentation on Activity stop/disconnect; countdown is not an accessibility live region. Screens and dialogs no longer block screenshots (DECISIONS 2026-10-27); `tooling/window-policy.test.mjs` fails the build if FLAG_SECURE or SecureOn returns.

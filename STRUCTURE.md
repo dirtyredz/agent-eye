@@ -15,7 +15,7 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `src/android/signing/artifacts/` — APK (`apk-signing.mjs`) and AAB (`bundle-signing.mjs`) inspection, signing and verification.
 - `src/android/signing/vault/` — 1Password DesktopAuth adapter (`vault.mjs`, documents the `error.stage` contract), vault creation (`vault-setup.mjs`), config lookup (`signing-config.mjs`: locates `signing.local.json`, checkout then main worktree), repair (`vault-maintenance.mjs`) and the default account (`owner-account.mjs`).
 - `src/android/signing/keys/` — key custody: isolated key directories (`key-material.mjs`), generation and recovery (`key-provisioning.mjs`) and `provision-flow.mjs` (vault then key).
-- `src/android/tooling/` — Android SDK/tool discovery, bounded secret-redacting subprocess execution (`process.mjs`) and the workflow guard test (no bare `sdkmanager` in `.github/workflows/`).
+- `src/android/tooling/` — Android SDK/tool discovery, bounded secret-redacting subprocess execution (`process.mjs`) and repo guard tests: `workflows.test.mjs` (no bare `sdkmanager` in `.github/workflows/`) and `window-policy.test.mjs` (Kotlin sources never re-add FLAG_SECURE/SecureOn).
 - `android/app/src/main/java/local/agenteye/selfupdate/` — user-initiated GitHub self-update: `contract/` (leaf release vocabulary), `release/` (policy, discovery), `transport/` (URL policy, bounded HTTPS), `download/` (transfer, verification), `storage/` (private files and records), `install/` (PackageInstaller sessions and recovery); details below.
 - `android/app/src/main/java/local/agenteye/json/` — neutral strict JSON: `StrictJson` parser/writer and the typed `JsonObject` view (one decode error, `StrictJson.Invalid`).
 - `android/app/src/main/java/local/agenteye/security/` — session token, `PairingCodes` state machine and `PairHandler` (the `POST /pair` body checks and code-for-token exchange).
@@ -119,7 +119,7 @@ or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
 `artifacts/contract.mjs` owns phase-specific asset sets and shared unsigned-JAR checks.
 APK and AAB verification remain separate under `signing/artifacts/`; `tooling/android-tools.mjs`
 owns SDK discovery and the build-tools version used by both workflows and signing;
-`tooling/workflows.test.mjs` guards both workflows against PATH-based `sdkmanager` calls.
+`tooling/workflows.test.mjs` guards both workflows against PATH-based `sdkmanager` calls; `tooling/window-policy.test.mjs` guards the screenshot policy.
 `signing/vault/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` in the checkout only (`setup-vault`); `signing/vault/signing-config.mjs` owns `CONFIG_FILE` and `resolveSigningConfigPath`, which every read-only lookup (release-sign, inspect, cleanup, key commands) uses to find it in the checkout, else the main worktree; `signing/keys/provision-flow.mjs` runs `provision` = vault then key; the default 1Password account lives alone in `signing/vault/owner-account.mjs`. `cli/command-names.mjs` is the single owner/CI command set. Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
 `signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
