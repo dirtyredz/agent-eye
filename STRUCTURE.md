@@ -119,7 +119,7 @@ Release `cli/cli.mjs` parses flags without loading execution adapters on dry-run
 `cli/commands.mjs` dispatches to `cli/ci-commands.mjs` (tag validation, staging and drafts)
 or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
 `local/release-sign.mjs` owns transaction ordering; `local/local-release.mjs` assembles
-`checkout.mjs`, `draft-verification.mjs`, `retry-cache.mjs` and `release-lock.mjs`.
+`checkout.mjs`, `draft-verification.mjs`, `retry-cache.mjs` (resume only), `signed-bundle.mjs` (sign and verify) and `release-lock.mjs`.
 `artifacts/contract.mjs` owns release names, phase-specific asset sets and the manifest schema.
 APK and AAB verification remain separate under `signing/artifacts/`; `tooling/android-tools.mjs`
 owns SDK discovery and the build-tools version used by both workflows and signing;
@@ -138,11 +138,8 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352).
-- **Duplicated mechanics (P1):** the SHA256SUMS format and
-  `release.json` literals in release tooling (dk-d31136f0).
 - **Wide coordinators:** `CaptureService` (dk-e3c7da36), GitHub
-  knowledge leaking out of the `github()` adapter (dk-67c7a246, dk-782342ab), `retry-cache.mjs`
-  (dk-d31136f0), the release CLI command spread (dk-0e25e219).
+  provenance still in the `github()` adapter (dk-782342ab), the release CLI command spread (dk-0e25e219).
 - **Smaller seams (P2/P3):** dk-bed2beb9, dk-1a0ea30f, dk-7fe1491b, dk-de2486c6, dk-02d3e16c,
   dk-25aafecb, dk-48064578, dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
