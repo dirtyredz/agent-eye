@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
-import { resolveSigningConfigPath } from './signing-config.mjs';
+import { gitCommonDir, resolveSigningConfigPath } from './signing-config.mjs';
 
 const root = resolve('/work/tag-checkout');
 const main = resolve('/work/main');
@@ -25,4 +25,11 @@ test('error names both paths', async () => {
 test('error without git still names the checkout path', async () => {
   await assert.rejects(resolveSigningConfigPath(root, { exists: async () => false, commonDir: async () => { throw new Error('no git'); } }),
     e => e.message.includes(local) && e.message.includes('unavailable'));
+});
+test('git common dir lookup goes through the injected run adapter', async () => {
+  const calls = [];
+  const run = async (file, args, options) => { calls.push([file, args, options.cwd]); return { code: 0, stdout: `${common}
+`, stderr: '' }; };
+  assert.equal(await resolveSigningConfigPath(root, { exists: async p => p === mainCfg, commonDir: gitCommonDir(run) }), mainCfg);
+  assert.deepEqual(calls, [['git', ['rev-parse', '--git-common-dir'], root]]);
 });

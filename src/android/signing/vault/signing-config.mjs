@@ -3,22 +3,16 @@
 // Rule: read-only lookups (release-sign, inspect, cleanup, key commands) resolve checkout -> main worktree
 // via resolveSigningConfigPath; setup-vault/provision deliberately read and write the checkout-local file only.
 import { access } from 'node:fs/promises';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { run as defaultRun } from '../../tooling/process.mjs';
 
 export const CONFIG_FILE = 'android/signing.local.json';
 
-const execFileAsync = promisify(execFile);
-
 const defaultExists = path => access(path).then(() => true, () => false);
 
-async function defaultCommonDir(root) {
-  const { stdout } = await execFileAsync('git', ['rev-parse', '--git-common-dir'], { cwd: root });
-  return stdout.trim();
-}
+export const gitCommonDir = (run = defaultRun) => async root => (await run('git', ['rev-parse', '--git-common-dir'], { cwd: root, timeout: 10000 })).stdout.trim();
 
-export async function resolveSigningConfigPath(root, { exists = defaultExists, commonDir = defaultCommonDir } = {}) {
+export async function resolveSigningConfigPath(root, { exists = defaultExists, commonDir = gitCommonDir() } = {}) {
   const local = join(root, CONFIG_FILE);
   if (await exists(local)) return local;
   let main = null;
