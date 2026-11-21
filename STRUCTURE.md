@@ -15,8 +15,8 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `src/android/shared/` — leaf modules: `assert.mjs` (`requireThat`, `hex`), `release-identity.mjs` (application id, SDK, version shape, artifact identity), `signing-policy.mjs` (`PASS_ENV`, certificate pin check, unsigned-archive check), `digest.mjs`. Imports only Node built-ins and itself (guarded).
 - `src/android/signing/artifacts/` — APK (`apk-signing.mjs`) and AAB (`bundle-signing.mjs`) inspection, signing and verification.
 - `src/android/signing/vault/` — 1Password DesktopAuth adapter (`vault.mjs`, documents the `error.stage` contract), vault creation (`vault-setup.mjs`), config lookup (`signing-config.mjs`: locates `signing.local.json`, checkout then main worktree), repair (`vault-maintenance.mjs`) and the default account (`owner-account.mjs`).
-- `src/android/signing/keys/` — key custody: isolated key directories (`key-material.mjs`), generation and recovery (`key-provisioning.mjs`) and `provision-flow.mjs` (vault then key).
-- `src/android/tooling/` — Android SDK/tool discovery and bounded secret-redacting subprocess execution (`process.mjs`).
+- `src/android/signing/keys/` — key custody: isolated key directories (`key-material.mjs`), generation and recovery (`key-provisioning.mjs`), keytool inspection (`key-inspection.mjs`: `keyCertificate`) and `provision-flow.mjs` (vault then key).
+- `src/android/tooling/` — Android SDK/tool discovery, the Gradle `releaseTools` runner (`release-tools.mjs`) and bounded secret-redacting subprocess execution (`process.mjs`).
 - `src/android/guards/` — repo guard tests: `workflows.test.mjs` (no bare `sdkmanager` in `.github/workflows/`), `window-policy.test.mjs` (Kotlin sources never re-add FLAG_SECURE/SecureOn) and `package-boundaries.test.mjs` (table-driven Kotlin package-dependency rules; add a rule per boundary in its table).
 - `android/app/src/main/java/local/agenteye/selfupdate/` — user-initiated GitHub self-update: `contract/` (leaf release vocabulary), `release/` (policy, discovery), `transport/` (URL policy, bounded HTTPS), `download/` (transfer, verification), `storage/` (private files and records), `install/` (PackageInstaller sessions and recovery); details below.
 - `android/app/src/main/java/local/agenteye/json/` — neutral strict JSON: `StrictJson` parser/writer and the typed `JsonObject` view (one decode error, `StrictJson.Invalid`).
@@ -80,7 +80,7 @@ src/
     │   │   └── fixtures/  shared update-schema1 fixtures (Node and JVM tests)
     │   ├── cli/         CLI parsing and CI/owner commands
     │   ├── github/      release API, draft lookup and Actions provenance
-    │   ├── local/       owner transaction, release tools, local checks/cache/lock
+    │   ├── local/       owner transaction, local checks/cache/lock
     │   ├── smoke/       signing-smoke.mjs, the disposable-key integration check
     │   └── signing-certificate.json
     ├── signing/

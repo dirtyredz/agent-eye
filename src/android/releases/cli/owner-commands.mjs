@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { certificate } from '../../shared/signing-policy.mjs';
 import { setup } from './owner-setup.mjs';
 import { releaseSign } from '../local/release-sign.mjs';
-import { resolveReleaseTools } from '../local/release-tools.mjs';
+import { resolveReleaseTools } from '../../tooling/release-tools.mjs';
 import { localRelease } from '../local/local-release.mjs';
 import { setupVault } from '../../signing/vault/vault-setup.mjs';
 import { provisionFlow } from '../../signing/keys/provision-flow.mjs';

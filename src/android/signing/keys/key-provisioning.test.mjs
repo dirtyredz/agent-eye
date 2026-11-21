@@ -2,18 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { provision, keyCertificate, recoverKey } from './key-provisioning.mjs';
+import { provision, recoverKey } from './key-provisioning.mjs';
 test('existing certificate refuses provisioning before vault or subprocess', async () => {
   await mkdir('.tmp', { recursive: true }); const dir = await mkdtemp('.tmp/key-test-'); const path = join(dir, 'pin.json');
   try {
     await writeFile(path, JSON.stringify({ applicationId: 'local.agenteye', alias: 'agent-eye', sha256: 'a'.repeat(64) }));
     await assert.rejects(provision({ vault: () => assert.fail('vault touched') }, { pinPath: path, firstVersionCode: 1 }), /Refusing existing/);
   } finally { await rm(dir, { recursive: true, force: true }); }
-});
-test('recovery requires one RSA-4096 private key and correct alias', async () => {
-  const text = `Your keystore contains 1 entry\nAlias name: agent-eye\nEntry type: PrivateKeyEntry\n4096-bit RSA key\nSHA256: ${'AA:'.repeat(31)}AA`;
-  assert.equal(await keyCertificate(async () => ({ stdout: text }), 'key', 'secret'), 'a'.repeat(64));
-  for (const changed of [text.replace('1 entry', '2 entries'), text.replace('agent-eye', 'other'), text.replace('agent-eye', 'agent-eye-extra'), text.replace('4096', '2048'), text.replace('PrivateKeyEntry', 'trustedCertEntry')]) await assert.rejects(keyCertificate(async () => ({ stdout: changed }), 'key', 'secret'), /Unexpected key/);
 });
 function provisioningFixture(failRecovery = false) {
   const events = [];

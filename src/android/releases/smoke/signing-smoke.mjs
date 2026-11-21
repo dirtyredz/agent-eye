@@ -9,7 +9,7 @@ import { runScript } from '../../../script-run/script-run.mjs';
 import { tooling } from '../../tooling/android-tools.mjs';
 import { readVersion } from '../../shared/release-identity.mjs';
 import { PASS_ENV } from '../../shared/signing-policy.mjs';
-import { keyCertificate } from '../../signing/keys/key-provisioning.mjs';
+import { keyCertificate } from '../../signing/keys/key-inspection.mjs';
 import { main } from '../cli/cli.mjs';
 
 async function smoke(log) {
