@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import local.agenteye.R
 import local.agenteye.camera.CameraSession
-import local.agenteye.camera.CaptureError
 import local.agenteye.camera.Lens
 import local.agenteye.camera.LensSelection
 import local.agenteye.camera.availableLenses
@@ -49,7 +48,7 @@ class CaptureService : LifecycleService() {
 
     @Volatile private var lastCapture: Long? = null
 
-    @Volatile private var error: CaptureError? = null
+    @Volatile private var error: SessionError? = null
     private var preview: Preview.SurfaceProvider? = null
     private var rotation = 0
     private var viewPort: ViewPort? = null
@@ -94,16 +93,16 @@ class CaptureService : LifecycleService() {
             running = true
             startedAt = android.os.SystemClock.elapsedRealtime()
             lastCapture = null
-            error = CaptureError.WifiUnavailable
+            error = SessionError.WifiUnavailable
             token = SessionToken()
             pairing = PairingCodes()
             power = SessionPower(this).also { it.acquire() }
             camera = CameraSession(this, this, lenses.selected ?: Lens.BACK) { _, code ->
                 if (running) {
-                    error = code ?: if (address ==
+                    error = code?.let(SessionError::of) ?: if (address ==
                         null
                     ) {
-                        CaptureError.WifiUnavailable
+                        SessionError.WifiUnavailable
                     } else {
                         null
                     }
@@ -113,7 +112,7 @@ class CaptureService : LifecycleService() {
             lan = LanBinding(this, ::rebind)
         } catch (_: Exception) {
             stopSession()
-            error = CaptureError.SessionStartFailed
+            error = SessionError.SessionStartFailed
         }
         observer?.invoke()
         return START_NOT_STICKY
@@ -162,7 +161,7 @@ class CaptureService : LifecycleService() {
         address = null
         if (!running) return
         if (binding == null) {
-            error = CaptureError.WifiUnavailable
+            error = SessionError.WifiUnavailable
         } else {
             try {
                 val currentToken = token ?: return
@@ -184,7 +183,7 @@ class CaptureService : LifecycleService() {
                                         lastCapture = shot.capturedAt
                                         error = null
                                     } else {
-                                        error = CaptureError.CaptureFailed
+                                        error = SessionError.CaptureFailed
                                     }
                                     observer?.invoke()
                                 }
@@ -194,9 +193,9 @@ class CaptureService : LifecycleService() {
                     }
                 )
                 address = url
-                error = if (currentCamera.ready) null else CaptureError.CameraUnavailable
+                error = if (currentCamera.ready) null else SessionError.CameraUnavailable
             } catch (_: Exception) {
-                error = CaptureError.BindFailed
+                error = SessionError.BindFailed
             }
         }
         observer?.invoke()

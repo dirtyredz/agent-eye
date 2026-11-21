@@ -1,9 +1,9 @@
 package local.agenteye.ui.capture
 
-import local.agenteye.camera.CaptureError
 import local.agenteye.camera.Lens
 import local.agenteye.selfupdate.UpdatePhase
 import local.agenteye.service.CaptureSnapshot
+import local.agenteye.service.SessionError
 
 data class CameraState(
     val running: Boolean = false,
@@ -42,18 +42,18 @@ object CameraStateHolder {
         !snapshot.running && installing -> CameraStatus.Installing
 
         !snapshot.running ->
-            if (snapshot.error == CaptureError.SessionStartFailed) {
+            if (snapshot.error == SessionError.SessionStartFailed) {
                 CameraStatus.StartFailed
             } else {
                 CameraStatus.Stopped
             }
 
         else -> when (snapshot.error) {
-            CaptureError.SessionStartFailed -> CameraStatus.StartFailed
-            CaptureError.CaptureFailed -> CameraStatus.CaptureFailed
-            CaptureError.BindFailed -> CameraStatus.BindFailed
-            CaptureError.WifiUnavailable -> CameraStatus.WifiUnavailable
-            CaptureError.CameraUnavailable -> CameraStatus.CameraUnavailable
+            SessionError.SessionStartFailed -> CameraStatus.StartFailed
+            SessionError.CaptureFailed -> CameraStatus.CaptureFailed
+            SessionError.BindFailed -> CameraStatus.BindFailed
+            SessionError.WifiUnavailable -> CameraStatus.WifiUnavailable
+            SessionError.CameraUnavailable -> CameraStatus.CameraUnavailable
             null -> if (snapshot.cameraReady) CameraStatus.Ready else CameraStatus.Starting
         }
     }

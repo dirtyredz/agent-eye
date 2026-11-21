@@ -1,9 +1,9 @@
 package local.agenteye.ui.capture
 
-import local.agenteye.camera.CaptureError
 import local.agenteye.camera.Lens
 import local.agenteye.selfupdate.UpdatePhase
 import local.agenteye.service.CaptureSnapshot
+import local.agenteye.service.SessionError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -36,16 +36,16 @@ class CameraStateHolderTest {
         assertEquals(CameraStatus.Ready, status(stopped.copy(running = true, cameraReady = true)))
     }
 
-    @Test fun everyCaptureErrorHasItsOwnStatusWhileRunning() {
+    @Test fun everySessionErrorHasItsOwnStatusWhileRunning() {
         val running = stopped.copy(running = true, cameraReady = true)
         val expected = mapOf(
-            CaptureError.SessionStartFailed to CameraStatus.StartFailed,
-            CaptureError.CaptureFailed to CameraStatus.CaptureFailed,
-            CaptureError.CameraUnavailable to CameraStatus.CameraUnavailable,
-            CaptureError.BindFailed to CameraStatus.BindFailed,
-            CaptureError.WifiUnavailable to CameraStatus.WifiUnavailable
+            SessionError.SessionStartFailed to CameraStatus.StartFailed,
+            SessionError.CaptureFailed to CameraStatus.CaptureFailed,
+            SessionError.CameraUnavailable to CameraStatus.CameraUnavailable,
+            SessionError.BindFailed to CameraStatus.BindFailed,
+            SessionError.WifiUnavailable to CameraStatus.WifiUnavailable
         )
-        assertEquals(CaptureError.entries.toSet(), expected.keys)
+        assertEquals(SessionError.entries.toSet(), expected.keys)
         for ((error, shown) in expected) assertEquals(shown, status(running.copy(error = error)))
     }
 
@@ -55,7 +55,7 @@ class CameraStateHolderTest {
                 stopped.copy(
                     running = true,
                     cameraReady = ready,
-                    error = CaptureError.WifiUnavailable
+                    error = SessionError.WifiUnavailable
                 )
             )
             assertEquals(CameraStatus.WifiUnavailable, shown)
@@ -66,7 +66,7 @@ class CameraStateHolderTest {
         assertEquals(CameraStatus.Stopped, status(stopped))
         assertEquals(
             CameraStatus.StartFailed,
-            status(stopped.copy(error = CaptureError.SessionStartFailed))
+            status(stopped.copy(error = SessionError.SessionStartFailed))
         )
         assertEquals(
             CameraStatus.Installing,
