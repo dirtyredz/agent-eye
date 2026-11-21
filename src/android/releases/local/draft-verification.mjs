@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST, finalNames, assertAssetSet, manifest } from '../artifacts/contract.mjs';
+import { REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST, SIGNED_MANIFEST, finalNames, assertAssetSet, manifest } from '../artifacts/contract.mjs';
 import { requireThat } from '../../shared/assert.mjs';
 import { version } from '../../shared/release-identity.mjs';
 import { certificate } from '../../shared/signing-policy.mjs';
@@ -30,7 +30,7 @@ export function draftVerification({ root, run, gh, apk, bundle, localVersion, pi
       const hasUnsignedManifest = list.some(a => a.name === UNSIGNED_MANIFEST);
       const m = hasUnsignedManifest
         ? manifest(JSON.parse(await gh.download(options.tag, UNSIGNED_MANIFEST, downloaded)))
-        : manifest(JSON.parse(await gh.download(options.tag, 'release.json', downloaded)), true);
+        : manifest(JSON.parse(await gh.download(options.tag, SIGNED_MANIFEST, downloaded)), true);
       requireThat(m.commit === commit && m.versionCode === localVersion.versionCode && m.versionName === localVersion.versionName && m.tag === options.tag, 'Draft version/commit mismatch');
       const unsigned = hasUnsignedManifest ? m : { ...m, artifacts: Object.fromEntries(UNSIGNED.map(name => [name, { size: 1, sha256: m.unsignedHashes[name] }])) };
       // When deletion was interrupted, obtain the original manifest from the trusted run.

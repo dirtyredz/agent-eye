@@ -7,7 +7,10 @@ export const FINAL = ['agent-eye.apk', 'agent-eye.aab', 'mapping.txt'];
 export const UNSIGNED_MANIFEST = 'release-unsigned.json';
 // Unsigned assets deleted after signing; mapping.txt is kept because the final set shares it.
 export const UNSIGNED_REMOVABLE = [...UNSIGNED.filter(name => name !== 'mapping.txt'), UNSIGNED_MANIFEST];
-export const finalNames = [...FINAL, 'release.json', 'SHA256SUMS'];
+export const SIGNED_MANIFEST = 'release.json';
+// Files covered by SHA256SUMS.
+export const hashedFinalNames = [...FINAL, SIGNED_MANIFEST];
+export const finalNames = [...hashedFinalNames, 'SHA256SUMS'];
 // CI and signing retries may have partial sets; only the cleaned final set is exact.
 export function assertAssetSet(assets, phase) {
   const allowed = phase === 'ci' ? [...UNSIGNED, UNSIGNED_MANIFEST]

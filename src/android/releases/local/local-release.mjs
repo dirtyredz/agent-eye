@@ -7,6 +7,7 @@ import { recoverKey } from '../../signing/keys/key-provisioning.mjs';
 import { releaseLock } from './release-lock.mjs';
 import { draftVerification } from './draft-verification.mjs';
 import { retryCache } from './retry-cache.mjs';
+import { signedBundle } from './signed-bundle.mjs';
 
 export function localRelease(deps) {
   const { root, run, gh, vault } = deps;
@@ -19,7 +20,8 @@ export function localRelease(deps) {
     recheck: verification.check,
     history: m => gh.history(m),
     withKey: (publicPin, action) => recoverKey({ root, run, vault }, publicPin, action),
-    ...retryCache({ ...deps, fresh }),
+    ...retryCache(deps),
+    ...signedBundle({ ...deps, fresh }),
     async upload(state, dir) { for (const name of finalNames) await gh.upload(state.id, state.tag, join(dir, name), name, lock.scratch); },
     async verifyDownloads(state, dir) {
       const checkDir = await fresh('uploaded-');

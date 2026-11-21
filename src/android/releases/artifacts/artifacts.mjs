@@ -1,6 +1,6 @@
 import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, UNSIGNED, FINAL, manifest } from './contract.mjs';
+import { UNSIGNED_MANIFEST, SIGNED_MANIFEST, hashedFinalNames, REPOSITORY, WORKFLOW, UNSIGNED, FINAL, manifest } from './contract.mjs';
 import { requireThat } from '../../shared/assert.mjs';
 import { APPLICATION_ID, SDK } from '../../shared/release-identity.mjs';
 import { digest } from '../../shared/digest.mjs';
@@ -22,10 +22,12 @@ export async function stage({ root, dir, version, tag, commit, runId, runAttempt
   await writeFile(join(dir, UNSIGNED_MANIFEST), JSON.stringify(m, null, 2) + '\n');
   return m;
 }
+export function sha256sums(hashed) {
+  return Object.entries(hashed).map(([name, a]) => `${a.sha256}  ${name}\n`).join('');
+}
 export async function finalManifest(dir, original, signerSha256) {
   const m = manifest({ ...original, artifacts: await hashes(dir, FINAL), signerSha256, unsignedHashes: Object.fromEntries(UNSIGNED.map(name => [name, original.artifacts[name].sha256])) }, true);
-  await writeFile(join(dir, 'release.json'), JSON.stringify(m, null, 2) + '\n');
-  const sums = await hashes(dir, [...FINAL, 'release.json']);
-  await writeFile(join(dir, 'SHA256SUMS'), Object.entries(sums).map(([name, a]) => `${a.sha256}  ${name}\n`).join(''));
+  await writeFile(join(dir, SIGNED_MANIFEST), JSON.stringify(m, null, 2) + '\n');
+  await writeFile(join(dir, 'SHA256SUMS'), sha256sums(await hashes(dir, hashedFinalNames)));
   return m;
 }

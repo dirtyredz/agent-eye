@@ -1,6 +1,6 @@
 import { mkdir, readFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UNSIGNED_MANIFEST, UNSIGNED_REMOVABLE, REPOSITORY, WORKFLOW, manifest } from '../artifacts/contract.mjs';
+import { UNSIGNED_MANIFEST, UNSIGNED_REMOVABLE, SIGNED_MANIFEST, REPOSITORY, WORKFLOW, manifest } from '../artifacts/contract.mjs';
 import { requireThat } from '../../shared/assert.mjs';
 import { verifyFiles } from '../artifacts/artifacts.mjs';
 import { digest } from '../../shared/digest.mjs';
@@ -69,8 +69,8 @@ export function github(run) {
       for (const rel of await listReleases()) {
         if (rel.draft) continue;
         requireThat(/^v\d+\.\d+\.\d+$/.test(rel.tag_name), 'Unexpected release history; manual reconciliation required');
-        const asset = (await assets(rel.id)).find(a => a.name === 'release.json');
-        requireThat(asset, `Published ${rel.tag_name} lacks release.json`);
+        const asset = (await assets(rel.id)).find(a => a.name === SIGNED_MANIFEST);
+        requireThat(asset, `Published ${rel.tag_name} lacks ${SIGNED_MANIFEST}`);
         const m = manifest(await api(`releases/assets/${asset.id}`, ['-H', 'Accept: application/octet-stream']), true);
         requireThat(m.tag === rel.tag_name && m.versionCode < current.versionCode, 'Published version code is not lower');
       }
