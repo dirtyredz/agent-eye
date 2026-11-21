@@ -1,7 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST, finalNames, assertAssetSet, version, manifest, certificate, requireThat } from '../artifacts/contract.mjs';
-import { digest } from '../artifacts/artifacts.mjs';
+import { REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST, finalNames, assertAssetSet, manifest } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
+import { version } from '../../shared/release-identity.mjs';
+import { certificate } from '../../shared/signing-policy.mjs';
+import { digest } from '../../shared/digest.mjs';
 import { assertDraft } from '../github/github.mjs';
 import { checkout } from './checkout.mjs';
 

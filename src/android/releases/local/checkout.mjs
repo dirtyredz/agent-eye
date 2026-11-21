@@ -1,4 +1,5 @@
-import { REPOSITORY, requireThat } from '../artifacts/contract.mjs';
+import { REPOSITORY } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
 
 export async function tagIdentity(run, root, tag, mismatch = 'Tag commit mismatch') {
   const commit = (await run('git', ['rev-parse', 'HEAD'], { cwd: root })).stdout.trim();

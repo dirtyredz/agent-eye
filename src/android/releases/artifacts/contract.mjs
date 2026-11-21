@@ -1,10 +1,6 @@
 import { hex, requireThat } from '../../shared/assert.mjs';
 import { APPLICATION_ID, SDK, version } from '../../shared/release-identity.mjs';
 
-// Release vocabulary (names, assets, manifest schema). The shared leaf names signing/ also needs
-// live in src/android/shared/ and are re-exported here so releases/ importers keep one import point.
-export { requireThat, hex } from '../../shared/assert.mjs';
-export { APPLICATION_ID, SDK, PASS_ENV, version, readVersion, identity, certificate, assertJarUnsigned } from '../../shared/release-identity.mjs';
 export const REPOSITORY = 'dirtyredz/agent-eye';
 export const UNSIGNED = ['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', 'mapping.txt'];
 export const FINAL = ['agent-eye.apk', 'agent-eye.aab', 'mapping.txt'];

@@ -4,7 +4,8 @@
 // the same synthetic APK bytes, so both sides prove the same wire format.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { FINAL, UNSIGNED, SDK, REPOSITORY, APPLICATION_ID, WORKFLOW } from './contract.mjs';
+import { FINAL, UNSIGNED, REPOSITORY, WORKFLOW } from './contract.mjs';
+import { SDK, APPLICATION_ID } from '../../shared/release-identity.mjs';
 import { finalManifest } from './artifacts.mjs';
 
 export const FIXTURE_PIN = 'f0d99c5825fbc240e7fefb68bb791d47cb61c37f13c42a5f9f81730168d6d6e2';

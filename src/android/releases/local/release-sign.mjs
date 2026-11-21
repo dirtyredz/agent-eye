@@ -1,4 +1,5 @@
-import { requireThat, certificate } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
+import { certificate } from '../../shared/signing-policy.mjs';
 
 // The orchestration has no ambient side effects. The production adapter and fixture
 // adapters use the same order, including all preflight checks before vault access.

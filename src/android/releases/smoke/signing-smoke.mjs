@@ -7,7 +7,8 @@ import { randomBytes } from 'node:crypto';
 import { onTermination, run as bareRun } from '../../tooling/process.mjs';
 import { runScript } from '../../../script-run/script-run.mjs';
 import { tooling } from '../../tooling/android-tools.mjs';
-import { readVersion, PASS_ENV } from '../../shared/release-identity.mjs';
+import { readVersion } from '../../shared/release-identity.mjs';
+import { PASS_ENV } from '../../shared/signing-policy.mjs';
 import { keyCertificate } from '../../signing/keys/key-provisioning.mjs';
 import { main } from '../cli/cli.mjs';
 

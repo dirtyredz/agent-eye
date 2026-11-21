@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { finalNames, requireThat } from '../artifacts/contract.mjs';
-import { digest } from '../artifacts/artifacts.mjs';
+import { finalNames } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
+import { digest } from '../../shared/digest.mjs';
 import { recoverKey } from '../../signing/keys/key-provisioning.mjs';
 import { releaseLock } from './release-lock.mjs';
 import { draftVerification } from './draft-verification.mjs';

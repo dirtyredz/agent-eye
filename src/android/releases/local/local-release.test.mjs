@@ -5,8 +5,9 @@ import { localRelease } from './local-release.mjs';
 import { releaseSign } from './release-sign.mjs';
 import { mkdir, mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { SDK, WORKFLOW, UNSIGNED } from '../artifacts/contract.mjs';
-import { digest } from '../artifacts/artifacts.mjs';
+import { WORKFLOW, UNSIGNED } from '../artifacts/contract.mjs';
+import { SDK } from '../../shared/release-identity.mjs';
+import { digest } from '../../shared/digest.mjs';
 async function transactionFixture() {
   await mkdir('.tmp', { recursive: true }); const root = await mkdtemp(resolve('.tmp/transaction-test-'));
   const commit = 'a'.repeat(40), tag = 'v1.0.0';

@@ -252,7 +252,7 @@ No implementation, builds or tests were performed for this specification.
 
 - `.\android\gradlew.bat -p android ktlintCheck assembleDebug assembleRelease bundleRelease testDebugUnitTest`
 - `.\android\gradlew.bat -p android lintRelease releaseTools`
-- `node src/android/signing/signing-smoke.mjs`
+- `node src/android/releases/smoke/signing-smoke.mjs`
 - `.\android\gradlew.bat --stop`
 - `git diff --check`
 - `dk check`

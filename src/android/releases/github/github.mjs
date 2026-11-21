@@ -1,7 +1,9 @@
 import { mkdir, readFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, manifest, requireThat } from '../artifacts/contract.mjs';
-import { digest, verifyFiles } from '../artifacts/artifacts.mjs';
+import { UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, manifest } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
+import { verifyFiles } from '../artifacts/artifacts.mjs';
+import { digest } from '../../shared/digest.mjs';
 
 export const ACTION_ARTIFACT = m => `unsigned-${m.commit}-${m.runAttempt}`;
 export function assertDraft(release, tag, id) {

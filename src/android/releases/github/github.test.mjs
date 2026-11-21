@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pages, assertDraft, github } from './github.mjs';
-import { cleanupOrphans } from '../../signing/vault/vault-maintenance.mjs';
 test('history pagination includes releases beyond 100', async () => {
   const calls = [];
   const results = await pages(async path => { calls.push(path); return path.endsWith('page=1') ? Array(100).fill({}) : [{ id: 101 }]; }, 'releases');
@@ -67,16 +66,4 @@ test('draftId resolves the numeric ID of a draft by tag and refuses published, m
   await assert.rejects(listed([{ id: 987, tag_name: 'v1.0.0', draft: false }]).draftId('v1.0.0'), /not a draft/);
   await assert.rejects(listed([{ id: 'x', tag_name: 'v1.0.0', draft: true }]).draftId('v1.0.0'), /Invalid draft release ID/);
   await assert.rejects(listed([]).draftId('v9.9.9'), /not found/);
-});
-
-const fakeVault = items => ({ config: { documentTitle: 'Agent Eye release key', passwordTitle: 'Agent Eye release key password' }, overview: async () => items, deleteItem: async () => {} });
-const item = (id, title) => ({ id, title, category: 'Password', state: 'active', createdAt: new Date('2026-10-26T02:00:00Z') });
-
-test('cleanup guard sees a release on page 2 (via the github adapter) and refuses', async () => {
-  const gh = github(async (_file, args) => {
-    const route = args[1];
-    const page = Number(/&page=(\d+)/.exec(route)[1]);
-    return { stdout: JSON.stringify(page === 1 ? Array(100).fill({ tag_name: 'x', draft: true }) : [{ tag_name: 'v1.0.0' }]) };
-  });
-  await assert.rejects(cleanupOrphans({ vault: fakeVault([item('a', 'Agent Eye release key')]), pin: { sha256: null }, gh, execute: true, say: () => {} }), /101 GitHub release\(s\) exist/);
 });

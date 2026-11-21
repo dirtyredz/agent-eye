@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { draftRelease, stageRelease, validateTag } from './ci-commands.mjs';
-import { SDK, WORKFLOW, REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST } from '../artifacts/contract.mjs';
+import { WORKFLOW, REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST } from '../artifacts/contract.mjs';
+import { SDK } from '../../shared/release-identity.mjs';
 import { github } from '../github/github.mjs';
 import { hashes } from '../artifacts/artifacts.mjs';
 

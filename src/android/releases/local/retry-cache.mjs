@@ -1,6 +1,7 @@
 import { readFile, mkdir, copyFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UNSIGNED, FINAL, finalNames, manifest, requireThat } from '../artifacts/contract.mjs';
+import { UNSIGNED, FINAL, finalNames, manifest } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
 import { verifyFiles, finalManifest, hashes } from '../artifacts/artifacts.mjs';
 
 export function retryCache({ gh, apk, bundle, localVersion, pin, fresh }) {

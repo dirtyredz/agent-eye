@@ -11,8 +11,8 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `src/android/releases/cli/` — side-effect-free argument parsing and CI/owner command dispatch.
 - `src/android/releases/github/` — GitHub release assets, history, draft lookup by tag (`releaseByTag`; the tags endpoint hides drafts) and Actions provenance.
 - `src/android/releases/local/` — owner transaction ordering, checkout, verification, retry cache and lock.
-- `src/android/signing/` — signing responsibilities below; imports only `shared/`, never `releases/` (guarded by `guards/import-boundaries.test.mjs`).
-- `src/android/shared/` — leaf modules: `assert.mjs` (`requireThat`, `hex`), `release-identity.mjs` (application id, SDK, version shape, artifact identity, certificate pin, unsigned-JAR check), `digest.mjs`. `releases/artifacts/contract.mjs` re-exports them.
+- `src/android/signing/` — signing responsibilities below; imports only `shared/` and `tooling/`, never `releases/` (guarded by `guards/import-boundaries.test.mjs`).
+- `src/android/shared/` — leaf modules: `assert.mjs` (`requireThat`, `hex`), `release-identity.mjs` (application id, SDK, version shape, artifact identity), `signing-policy.mjs` (`PASS_ENV`, certificate pin check, unsigned-archive check), `digest.mjs`. Imports only Node built-ins and itself (guarded).
 - `src/android/signing/artifacts/` — APK (`apk-signing.mjs`) and AAB (`bundle-signing.mjs`) inspection, signing and verification.
 - `src/android/signing/vault/` — 1Password DesktopAuth adapter (`vault.mjs`, documents the `error.stage` contract), vault creation (`vault-setup.mjs`), config lookup (`signing-config.mjs`: locates `signing.local.json`, checkout then main worktree), repair (`vault-maintenance.mjs`) and the default account (`owner-account.mjs`).
 - `src/android/signing/keys/` — key custody: isolated key directories (`key-material.mjs`), generation and recovery (`key-provisioning.mjs`) and `provision-flow.mjs` (vault then key).

@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-import { requireThat } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
 import { runScript } from '../../../script-run/script-run.mjs';
 import { OWNER_COMMANDS, CI_COMMANDS } from './command-names.mjs';
 import { setupPlan } from './owner-setup.mjs';

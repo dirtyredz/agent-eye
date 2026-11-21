@@ -1,6 +1,8 @@
 import { readFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { version, REPOSITORY, requireThat, UNSIGNED, UNSIGNED_MANIFEST, manifest, assertAssetSet } from '../artifacts/contract.mjs';
+import { REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST, manifest, assertAssetSet } from '../artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
+import { version } from '../../shared/release-identity.mjs';
 import { stage, verifyFiles } from '../artifacts/artifacts.mjs';
 import { assertDraft } from '../github/github.mjs';
 import { tagIdentity } from '../local/checkout.mjs';

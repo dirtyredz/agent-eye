@@ -21,7 +21,8 @@ test('artifact hashes cover lengths, missing files and changed bytes', async () 
 test('shared updater fixtures are exactly what the publisher writes', async () => {
   const { writeUpdateFixtures, FIXTURE_PIN } = await import('./update-fixtures.mjs');
   const { readFile } = await import('node:fs/promises');
-  const { manifest, certificate } = await import('./contract.mjs');
+  const { manifest } = await import('./contract.mjs');
+  const { certificate } = await import('../../shared/signing-policy.mjs');
   await mkdir('.tmp', { recursive: true }); const dir = await mkdtemp('.tmp/update-fixture-');
   try {
     const m = await writeUpdateFixtures(dir);

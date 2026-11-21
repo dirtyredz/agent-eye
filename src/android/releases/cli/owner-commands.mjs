@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { certificate } from '../artifacts/contract.mjs';
+import { certificate } from '../../shared/signing-policy.mjs';
 import { setup } from './owner-setup.mjs';
 import { releaseSign } from '../local/release-sign.mjs';
 import { resolveReleaseTools } from '../local/release-tools.mjs';

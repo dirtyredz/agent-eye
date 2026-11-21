@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readVersion, version, identity, manifest, certificate, SDK, UNSIGNED, WORKFLOW, UNSIGNED_MANIFEST, finalNames, assertAssetSet, assertJarUnsigned } from './contract.mjs';
+import { manifest, UNSIGNED, WORKFLOW, UNSIGNED_MANIFEST, finalNames, assertAssetSet } from './contract.mjs';
+import { readVersion, version, identity, SDK } from '../../shared/release-identity.mjs';
+import { certificate, assertJarUnsigned } from '../../shared/signing-policy.mjs';
 export const fixture = () => ({ schema: 1, repository: 'dirtyredz/agent-eye', applicationId: 'local.agenteye', ...SDK, versionName: '1.0.0', versionCode: 1, tag: 'v1.0.0', commit: 'a'.repeat(40), runId: 12, runAttempt: 1, workflow: WORKFLOW, artifacts: Object.fromEntries(UNSIGNED.map(n => [n, { size: 1, sha256: 'b'.repeat(64) }])) });
 test('version is canonical, positive and exactly tag-bound', () => {
   assert.deepEqual(readVersion('versionName=1.0.0\nversionCode=1\n'), { versionName: '1.0.0', versionCode: 1 });

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { run as bareRun } from '../../tooling/process.mjs';
 import { CI_COMMANDS } from './command-names.mjs';
-import { readVersion } from '../artifacts/contract.mjs';
+import { readVersion } from '../../shared/release-identity.mjs';
 import { github } from '../github/github.mjs';
 import { ciCommand } from './ci-commands.mjs';
 import { ownerCommand } from './owner-commands.mjs';

@@ -1,9 +1,10 @@
 import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UNSIGNED_MANIFEST, APPLICATION_ID, REPOSITORY, SDK, WORKFLOW, UNSIGNED, FINAL, manifest, requireThat } from './contract.mjs';
+import { UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, UNSIGNED, FINAL, manifest } from './contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
+import { APPLICATION_ID, SDK } from '../../shared/release-identity.mjs';
 import { digest } from '../../shared/digest.mjs';
 
-export { digest } from '../../shared/digest.mjs';
 export async function hashes(dir, names) {
   return Object.fromEntries(await Promise.all(names.map(async name => [name, digest(await readFile(join(dir, name)))])));
 }
