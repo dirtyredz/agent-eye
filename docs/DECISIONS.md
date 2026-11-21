@@ -6,8 +6,9 @@
   `service/SessionStatusJson` (rendered from `CaptureSnapshot`, which now carries uptime and last
   capture time). The retained ViewPort has one owner, `camera/PreviewViewport`, held by the service
   for its lifetime and passed into each `CameraSession`, so pre-Start and Stop/Start geometry
-  survive without a second copy; this supersedes the 2026-10-26 "retain shared viewport ownership"
-  note. `ui/preview/PreviewFeed` depends on the `camera/PreviewSink` port, which `CaptureService`
+  survive without a second copy (replacing the duplicated retention rules noted in dk-afb1348d).
+  The retained window deliberately outlives the preview: a session started with no preview
+  attached (e.g. from the notification) frames stills with the last window rather than none. `ui/preview/PreviewFeed` depends on the `camera/PreviewSink` port, which `CaptureService`
   implements; a package-boundary rule forbids `ui/preview` -> `service`. Reused the existing
   snapshot and `CameraStateHolder` renderer instead of a new status type; a `PreviewTarget` value
   type was deferred.
