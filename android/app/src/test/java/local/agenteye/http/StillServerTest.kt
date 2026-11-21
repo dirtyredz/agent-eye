@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import local.agenteye.camera.CapturedFrame
 import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
 import org.junit.Assert.assertEquals
@@ -32,7 +33,9 @@ class StillServerTest {
         val token = SessionToken()
         val count = AtomicInteger()
         StillServer(local, 0, { true }, token, { "{}" }, {
-            CompletableFuture.completedFuture(Shot(jpeg, 123, count.incrementAndGet().toLong()))
+            CompletableFuture.completedFuture(
+                CapturedFrame(jpeg, 123, count.incrementAndGet().toLong())
+            )
         }, intervalMs = 0).use { server ->
             assertTrue(request(server, "wrong").startsWith("HTTP/1.1 401"))
             assertEquals(0, count.get())
@@ -72,7 +75,7 @@ class StillServerTest {
 
     @Test fun captureTimeoutAndRateLimit() {
         val token = SessionToken()
-        val future = CompletableFuture<Shot>()
+        val future = CompletableFuture<CapturedFrame>()
         StillServer(local, 0, {
             true
         }, token, { "{}" }, { future }, captureTimeoutMs = 40).use { server ->
@@ -85,7 +88,7 @@ class StillServerTest {
     @Test fun concurrentCaptureRejectedAndShutdownCancelsWork() {
         val token = SessionToken()
         val entered = CountDownLatch(1)
-        val future = CompletableFuture<Shot>()
+        val future = CompletableFuture<CapturedFrame>()
         val server =
             StillServer(local, 0, { true }, token, { "{}" }, {
                 entered.countDown()
@@ -137,11 +140,13 @@ class StillServerTest {
             if (call++ ==
                 0
             ) {
-                CompletableFuture<Shot>().apply {
+                CompletableFuture<CapturedFrame>().apply {
                     completeExceptionally(IllegalStateException())
                 }
             } else {
-                CompletableFuture.completedFuture(Shot(ByteArray(8 * 1024 * 1024 + 1), 123, 1))
+                CompletableFuture.completedFuture(
+                    CapturedFrame(ByteArray(8 * 1024 * 1024 + 1), 123, 1)
+                )
             }
         }, intervalMs = 0).use { server ->
             repeat(2) {
@@ -157,7 +162,7 @@ class StillServerTest {
         val entered = CountDownLatch(1)
         StillServer(local, 0, { true }, token, { "{}" }, {
             entered.countDown()
-            CompletableFuture.completedFuture(Shot(ByteArray(8 * 1024 * 1024), 123, 1))
+            CompletableFuture.completedFuture(CapturedFrame(ByteArray(8 * 1024 * 1024), 123, 1))
         }, connectionTimeoutMs = 150).use { server ->
             Socket().use { socket ->
                 socket.receiveBufferSize = 1024
@@ -195,7 +200,7 @@ class StillServerTest {
         val token = SessionToken()
         val pairing = PairingCodes()
         StillServer(local, 0, { true }, token, { "{}" }, {
-            CompletableFuture.completedFuture(Shot(jpeg, 1, 1))
+            CompletableFuture.completedFuture(CapturedFrame(jpeg, 1, 1))
         }, pairing = pairing).use { server ->
             val code = pairing.current().value
             val ok = post(server, json(code))
@@ -216,13 +221,13 @@ class StillServerTest {
 
     @Test fun pairingDisabledWithoutGateAndClientRateLimited() {
         StillServer(local, 0, { true }, SessionToken(), { "{}" }, {
-            CompletableFuture.completedFuture(Shot(jpeg, 1, 1))
+            CompletableFuture.completedFuture(CapturedFrame(jpeg, 1, 1))
         }).use { server ->
             assertTrue(post(server, json("123456")).startsWith("HTTP/1.1 404"))
         }
         val pairing = PairingCodes(clientLimit = 2, maxAttempts = 100)
         StillServer(local, 0, { true }, SessionToken(), { "{}" }, {
-            CompletableFuture.completedFuture(Shot(jpeg, 1, 1))
+            CompletableFuture.completedFuture(CapturedFrame(jpeg, 1, 1))
         }, pairing = pairing).use { server ->
             val wrong = json(if (pairing.current().value == "000000") "000001" else "000000")
             assertTrue(post(server, wrong).startsWith("HTTP/1.1 403"))

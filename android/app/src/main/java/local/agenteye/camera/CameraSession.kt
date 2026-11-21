@@ -20,7 +20,6 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-import local.agenteye.http.Shot
 
 class CameraSession(
     context: Context,
@@ -36,7 +35,7 @@ class CameraSession(
     private var rebindPending = false
     private var lastStart = Long.MIN_VALUE
 
-    @Volatile private var pending: CompletableFuture<Shot>? = null
+    @Volatile private var pending: CompletableFuture<CapturedFrame>? = null
 
     @Volatile var ready = false
         private set
@@ -155,8 +154,8 @@ class CameraSession(
             a.layoutDirection == b.layoutDirection
         )
 
-    @Synchronized fun shot(): CompletableFuture<Shot> {
-        val result = CompletableFuture<Shot>()
+    @Synchronized fun shot(): CompletableFuture<CapturedFrame> {
+        val result = CompletableFuture<CapturedFrame>()
         val now = System.nanoTime()
         if (closed.get() || !ready ||
             (lastStart != Long.MIN_VALUE && now - lastStart < 1_000_000_000L) ||
@@ -181,7 +180,7 @@ class CameraSession(
                                     if (!closed.get() && !result.isCancelled) {
                                         val at = System.currentTimeMillis()
                                         result.complete(
-                                            Shot(
+                                            CapturedFrame(
                                                 JpegEncoder.encode(image),
                                                 at,
                                                 sequence.incrementAndGet()

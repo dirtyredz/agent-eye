@@ -9,11 +9,10 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import local.agenteye.camera.CapturedFrame
 import local.agenteye.security.PairHandler
 import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
-
-data class Shot(val jpeg: ByteArray, val capturedAt: Long, val sequence: Long)
 
 /**
  * Only the service supplies production binding/admission.
@@ -25,7 +24,7 @@ class StillServer(
     private val admit: (InetAddress) -> Boolean,
     private val token: SessionToken,
     private val status: () -> String,
-    private val capture: () -> CompletableFuture<Shot>,
+    private val capture: () -> CompletableFuture<CapturedFrame>,
     private val captureTimeoutMs: Long = 5000,
     private val connectionTimeoutMs: Long = 10000,
     private val intervalMs: Long = 1000,
@@ -37,7 +36,7 @@ class StillServer(
     private val stopped = AtomicBoolean(false)
     private val slots = Semaphore(4)
     private val clients = ConcurrentHashMap.newKeySet<Socket>()
-    private val pending = ConcurrentHashMap.newKeySet<CompletableFuture<Shot>>()
+    private val pending = ConcurrentHashMap.newKeySet<CompletableFuture<CapturedFrame>>()
     private val workers = Executors.newFixedThreadPool(4)
     private val deadlines = Executors.newSingleThreadScheduledExecutor()
     private val captureLock = Any()
@@ -152,7 +151,7 @@ class StillServer(
         respond(socket, 200, "application/json", result.body.toByteArray())
     }
 
-    private fun freshShot(): Shot {
+    private fun freshShot(): CapturedFrame {
         synchronized(captureLock) {
             val now = System.nanoTime()
             if (busy ||
@@ -167,7 +166,7 @@ class StillServer(
             busy = true
             lastStart = now
         }
-        var future: CompletableFuture<Shot>? = null
+        var future: CompletableFuture<CapturedFrame>? = null
         try {
             future = capture()
             pending.add(future)

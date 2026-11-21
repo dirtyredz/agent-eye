@@ -28,7 +28,7 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `android/app/src/main/java/local/agenteye/ui/theme/` — `Theme` provides the static amber Material 3 light/dark theme (no dynamic color); `DesignTokens` owns the shared 16dp corner-radius, shape, spacing and elevation tokens, and `SettingsTypography` owns the Settings card text roles.
 - `android/app/src/main/java/local/agenteye/ui/settings/` — `SettingsActivity` (updater lifecycle and install handoff) and `SettingsScreen` (update panel, usage guidance and privacy-policy entry).
 - `android/app/src/main/java/local/agenteye/ui/update/` — `UpdatePanel` view and its pure `UpdatePresenter`.
-- `android/app/src/main/java/local/agenteye/camera/` — CameraX session, capture geometry (crop maths), JPEG encoding; `CaptureError` (the closed failure set); `LensSelection` (pure, JVM-tested lens policy), `LensPreferences` (`camera`/`lens` SharedPreferences factory) and `LensCameraSelector` (CameraX adapter and provider discovery; the experimental external-lens opt-in lives only here).
+- `android/app/src/main/java/local/agenteye/camera/` — CameraX session, capture geometry (crop maths), JPEG encoding; `CapturedFrame` (the captured JPEG value, consumed by `http`); `CaptureError` (the closed failure set); `LensSelection` (pure, JVM-tested lens policy), `LensPreferences` (`camera`/`lens` SharedPreferences factory) and `LensCameraSelector` (CameraX adapter and provider discovery; the experimental external-lens opt-in lives only here).
 - `android/app/src/main/java/local/agenteye/http/` — bounded request parser and `StillServer` routes.
 - `android/app/src/main/java/local/agenteye/network/` — Wi-Fi/LAN binding and pure subnet admission.
 - `android/app/src/main/java/local/agenteye/service/` — `CaptureService` session coordination, credential-free immutable `CaptureSnapshot` (carrying a typed `CaptureError?`), and `SessionPower` locks.
@@ -97,7 +97,7 @@ docs/                   living docs, runbooks, plans/, items/
 ```text
 android/app/src/main/java/local/agenteye/
 ├── AgentEyeApplication.kt   owns the lazy UpdateRuntime
-├── camera/          CameraX session, capture geometry, JPEG encoding, CaptureError (failure set), LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
+├── camera/          CameraX session, capture geometry, JPEG encoding, CapturedFrame (captured JPEG value), CaptureError (failure set), LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
 ├── http/            HttpRequest (bounded parser), StillServer (routes, POST /pair)
 ├── json/            StrictJson, JsonObject
 ├── network/         LAN binding, subnet policy
@@ -134,8 +134,7 @@ Last full review: 2026-10-26
 From the 2026-10-26 baseline review: componentization and abstraction lenses for each area, a
 topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items hold the details.
 
-- **Dependency cycles (P1):** `camera` -> `http` through `Shot` (dk-c6943e21);
-  `selfupdate` root <-> subpackages through the
+- **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352); `signing/` <-> `releases/` through `requireThat` in
   `contract.mjs` (dk-28656ae1).
 - **Duplicated mechanics (P1):** SHA-256/hex four times in self-update (dk-09deb5ab); the camera
