@@ -13,8 +13,7 @@ test('readPin parses the pin file', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'pin-store-'));
   try {
     const path = join(dir, 'pin.json');
-    await writeFile(path, '{"sha256":"ab"}'+'
-');
+    await writeFile(path, JSON.stringify({ sha256: 'ab' }));
     assert.deepEqual(await readPin(path), { sha256: 'ab' });
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
