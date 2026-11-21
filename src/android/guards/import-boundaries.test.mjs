@@ -5,37 +5,34 @@ import { readdir, readFile } from 'node:fs/promises';
 
 const androidRoot = new URL('../', import.meta.url);
 
-// Directories that must never import a path under another directory.
-const FORBIDDEN = [{ from: 'signing', forbidden: 'releases' }];
-// Directories restricted to Node built-ins and files inside themselves.
-const SELF_CONTAINED = ['shared'];
+// Allowlists: a directory's modules may import Node built-ins, files inside the directory, the
+// listed sibling directories and the listed packages; anything else is rejected.
+const ALLOWED = [
+  { dir: 'shared', siblings: [], packages: [] },
+  { dir: 'signing', siblings: ['shared', 'tooling'], packages: ['@1password/sdk'] },
+];
 // Directories whose modules must not re-export from shared/ (callers import the owner).
 const NO_SHARED_REEXPORT = ['releases/artifacts'];
 
-const specifiersOf = source => [...source.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
+const specifiersOf = source => [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g)].map(m => m[1]);
 
-function importsInto(source, forbidden) {
-  return specifiersOf(source).filter(s => new RegExp(`(^|/)${forbidden}/`).test(s));
-}
-
-/** Specifiers that are neither Node built-ins nor relative paths staying inside `dir` (given the file's dir-relative path). */
-function outwardImports(source, dir, file) {
+/** Imports that are not Node built-ins, not inside dir, and not in the allowed siblings or packages. */
+function disallowedImports(source, dir, file, { siblings, packages }) {
   return specifiersOf(source).filter(s => {
     if (s.startsWith('node:')) return false;
-    if (!s.startsWith('.')) return true;
-    return posix.normalize(posix.join(posix.dirname(`${dir}/${file}`), s)).split('/')[0] !== dir;
+    if (!s.startsWith('.')) return !packages.includes(s);
+    return ![dir, ...siblings].includes(posix.normalize(posix.join(posix.dirname(dir + '/' + file), s)).split('/')[0]);
   });
 }
 
-/** Re-exports of shared/ names: direct export-from, or an export of a binding imported from shared/. */
+/** Re-exports of shared/ names: any export ... from a shared/ module, or an export of a binding imported from shared/. */
 function sharedReexports(source) {
-  const direct = [...source.matchAll(/export\s*(?:\{[^}]*\}|\*)\s*from\s*['"]([^'"]*shared\/[^'"]*)['"]/g)].map(m => m[1]);
+  const direct = [...source.matchAll(/\bexport\b[^;]*?\bfrom\s*['"]([^'"]+)['"]/gs)].map(m => m[1]).filter(s => /(^|\/)shared\//.test(s));
   const bound = new Set();
   for (const [, clause] of source.matchAll(/import\s+([^;'"]+?)\s+from\s*['"][^'"]*shared\/[^'"]*['"]/g)) {
     const named = /\{([^}]*)\}/.exec(clause)?.[1] ?? '';
     for (const part of named.split(',')) { const name = part.trim().split(/\s+as\s+/).pop(); if (name) bound.add(name); }
-    const rest = clause.replace(/\{[^}]*\}/, '');
-    for (const part of rest.split(',')) { const name = part.trim().replace(/^\*\s*as\s+/, ''); if (name) bound.add(name); }
+    for (const part of clause.replace(/\{[^}]*\}/, '').split(',')) { const name = part.trim().replace(/^\*\s*as\s+/, ''); if (name) bound.add(name); }
   }
   const exported = [];
   for (const [, list] of source.matchAll(/export\s*\{([^}]*)\}(?!\s*from)/g)) {
@@ -54,53 +51,58 @@ async function mjsFiles(dir) {
   }));
 }
 
-test('importsInto flags an import of the forbidden directory', () => {
-  assert.deepEqual(importsInto("import { x } from '../../releases/artifacts/contract.mjs';", 'releases'), ['../../releases/artifacts/contract.mjs']);
-  assert.deepEqual(importsInto("const m = await import('../releases/cli/cli.mjs');", 'releases'), ['../releases/cli/cli.mjs']);
-  assert.deepEqual(importsInto("import { y } from '../../shared/assert.mjs';\nimport z from 'node:path';", 'releases'), []);
+test('disallowedImports rejects a sibling directory outside the allowlist', () => {
+  const signing = ALLOWED.find(rule => rule.dir === 'signing');
+  assert.deepEqual(disallowedImports("import { x } from '../../icons/icon-assets.mjs';", 'signing', 'keys/a.mjs', signing), ['../../icons/icon-assets.mjs']);
+  assert.deepEqual(disallowedImports("import { x } from '../../releases/cli/cli.mjs';", 'signing', 'keys/a.mjs', signing), ['../../releases/cli/cli.mjs']);
+  assert.deepEqual(disallowedImports("import 'left-pad';", 'signing', 'a.mjs', signing), ['left-pad']);
 });
 
-test('outwardImports rejects a hop through another directory and bare packages', () => {
-  assert.deepEqual(outwardImports("import '../tooling/android-tools.mjs';", 'shared', 'x.mjs'), ['../tooling/android-tools.mjs']);
-  assert.deepEqual(outwardImports("import 'left-pad';", 'shared', 'x.mjs'), ['left-pad']);
+test('disallowedImports accepts built-ins, own files, allowed siblings and packages', () => {
+  const signing = ALLOWED.find(rule => rule.dir === 'signing');
+  const source = "import fs from 'node:fs';\nimport a from './b.mjs';\nimport c from '../vault/v.mjs';\nimport d from '../../shared/assert.mjs';\nimport e from '../../tooling/process.mjs';\nimport f from '@1password/sdk';";
+  assert.deepEqual(disallowedImports(source, 'signing', 'keys/a.mjs', signing), []);
 });
 
-test('outwardImports accepts built-ins and files inside the directory', () => {
-  assert.deepEqual(outwardImports("import { createHash } from 'node:crypto';\nimport { a } from './assert.mjs';", 'shared', 'x.mjs'), []);
+test('disallowedImports keeps shared a leaf', () => {
+  const shared = ALLOWED.find(rule => rule.dir === 'shared');
+  assert.deepEqual(disallowedImports("import '../tooling/android-tools.mjs';", 'shared', 'x.mjs', shared), ['../tooling/android-tools.mjs']);
+  assert.deepEqual(disallowedImports("import { a } from './assert.mjs';", 'shared', 'x.mjs', shared), []);
 });
 
-test('sharedReexports flags every way of re-exporting a shared binding', () => {
-  assert.deepEqual(sharedReexports("export { digest } from '../../shared/digest.mjs';"), ['../../shared/digest.mjs']);
+test('sharedReexports flags every export-from of a shared module', () => {
+  for (const source of [
+    "export { digest } from '../../shared/digest.mjs';",
+    "export * from '../../shared/digest.mjs';",
+    "export * as policy from '../../shared/signing-policy.mjs';",
+    "export {\n  a,\n  b as c,\n} from '../../shared/assert.mjs';",
+  ]) assert.equal(sharedReexports(source).length, 1, source);
+});
+
+test('sharedReexports flags an export of a binding imported from shared', () => {
   assert.deepEqual(sharedReexports("import { digest } from '../../shared/digest.mjs';\nexport { digest };"), ['digest']);
   assert.deepEqual(sharedReexports("import { digest as d } from '../../shared/digest.mjs';\nexport { d as digest };"), ['d']);
   assert.deepEqual(sharedReexports("import {\n  a,\n  b as c,\n} from '../../shared/assert.mjs';\nexport { c };"), ['c']);
   assert.deepEqual(sharedReexports("import * as ns from '../../shared/assert.mjs';\nexport default ns;"), ['ns']);
 });
 
-test('sharedReexports accepts a shared import used only locally', () => {
+test('sharedReexports accepts a shared import used only locally and unrelated export-from', () => {
   assert.deepEqual(sharedReexports("import { digest } from '../../shared/digest.mjs';\nexport const x = digest(1);\nexport { other };"), []);
+  assert.deepEqual(sharedReexports("export { a } from './contract.mjs';"), []);
 });
 
-for (const { from, forbidden } of FORBIDDEN) {
-  test(`${from}/ never imports ${forbidden}/`, async () => {
-    for (const { file, source } of await mjsFiles(from)) {
-      assert.deepEqual(importsInto(source, forbidden), [], `${from}/${file}: must not import ${forbidden}/ (directory dependency cycle)`);
-    }
-  });
-}
-
-for (const dir of SELF_CONTAINED) {
-  test(`${dir}/ imports only Node built-ins and itself`, async () => {
-    for (const { file, source } of await mjsFiles(dir)) {
-      assert.deepEqual(outwardImports(source, dir, file), [], `${dir}/${file}: must stay a leaf`);
+for (const rule of ALLOWED) {
+  test(rule.dir + '/ imports only what its allowlist permits', async () => {
+    for (const { file, source } of await mjsFiles(rule.dir)) {
+      assert.deepEqual(disallowedImports(source, rule.dir, file, rule), [], rule.dir + '/' + file + ': import outside the allowlist');
     }
   });
 }
 
 for (const dir of NO_SHARED_REEXPORT) {
-  test(`${dir}/ does not re-export from shared/`, async () => {
+  test(dir + '/ does not re-export from shared/', async () => {
     for (const { file, source } of await mjsFiles(dir)) {
-      assert.deepEqual(sharedReexports(source), [], `${dir}/${file}: import from shared/ directly instead of re-exporting`);
+      assert.deepEqual(sharedReexports(source), [], dir + '/' + file + ': import from shared/ directly instead of re-exporting');
     }
   });
 }

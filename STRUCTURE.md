@@ -87,7 +87,7 @@ src/
     │   ├── artifacts/   APK and AAB signing
     │   ├── vault/       DesktopAuth adapter, vault setup, config lookup and repair
     │   └── keys/        key material, provisioning, provision flow
-    ├── shared/          leaf modules used by releases/ and signing/ (assert, release identity, digest)
+    ├── shared/          leaf modules used by releases/ and signing/ (assert, release identity, signing policy, digest)
     ├── guards/          repo guard tests (workflows, window policy, package and import boundaries)
     └── tooling/         Android tools and subprocess execution
 scripts/release/        owner-run .ps1 pass-throughs, harness template, dry-run tests
