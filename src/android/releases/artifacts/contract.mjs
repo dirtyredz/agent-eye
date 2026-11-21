@@ -5,6 +5,8 @@ export const REPOSITORY = 'dirtyredz/agent-eye';
 export const UNSIGNED = ['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', 'mapping.txt'];
 export const FINAL = ['agent-eye.apk', 'agent-eye.aab', 'mapping.txt'];
 export const UNSIGNED_MANIFEST = 'release-unsigned.json';
+// Unsigned assets deleted after signing; mapping.txt is kept because the final set shares it.
+export const UNSIGNED_REMOVABLE = [...UNSIGNED.filter(name => name !== 'mapping.txt'), UNSIGNED_MANIFEST];
 export const finalNames = [...FINAL, 'release.json', 'SHA256SUMS'];
 // CI and signing retries may have partial sets; only the cleaned final set is exact.
 export function assertAssetSet(assets, phase) {

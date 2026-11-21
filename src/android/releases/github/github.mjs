@@ -1,6 +1,6 @@
 import { mkdir, readFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UNSIGNED, UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, manifest } from '../artifacts/contract.mjs';
+import { UNSIGNED_MANIFEST, UNSIGNED_REMOVABLE, REPOSITORY, WORKFLOW, manifest } from '../artifacts/contract.mjs';
 import { requireThat } from '../../shared/assert.mjs';
 import { verifyFiles } from '../artifacts/artifacts.mjs';
 import { digest } from '../../shared/digest.mjs';
@@ -102,7 +102,7 @@ export function github(run) {
     async removeUnsigned(id, tag) {
       assertDraft(await release(id), tag, id);
       for (const asset of await assets(id)) {
-        if ([...UNSIGNED.slice(0, 2), UNSIGNED_MANIFEST].includes(asset.name)) await api(`releases/assets/${asset.id}`, ['--method', 'DELETE']);
+        if (UNSIGNED_REMOVABLE.includes(asset.name)) await api(`releases/assets/${asset.id}`, ['--method', 'DELETE']);
       }
     },
     async publish(id, tag) {
