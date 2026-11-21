@@ -26,7 +26,6 @@ import local.agenteye.network.LanBinding
 import local.agenteye.network.SubnetPolicy
 import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
-import local.agenteye.ui.MainActivity
 import org.json.JSONObject
 
 class CaptureService : LifecycleService() {
@@ -136,7 +135,7 @@ class CaptureService : LifecycleService() {
         val open = PendingIntent.getActivity(
             this,
             2,
-            Intent(this, MainActivity::class.java),
+            packageManager.getLaunchIntentForPackage(packageName) ?: Intent(),
             PendingIntent.FLAG_IMMUTABLE
         )
         val builder = if (Build.VERSION.SDK_INT >=

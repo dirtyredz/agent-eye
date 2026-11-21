@@ -132,8 +132,8 @@ Last full review: 2026-10-26
 From the 2026-10-26 baseline review: componentization and abstraction lenses for each area, a
 topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items hold the details.
 
-- **Dependency cycles (P1):** `camera` -> `http` through `Shot` (dk-c6943e21); `service` <-> `ui`
-  through the notification intent (dk-6844e342); `selfupdate` root <-> subpackages through the
+- **Dependency cycles (P1):** `camera` -> `http` through `Shot` (dk-c6943e21);
+  `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352); `signing/` <-> `releases/` through `requireThat` in
   `contract.mjs` (dk-28656ae1).
 - **Duplicated mechanics (P1):** SHA-256/hex four times in self-update (dk-09deb5ab); the camera
