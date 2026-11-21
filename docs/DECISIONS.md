@@ -1,5 +1,17 @@
 # Decisions
 
+- **2026-11-21 — CaptureService split; one viewport owner (dk-e3c7da36, dk-afb1348d, dk-33998a40).**
+  `CaptureService` keeps start/stop/rebind orchestration and `startForeground` ordering; the
+  notification moved to `service/SessionNotification`, the `GET /status` body to the pure
+  `service/SessionStatusJson` (rendered from `CaptureSnapshot`, which now carries uptime and last
+  capture time). The retained ViewPort has one owner, `camera/PreviewViewport`, held by the service
+  for its lifetime and passed into each `CameraSession`, so pre-Start and Stop/Start geometry
+  survive without a second copy; this supersedes the 2026-10-26 "retain shared viewport ownership"
+  note. `ui/preview/PreviewFeed` depends on the `camera/PreviewSink` port, which `CaptureService`
+  implements; a package-boundary rule forbids `ui/preview` -> `service`. Reused the existing
+  snapshot and `CameraStateHolder` renderer instead of a new status type; a `PreviewTarget` value
+  type was deferred.
+
 - **2026-11-21 — Updater vocabulary split by file, package unchanged (dk-7948b352).** `Candidate`, `UpdateProblem`/`UpdateFailure`/`UpdateCancelled` and `UpdatePhase`/`UpdateState` now live in `Candidate.kt`, `UpdateFailure.kt` and `UpdateState.kt`, all still `local.agenteye.selfupdate`, so no imports changed. Moving them into a leaf package (and breaking the root <-> subpackage cycle) is deferred: `release/` would violate the installer boundary and a broader migration is out of scope for this refactor.
 - **2026-10-27 — Allow screenshots and recents thumbnails (1.3.2 / 7).** Owner decision:
   screenshots are needed to capture and communicate UI problems, so neither Activity nor the
@@ -21,7 +33,7 @@
   in the code row, with a visible Copy label and accessibility-labeled renewal icon; large text may
   wrap the action group without clipping the code. The fixed pairing-panel sizing in this decision
   is superseded by the 2026-10-27 content-sized unified-panel decision above.
-- **2026-10-26 — Move the UI to Compose + Material 3 (1.3.0 / 5).** Matches the sibling apps (Command Deck, family-command-center) and replaces hand-built views. Keeps two Activities (`MainActivity`, `SettingsActivity`) and service-owned capture; no navigation framework, extended icon pack or custom fonts. ComponentActivity propagates handled configuration changes to Compose; `PreviewFeed` stays a non-Compose, started-only geometry feed. Cost, measured on the unsigned minified APK: 1,074,018 → 2,121,596 bytes (+1,047,578; +97.54%, about +1 MB); R8/resource shrinking remain enabled, no blanket keep rules. Retain shared viewport ownership pending dk-afb1348d.
+- **2026-10-26 — Move the UI to Compose + Material 3 (1.3.0 / 5).** Matches the sibling apps (Command Deck, family-command-center) and replaces hand-built views. Keeps two Activities (`MainActivity`, `SettingsActivity`) and service-owned capture; no navigation framework, extended icon pack or custom fonts. ComponentActivity propagates handled configuration changes to Compose; `PreviewFeed` stays a non-Compose, started-only geometry feed. Cost, measured on the unsigned minified APK: 1,074,018 → 2,121,596 bytes (+1,047,578; +97.54%, about +1 MB); R8/resource shrinking remain enabled, no blanket keep rules. Shared viewport ownership: superseded 2026-11-21 (`PreviewViewport`).
 - **2026-10-26 — Static amber theme, no dynamic colour.** Follows Command Deck's amber system light/dark scheme and default typography. Material You dynamic colour is rejected: it would make the app's look vary per wallpaper and add no function to a camera control surface.
 - **2026-10-26 — Whole-frame FIT preview with full-frame snapshots.** Owner decision (plan §8) overrides the plan's full-bleed assumption: FIT_CENTER produces `ViewPort.FIT`, so preview and still share the full camera frame instead of cropping to screen aspect. Stable bottom/trailing control bars keep the frame unobstructed, and secondary content scrolls at large text sizes. `CameraSession.attach` and JPEG encoding are unchanged. Front preview remains mirrored and front JPEG unmirrored; matching refers to field of view.
 - **2026-10-26 — `CaptureSnapshot` is the UI's read model; failures are typed.** The Activity reads one immutable snapshot (running, camera ready, address, `SessionError?`, lenses) from the service instead of its fields; credentials never enter it. `SessionError` is a closed enum in `service/` (since dk-4f28c010; camera failures stay in `camera/CaptureError` and are converted at the CaptureService boundary); the `/status` JSON string is produced only in `CaptureService.statusJson`, so wire values are unchanged. Status text is a `CameraStatus` enum resolved from string resources at composition (the Activity's start-flow outcomes are the same enum), and `CaptureScreenModel` is the single place that builds the display and pairing state.

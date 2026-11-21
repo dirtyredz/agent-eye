@@ -23,13 +23,13 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `android/app/src/main/java/local/agenteye/security/` — session token, `PairingCodes` state machine and `PairHandler` (the `POST /pair` body checks and code-for-token exchange, returning a sealed `PairOutcome` that `StillServer` maps to HTTP).
 - `android/app/src/main/java/local/agenteye/ui/` — `MainActivity` (lifecycle, service link, preview wiring) and `CaptureServiceLink` (binding and updater install preflight); the rest lives in the responsibility folders below.
 - `android/app/src/main/java/local/agenteye/ui/capture/` — capture screen: `CameraScreen` shell, `CameraBody` content-measured preview/panel placement, unified `CameraPanel` and `CameraControls` (Compose), pure `CameraLayout` geometry (JVM-tested by `CameraLayoutTest`), `CaptureScreenModel` (the one owner of `CameraState`/`PairingState` and the 1 s countdown), `SessionStarter` (permission and Start flow), pure `CameraStateHolder` (snapshot to display state) and `CameraStatus` (status enum resolved from string resources).
-- `android/app/src/main/java/local/agenteye/ui/preview/` — `CameraPreview` (stable AndroidView), `RoundedPreviewFrame` (fail-safe clipping to CameraX's transformed FIT implementation bounds) and `PreviewFeed`, a non-Compose geometry feed (display and layout listeners pushing rotation and ViewPort to the service while started).
+- `android/app/src/main/java/local/agenteye/ui/preview/` — `CameraPreview` (stable AndroidView), `RoundedPreviewFrame` (fail-safe clipping to CameraX's transformed FIT implementation bounds) and `PreviewFeed`, a non-Compose geometry feed (display and layout listeners pushing rotation and ViewPort to a `camera/PreviewSink` while started; never imports `service`).
 - `android/app/src/main/java/local/agenteye/ui/pairing/` — `PairingCard`, pure `PairingState` (countdown), `PairingCopy` (tap-time copy policy) and the sensitive `PairingClipboard`.
 - `android/app/src/main/java/local/agenteye/ui/privacy/` — local privacy-policy dialog.
 - `android/app/src/main/java/local/agenteye/ui/theme/` — `Theme` provides the static amber Material 3 light/dark theme (no dynamic color); `DesignTokens` owns the shared 16dp corner-radius, shape, spacing and elevation tokens, and `SettingsTypography` owns the Settings card text roles.
 - `android/app/src/main/java/local/agenteye/ui/settings/` — `SettingsActivity` (updater lifecycle and install handoff) and `SettingsScreen` (update panel, usage guidance and privacy-policy entry).
 - `android/app/src/main/java/local/agenteye/ui/update/` — `UpdatePanel` view, its pure `UpdatePresenter`, `UpdateController` and `UpdateLifecycle` (the Activities' resume/pause attach and detach; `Context.updates` is the single runtime accessor).
-- `android/app/src/main/java/local/agenteye/camera/` — CameraX session, capture geometry (crop maths), JPEG encoding; `CapturedFrame` (the captured JPEG value, consumed by `http`); `CaptureError` (camera failures only: camera_unavailable, capture_failed); `LensSelection` (pure, JVM-tested lens policy), `LensPreferences` (`camera`/`lens` SharedPreferences factory) and `LensCameraSelector` (CameraX adapter and provider discovery; the experimental external-lens opt-in lives only here).
+- `android/app/src/main/java/local/agenteye/camera/` — CameraX session, capture geometry (crop maths), JPEG encoding; `CapturedFrame` (the captured JPEG value, consumed by `http`); `CaptureError` (camera failures only: camera_unavailable, capture_failed); `LensSelection` (pure, JVM-tested lens policy), `LensPreferences` (`camera`/`lens` SharedPreferences factory) and `LensCameraSelector` (CameraX adapter and provider discovery; the experimental external-lens opt-in lives only here); `PreviewViewport` (the single retained preview window, outliving each `CameraSession`) and `PreviewSink` (the preview delivery port `CaptureService` implements).
 - `android/app/src/main/java/local/agenteye/http/` — bounded request parser and `StillServer` routes.
 - `android/app/src/main/java/local/agenteye/network/` — Wi-Fi/LAN binding and pure subnet admission.
 - `android/app/src/main/java/local/agenteye/service/` — `CaptureService` session start/stop/rebind coordination (owns the `ACTION_START`/`ACTION_STOP` intent actions and `startForeground` ordering), `SessionNotification` (channel, copy, open and Stop intents of the ongoing notification), `SessionError` (the closed session-wide failure set, wrapping camera failures), credential-free immutable `CaptureSnapshot` (carrying a typed `SessionError?`, uptime and last capture time), `SessionStatusJson` (pure, JVM-tested `GET /status` body), and `SessionPower` locks.
@@ -99,7 +99,7 @@ docs/                   living docs, runbooks, plans/, items/
 ```text
 android/app/src/main/java/local/agenteye/
 ├── AgentEyeApplication.kt   owns the lazy UpdateRuntime
-├── camera/          CameraX session, CaptureLimits (port, still spacing and timeouts shared with http and service), capture geometry, JPEG encoding, CapturedFrame (captured JPEG value), CaptureError (camera failures), LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
+├── camera/          CameraX session, PreviewViewport (retained window), PreviewSink (preview port), CaptureLimits (port, still spacing and timeouts shared with http and service), capture geometry, JPEG encoding, CapturedFrame (captured JPEG value), CaptureError (camera failures), LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
 ├── http/            HttpRequest (bounded parser), StillServer (routes, POST /pair)
 ├── json/            StrictJson, JsonObject
 ├── network/         LAN binding, subnet policy
@@ -138,7 +138,7 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352).
-- **Wide coordinators:** `CaptureService` (dk-e3c7da36), the release CLI command spread (dk-0e25e219).
+- **Wide coordinators:** the release CLI command spread (dk-0e25e219).
 - **Smaller seams (P2/P3):** dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
 - `tooling/android-tools.mjs` imports `signing/artifacts/*` while `signing/` imports `tooling/`: a cycle; move it to a composition layer and add a `tooling` boundary rule when nearby.

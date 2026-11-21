@@ -25,6 +25,7 @@ class CameraSession(
     context: Context,
     private val owner: LifecycleOwner,
     private var lens: Lens,
+    private val viewport: PreviewViewport,
     private val state: (Boolean, CaptureError?) -> Unit
 ) : AutoCloseable {
     private val main = ContextCompat.getMainExecutor(context)
@@ -43,7 +44,6 @@ class CameraSession(
     private var cameraState: LiveData<CameraState>? = null
     private val preview = Preview.Builder().build()
     private var surface: Preview.SurfaceProvider? = null
-    private var viewPort: ViewPort? = null
     private val capture = ImageCapture.Builder()
         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
         .setFlashMode(ImageCapture.FLASH_MODE_OFF)
@@ -89,7 +89,7 @@ class CameraSession(
             cameraState?.removeObservers(owner)
             current.unbind(capture, preview)
             val group = UseCaseGroup.Builder().addUseCase(capture)
-            viewPort?.let { group.setViewPort(it) }
+            viewport.current?.let { group.setViewPort(it) }
             if (surface != null) {
                 preview.setSurfaceProvider(surface)
                 group.addUseCase(preview)
@@ -114,9 +114,8 @@ class CameraSession(
 
     /**
      * Follows the screen: [rotation] is the display rotation (always applied live, no rebind) and
-     * [port] the preview's visible window, shared by preview and still so both frame the same
-     * field of view. The use cases are rebound only when the surface or the window really changed;
-     * a null surface (screen off) keeps the last window so stills stay framed the same.
+     * [port] the preview's visible window, retained by [PreviewViewport]. The use cases are
+     * rebound only when the surface or the window really changed.
      */
     fun attach(
         surfaceProvider: Preview.SurfaceProvider?,
@@ -125,10 +124,9 @@ class CameraSession(
     ) {
         capture.targetRotation = rotation
         preview.targetRotation = rotation
-        val newPort = if (surfaceProvider != null && port != null) port else viewPort
-        val changed = surfaceProvider !== surface || !sameWindow(newPort, viewPort)
+        val windowChanged = viewport.update(surfaceProvider, port)
+        val changed = surfaceProvider !== surface || windowChanged
         surface = surfaceProvider
-        viewPort = newPort
         if (changed && !closed.get()) bind()
     }
 
@@ -147,12 +145,6 @@ class CameraSession(
         busy.set(false)
         main.execute { if (rebindPending && !closed.get()) bind() }
     }
-
-    private fun sameWindow(a: ViewPort?, b: ViewPort?) = a === b || (
-        a != null && b != null && a.aspectRatio == b.aspectRatio &&
-            a.rotation == b.rotation && a.scaleType == b.scaleType &&
-            a.layoutDirection == b.layoutDirection
-        )
 
     @Synchronized fun shot(): CompletableFuture<CapturedFrame> {
         val result = CompletableFuture<CapturedFrame>()

@@ -92,6 +92,8 @@ uses the non-retrying lookup. Never reintroduce `releases/tags/` for release-pip
   `UseCaseGroup` FIT `ViewPort` taken from the `PreviewView`. FIT_CENTER is required in v1.3.0: changing it to FILL reintroduces screen-aspect snapshot cropping;
   `JpegEncoder` applies `cropRect` itself if CameraX leaves the crop as metadata. Rebind only when the
   surface or view port changes: needless rebinds race `takePicture` and leave `cameraReady:false`.
+  The ViewPort lives only in `camera/PreviewViewport`, which outlives each `CameraSession`: geometry
+  sent before Start, across Stop/Start and while the surface is null (screen off) must survive.
   Physical-device acceptance (portrait, landscape, 180 flip, rotate mid-session) is still owed.
 
 - **Lens switches (v1.2.0).** An in-flight still can finish from the old lens; new requests during

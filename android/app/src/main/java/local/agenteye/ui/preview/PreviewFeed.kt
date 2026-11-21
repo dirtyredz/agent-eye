@@ -8,10 +8,10 @@ import android.os.Looper
 import android.view.Surface
 import android.view.View
 import androidx.camera.view.PreviewView
-import local.agenteye.service.CaptureService
+import local.agenteye.camera.PreviewSink
 
-/** Started-Activity-only geometry delivery, independent of composition and service arrival order. */
-class PreviewFeed(private val activity: Activity, private val service: () -> CaptureService?) {
+/** Started-Activity-only geometry delivery to a [PreviewSink], independent of arrival order. */
+class PreviewFeed(private val activity: Activity, private val sink: () -> PreviewSink?) {
     private val handler = Handler(Looper.getMainLooper())
     private val displays = activity.getSystemService(DisplayManager::class.java)
     private var preview: PreviewView? = null
@@ -36,7 +36,7 @@ class PreviewFeed(private val activity: Activity, private val service: () -> Cap
         view.removeOnLayoutChangeListener(layout)
         if (preview === view) {
             handler.removeCallbacks(refresh)
-            service()?.attach(null)
+            sink()?.attach(null)
             preview = null
         }
     }
@@ -54,7 +54,7 @@ class PreviewFeed(private val activity: Activity, private val service: () -> Cap
         displays.unregisterDisplayListener(listener)
         preview?.removeOnLayoutChangeListener(layout)
         handler.removeCallbacks(refresh)
-        service()?.attach(null)
+        sink()?.attach(null)
     }
 
     fun requestRefresh() {
@@ -75,6 +75,6 @@ class PreviewFeed(private val activity: Activity, private val service: () -> Cap
         val rotation = rotation()
         // FIT yields ViewPort.FIT: CameraX keeps the shared camera frame, not the screen ratio.
         val port = view.getViewPort(rotation) ?: return
-        service()?.attach(view.surfaceProvider, rotation, port)
+        sink()?.attach(view.surfaceProvider, rotation, port)
     }
 }

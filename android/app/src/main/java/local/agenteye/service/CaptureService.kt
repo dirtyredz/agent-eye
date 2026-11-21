@@ -12,6 +12,8 @@ import local.agenteye.camera.CameraSession
 import local.agenteye.camera.CaptureLimits
 import local.agenteye.camera.Lens
 import local.agenteye.camera.LensSelection
+import local.agenteye.camera.PreviewSink
+import local.agenteye.camera.PreviewViewport
 import local.agenteye.camera.availableLenses
 import local.agenteye.camera.fromPreferences
 import local.agenteye.http.StillServer
@@ -21,7 +23,9 @@ import local.agenteye.network.SubnetPolicy
 import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
 
-class CaptureService : LifecycleService() {
+class CaptureService :
+    LifecycleService(),
+    PreviewSink {
     inner class LocalBinder : Binder() {
         val service: CaptureService get() = this@CaptureService
     }
@@ -45,7 +49,7 @@ class CaptureService : LifecycleService() {
     @Volatile private var error: SessionError? = null
     private var preview: Preview.SurfaceProvider? = null
     private var rotation = 0
-    private var viewPort: ViewPort? = null
+    private val viewport = PreviewViewport()
     var observer: (() -> Unit)? = null
 
     private val lenses by lazy { LensSelection.fromPreferences(this) }
@@ -91,7 +95,7 @@ class CaptureService : LifecycleService() {
             token = SessionToken()
             pairing = PairingCodes()
             power = SessionPower(this).also { it.acquire() }
-            camera = CameraSession(this, this, lenses.selected ?: Lens.BACK) { _, code ->
+            camera = CameraSession(this, this, lenses.selected ?: Lens.BACK, viewport) { _, code ->
                 if (running) {
                     error = code?.let(SessionError::of) ?: if (address ==
                         null
@@ -102,7 +106,7 @@ class CaptureService : LifecycleService() {
                     }
                     observer?.invoke()
                 }
-            }.also { it.attach(preview, rotation, viewPort) }
+            }.also { it.attach(preview, rotation) }
             lan = LanBinding(this, ::rebind)
         } catch (_: Exception) {
             stopSession()
@@ -158,15 +162,16 @@ class CaptureService : LifecycleService() {
         observer?.invoke()
     }
 
-    fun attach(
-        surface: Preview.SurfaceProvider?,
-        displayRotation: Int = rotation,
-        port: ViewPort? = null
-    ) {
+    /** Replays surface and rotation into each new camera; with no camera, keeps the geometry. */
+    override fun attach(surface: Preview.SurfaceProvider?, displayRotation: Int?, port: ViewPort?) {
         preview = surface
-        rotation = displayRotation
-        if (surface != null && port != null) viewPort = port
-        camera?.attach(surface, rotation, port)
+        rotation = displayRotation ?: rotation
+        val current = camera
+        if (current == null) {
+            viewport.update(surface, port)
+        } else {
+            current.attach(surface, rotation, port)
+        }
     }
     fun snapshot() = CaptureSnapshot(
         running,
