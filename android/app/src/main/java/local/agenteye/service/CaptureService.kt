@@ -20,7 +20,6 @@ import local.agenteye.network.LanBinding
 import local.agenteye.network.SubnetPolicy
 import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
-import org.json.JSONObject
 
 class CaptureService : LifecycleService() {
     inner class LocalBinder : Binder() {
@@ -130,7 +129,7 @@ class CaptureService : LifecycleService() {
                     admit = { SubnetPolicy.allows(binding.address, binding.prefix, it) },
                     token = currentToken,
                     pairing = pairing,
-                    status = ::statusJson,
+                    status = { SessionStatusJson.render(snapshot()) },
                     capture = {
                         val future = currentCamera.shot()
                         future.whenComplete { shot, failure ->
@@ -175,22 +174,14 @@ class CaptureService : LifecycleService() {
         address,
         error,
         availableLenses.toList(),
-        selectedLens
+        selectedLens,
+        android.os.SystemClock.elapsedRealtime() - startedAt,
+        lastCapture
     )
 
     /** The live pairing code (rotated when expired), or null when no session runs. */
     fun pairingCode(): PairingCodes.Code? = if (running) pairing?.current() else null
     fun newPairingCode(): PairingCodes.Code? = if (running) pairing?.refresh() else null
-
-    private fun statusJson(): String = JSONObject().apply {
-        put("protocolVersion", 1)
-        put("sessionReady", running && address != null)
-        put("cameraReady", camera?.ready == true)
-        put("boundAddress", address ?: JSONObject.NULL)
-        put("uptimeMs", android.os.SystemClock.elapsedRealtime() - startedAt)
-        put("lastCaptureTime", lastCapture ?: JSONObject.NULL)
-        put("error", error?.code ?: JSONObject.NULL)
-    }.toString()
 
     fun stopSession() {
         running = false

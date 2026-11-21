@@ -9,5 +9,7 @@ data class CaptureSnapshot(
     val address: String?,
     val error: SessionError?,
     val availableLenses: List<Lens>,
-    val selectedLens: Lens?
+    val selectedLens: Lens?,
+    val uptimeMs: Long = 0L,
+    val lastCaptureTime: Long? = null
 )
