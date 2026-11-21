@@ -21,7 +21,7 @@ export function createAgentEyeDir(root, label) {
   // (if given) before any content exists, lets `fill(handle)` write it, then renames it over `name`.
   // `name` is a plain file name: no separators or '..'. The temporary file never survives a failure.
   async function atomicWrite({ name, prefix, suffix, harden }, fill) {
-    if (path.basename(name) !== name || name === '..' || name === '.' || /[\/]/.test(name)) {
+    if (path.basename(name) !== name || name === '..' || name === '.' || /[\\/]/.test(name)) {
       throw new Error(`${label} file name must not contain a path`);
     }
     const target = path.join(directory, name);

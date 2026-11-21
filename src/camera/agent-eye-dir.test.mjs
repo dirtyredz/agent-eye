@@ -36,7 +36,7 @@ test('atomic write replaces the target and leaves no temporary file, also on fai
 test('file name with a path separator or dot segment is rejected', async t => {
   const root = await sandbox(t);
   const { atomicWrite } = createAgentEyeDir(root, 'Thing');
-  for (const name of ['../x', 'a/b', 'a\b', '..', '.']) {
+  for (const name of ['../x', 'a/b', 'a\\b', '..', '.']) {
     await assert.rejects(atomicWrite({ name, prefix: 'p', suffix: '.t' }, async () => {}), /must not contain a path/);
   }
 });
