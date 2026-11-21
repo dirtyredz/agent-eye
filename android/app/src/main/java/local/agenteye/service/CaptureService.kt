@@ -1,19 +1,13 @@
 package local.agenteye.service
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Intent
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
 import androidx.camera.core.Preview
 import androidx.camera.core.ViewPort
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
-import local.agenteye.R
 import local.agenteye.camera.CameraSession
 import local.agenteye.camera.CaptureLimits
 import local.agenteye.camera.Lens
@@ -84,13 +78,13 @@ class CaptureService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        if (intent?.action == "STOP") {
+        if (intent?.action == ACTION_STOP) {
             stopSession()
             return START_NOT_STICKY
         }
-        if (intent?.action != "START" || running) return START_NOT_STICKY
+        if (intent?.action != ACTION_START || running) return START_NOT_STICKY
         try {
-            showNotification()
+            startForeground(SessionNotification.ID, SessionNotification.build(this))
             running = true
             startedAt = android.os.SystemClock.elapsedRealtime()
             lastCapture = null
@@ -117,43 +111,6 @@ class CaptureService : LifecycleService() {
         }
         observer?.invoke()
         return START_NOT_STICKY
-    }
-
-    private fun showNotification() {
-        val manager = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= 26) {
-            manager.createNotificationChannel(
-                NotificationChannel("capture", "Camera session", NotificationManager.IMPORTANCE_LOW)
-            )
-        }
-        val stop = PendingIntent.getService(
-            this,
-            1,
-            Intent(this, CaptureService::class.java).setAction("STOP"),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        val open = PendingIntent.getActivity(
-            this,
-            2,
-            packageManager.getLaunchIntentForPackage(packageName) ?: Intent(),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        val builder = if (Build.VERSION.SDK_INT >=
-            26
-        ) {
-            Notification.Builder(this, "capture")
-        } else {
-            Notification.Builder(this)
-        }
-        startForeground(
-            1,
-            builder.setSmallIcon(R.drawable.ic_camera_notification)
-                .setContentTitle(
-                    "Agent Eye is active"
-                ).setContentText("Local camera session · Tap to open")
-                .setContentIntent(open).setOngoing(true)
-                .addAction(Notification.Action.Builder(null, "Stop", stop).build()).build()
-        )
     }
 
     private fun rebind(binding: LanAddress?) {
@@ -260,5 +217,10 @@ class CaptureService : LifecycleService() {
         observer = null
         preview = null
         super.onDestroy()
+    }
+
+    companion object {
+        const val ACTION_START = "START"
+        const val ACTION_STOP = "STOP"
     }
 }

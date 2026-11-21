@@ -48,7 +48,8 @@ class SessionStarter(private val activity: Activity, private val model: CaptureS
             return
         }
         try {
-            val intent = Intent(activity, CaptureService::class.java).setAction("START")
+            val intent = Intent(activity, CaptureService::class.java)
+                .setAction(CaptureService.ACTION_START)
             if (Build.VERSION.SDK_INT >= 26) {
                 activity.startForegroundService(intent)
             } else {
