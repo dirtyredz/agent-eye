@@ -2,8 +2,8 @@
 id: dk-afb1348d
 type: task
 created: 2026-10-26
-status: todo
-since: 2026-10-26
+status: done
+since: 2026-11-21
 area: camera
 priority: P2
 rank: y
