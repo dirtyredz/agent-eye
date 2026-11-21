@@ -11,7 +11,8 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `src/android/releases/cli/` — side-effect-free argument parsing and CI/owner command dispatch.
 - `src/android/releases/github/` — GitHub release assets, history, draft lookup by tag (`releaseByTag`; the tags endpoint hides drafts) and Actions provenance.
 - `src/android/releases/local/` — owner transaction ordering, checkout, verification, retry cache and lock.
-- `src/android/signing/` — signing responsibilities below plus `signing-smoke.mjs`, the explicitly invoked disposable-key integration check.
+- `src/android/signing/` — signing responsibilities below; imports only `shared/`, never `releases/` (guarded by `guards/import-boundaries.test.mjs`).
+- `src/android/shared/` — leaf modules: `assert.mjs` (`requireThat`, `hex`), `release-identity.mjs` (application id, SDK, version shape, artifact identity, certificate pin, unsigned-JAR check), `digest.mjs`. `releases/artifacts/contract.mjs` re-exports them.
 - `src/android/signing/artifacts/` — APK (`apk-signing.mjs`) and AAB (`bundle-signing.mjs`) inspection, signing and verification.
 - `src/android/signing/vault/` — 1Password DesktopAuth adapter (`vault.mjs`, documents the `error.stage` contract), vault creation (`vault-setup.mjs`), config lookup (`signing-config.mjs`: locates `signing.local.json`, checkout then main worktree), repair (`vault-maintenance.mjs`) and the default account (`owner-account.mjs`).
 - `src/android/signing/keys/` — key custody: isolated key directories (`key-material.mjs`), generation and recovery (`key-provisioning.mjs`) and `provision-flow.mjs` (vault then key).
@@ -80,13 +81,14 @@ src/
     │   ├── cli/         CLI parsing and CI/owner commands
     │   ├── github/      release API, draft lookup and Actions provenance
     │   ├── local/       owner transaction, release tools, local checks/cache/lock
+    │   ├── smoke/       signing-smoke.mjs, the disposable-key integration check
     │   └── signing-certificate.json
     ├── signing/
     │   ├── artifacts/   APK and AAB signing
     │   ├── vault/       DesktopAuth adapter, vault setup, config lookup and repair
-    │   ├── keys/        key material, provisioning, provision flow
-    │   └── signing-smoke.mjs
-    ├── guards/          repo guard tests (workflows, window policy, package boundaries)
+    │   └── keys/        key material, provisioning, provision flow
+    ├── shared/          leaf modules used by releases/ and signing/ (assert, release identity, digest)
+    ├── guards/          repo guard tests (workflows, window policy, package and import boundaries)
     └── tooling/         Android tools and subprocess execution
 scripts/release/        owner-run .ps1 pass-throughs, harness template, dry-run tests
 android/                Gradle project (Kotlin app, version.properties, signing.example.json)
@@ -118,12 +120,12 @@ Release `cli/cli.mjs` parses flags without loading execution adapters on dry-run
 or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
 `local/release-sign.mjs` owns transaction ordering; `local/local-release.mjs` assembles
 `checkout.mjs`, `draft-verification.mjs`, `retry-cache.mjs` and `release-lock.mjs`.
-`artifacts/contract.mjs` owns phase-specific asset sets and shared unsigned-JAR checks.
+`artifacts/contract.mjs` owns release names, phase-specific asset sets and the manifest schema.
 APK and AAB verification remain separate under `signing/artifacts/`; `tooling/android-tools.mjs`
 owns SDK discovery and the build-tools version used by both workflows and signing;
 `guards/workflows.test.mjs` guards both workflows against PATH-based `sdkmanager` calls; `guards/window-policy.test.mjs` guards the screenshot policy.
 `signing/vault/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` in the checkout only (`setup-vault`); `signing/vault/signing-config.mjs` owns `CONFIG_FILE` and `resolveSigningConfigPath`, which every read-only lookup (release-sign, inspect, cleanup, key commands) uses to find it in the checkout, else the main worktree; `signing/keys/provision-flow.mjs` runs `provision` = vault then key; the default 1Password account lives alone in `signing/vault/owner-account.mjs`. `cli/command-names.mjs` is the single owner/CI command set. Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
-`signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
+`releases/smoke/signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 
 Structural review: 2026-10-25 (findings applied 2026-10-26: typed errors, status resources, ui/capture state owner). No code file exceeds 800 lines.
@@ -135,8 +137,7 @@ From the 2026-10-26 baseline review: componentization and abstraction lenses for
 topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items hold the details.
 
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
-  shared vocabulary (dk-7948b352); `signing/` <-> `releases/` through `requireThat` in
-  `contract.mjs` (dk-28656ae1).
+  shared vocabulary (dk-7948b352).
 - **Duplicated mechanics (P1):** the SHA256SUMS format and
   `release.json` literals in release tooling (dk-d31136f0).
 - **Wide coordinators:** `CaptureService` (dk-e3c7da36), GitHub

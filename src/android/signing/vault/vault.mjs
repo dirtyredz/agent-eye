@@ -1,4 +1,4 @@
-import { requireThat } from '../../releases/artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
 // Contract: failures raised by the vault adapter and its callers may carry `error.stage` (a short step name such as
 // "store-password" or "store-document") set by atStage(); reporters print it next to the original cause. atStage itself stays private
 // to the signing modules: it never changes the error message and never masks the underlying failure.

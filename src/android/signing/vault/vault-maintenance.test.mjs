@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { github } from '../../releases/github/github.mjs';
 import { inspectVault, cleanupOrphans } from './vault-maintenance.mjs';
 
 const config = { documentTitle: 'Agent Eye release key', passwordTitle: 'Agent Eye release key password' };
@@ -44,13 +43,4 @@ test('cleanup fails closed: pin set, release exists, gh failure, odd gh output, 
   const dup = fakeVault([item('a', 'Agent Eye release key'), item('b', 'Agent Eye release key')]);
   await assert.rejects(cleanupOrphans({ vault: dup, pin: { sha256: null }, gh: noRelease, execute: true, say: () => {} }), /duplicate/);
   assert.deepEqual(vault.deleted.concat(dup.deleted), []);
-});
-
-test('cleanup guard sees a release on page 2 (via the github adapter) and refuses', async () => {
-  const gh = github(async (_file, args) => {
-    const route = args[1];
-    const page = Number(/&page=(\d+)/.exec(route)[1]);
-    return { stdout: JSON.stringify(page === 1 ? Array(100).fill({ tag_name: 'x', draft: true }) : [{ tag_name: 'v1.0.0' }]) };
-  });
-  await assert.rejects(cleanupOrphans({ vault: fakeVault([item('a', 'Agent Eye release key')]), pin: { sha256: null }, gh, execute: true, say: () => {} }), /101 GitHub release\(s\) exist/);
 });

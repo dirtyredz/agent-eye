@@ -4,12 +4,12 @@
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { onTermination, run as bareRun } from '../tooling/process.mjs';
-import { runScript } from '../../script-run/script-run.mjs';
-import { tooling } from '../tooling/android-tools.mjs';
-import { readVersion, PASS_ENV } from '../releases/artifacts/contract.mjs';
-import { keyCertificate } from './keys/key-provisioning.mjs';
-import { main } from '../releases/cli/cli.mjs';
+import { onTermination, run as bareRun } from '../../tooling/process.mjs';
+import { runScript } from '../../../script-run/script-run.mjs';
+import { tooling } from '../../tooling/android-tools.mjs';
+import { readVersion, PASS_ENV } from '../../shared/release-identity.mjs';
+import { keyCertificate } from '../../signing/keys/key-provisioning.mjs';
+import { main } from '../cli/cli.mjs';
 
 async function smoke(log) {
   const { dryRun } = log;

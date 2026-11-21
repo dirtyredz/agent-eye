@@ -13,7 +13,7 @@ const cases = [
   [cli, 'generate-key', '--dry-run'], [cli, 'verify-key', '--dry-run'],
   [cli, 'release-sign', '--tag', 'v1.0.0', '--release-id', '1', '--dry-run', '--publish'],
   [cli, 'validate-tag', '--dry-run'], [cli, 'stage', '--dry-run'], [cli, 'draft', '--dry-run'],
-  [src('android/signing/signing-smoke.mjs'), '--dry-run'],
+  [src('android/releases/smoke/signing-smoke.mjs'), '--dry-run'],
   [src('camera/snapshot.mjs'), 'clean', '--dry-run'],
   [src('camera/snapshot.mjs'), 'status', '--url', 'http://192.168.1.2:8765', '--dry-run'],
   [src('camera/snapshot.mjs'), 'pair', '--url', 'http://192.168.1.2:8765', '--code', '123456', '--dry-run'],

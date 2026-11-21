@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import { join, resolve, relative } from 'node:path';
 import { tmpdir } from 'node:os';
-import { requireThat } from '../../releases/artifacts/contract.mjs';
+import { requireThat } from '../../shared/assert.mjs';
 import { onTermination } from '../../tooling/process.mjs';
 
 export async function protectedDirectory({ run, root, io = fs, tempRoot = tmpdir(), platform = process.platform }) {

@@ -1,9 +1,9 @@
-import { createHash } from 'node:crypto';
 import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { UNSIGNED_MANIFEST, APPLICATION_ID, REPOSITORY, SDK, WORKFLOW, UNSIGNED, FINAL, manifest, requireThat } from './contract.mjs';
+import { digest } from '../../shared/digest.mjs';
 
-export const digest = bytes => ({ size: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
+export { digest } from '../../shared/digest.mjs';
 export async function hashes(dir, names) {
   return Object.fromEntries(await Promise.all(names.map(async name => [name, digest(await readFile(join(dir, name)))])));
 }

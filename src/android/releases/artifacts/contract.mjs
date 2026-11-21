@@ -1,11 +1,15 @@
+import { hex, requireThat } from '../../shared/assert.mjs';
+import { APPLICATION_ID, SDK, version } from '../../shared/release-identity.mjs';
+
+// Release vocabulary (names, assets, manifest schema). The shared leaf names signing/ also needs
+// live in src/android/shared/ and are re-exported here so releases/ importers keep one import point.
+export { requireThat, hex } from '../../shared/assert.mjs';
+export { APPLICATION_ID, SDK, PASS_ENV, version, readVersion, identity, certificate, assertJarUnsigned } from '../../shared/release-identity.mjs';
 export const REPOSITORY = 'dirtyredz/agent-eye';
-export const APPLICATION_ID = 'local.agenteye';
-export const SDK = Object.freeze({ minSdk: 24, targetSdk: 36, compileSdk: 36 });
 export const UNSIGNED = ['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', 'mapping.txt'];
 export const FINAL = ['agent-eye.apk', 'agent-eye.aab', 'mapping.txt'];
 export const UNSIGNED_MANIFEST = 'release-unsigned.json';
 export const finalNames = [...FINAL, 'release.json', 'SHA256SUMS'];
-export const PASS_ENV = 'AGENT_EYE_KEY_PASSWORD';
 // CI and signing retries may have partial sets; only the cleaned final set is exact.
 export function assertAssetSet(assets, phase) {
   const allowed = phase === 'ci' ? [...UNSIGNED, UNSIGNED_MANIFEST]
@@ -17,35 +21,7 @@ export function assertAssetSet(assets, phase) {
   requireThat(new Set(assets.map(a => a.name)).size === assets.length, 'Unexpected or duplicate draft assets');
   if (phase === 'final') requireThat(assets.length === finalNames.length, 'Incomplete final asset set');
 }
-export function assertJarUnsigned(entries, message = 'Signed JAR input refused') {
-  requireThat(!/^META-INF\/[^\r\n]+\.(SF|RSA|DSA|EC)$/im.test(entries), message);
-}
 export const WORKFLOW = '.github/workflows/android-release.yml';
-export const hex = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
-export function requireThat(condition, message) {
-  if (!condition) throw new Error(message);
-}
-export function version(value, tag = `v${value?.versionName}`) {
-  requireThat(value && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(value.versionName), 'Invalid versionName');
-  requireThat(Number.isInteger(value.versionCode) && value.versionCode > 0 && value.versionCode <= 2100000000, 'Invalid versionCode');
-  requireThat(tag === `v${value.versionName}`, 'Tag/version mismatch');
-  return value;
-}
-export function readVersion(text) {
-  const lines = text.trim().split(/\r?\n/);
-  requireThat(lines.length === 2 && lines[0].startsWith('versionName=') && /^versionCode=[1-9]\d*$/.test(lines[1]), 'Invalid version.properties');
-  return version({ versionName: lines[0].slice(12), versionCode: Number(lines[1].slice(12)) });
-}
-export function identity(actual, expected) {
-  for (const [key, val] of Object.entries({ applicationId: APPLICATION_ID, ...SDK, ...version(expected) })) {
-    requireThat(actual[key] === val, `Artifact identity mismatch: ${key}`);
-  }
-  requireThat(actual.debuggable === false, 'Debuggable artifact refused');
-}
-export function certificate(pin) {
-  requireThat(pin.applicationId === APPLICATION_ID && hex(pin.sha256) && pin.alias === 'agent-eye' && Number.isInteger(pin.firstVersionCode) && pin.firstVersionCode > 0, 'Public certificate pin is not provisioned or invalid');
-  return pin;
-}
 export function manifest(m, signed = false) {
   requireThat(m?.schema === 1 && m.repository === REPOSITORY && m.applicationId === APPLICATION_ID, 'Invalid manifest identity/schema');
   version(m, m.tag);
