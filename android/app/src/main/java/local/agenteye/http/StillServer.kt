@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import local.agenteye.camera.CapturedFrame
 import local.agenteye.security.PairHandler
+import local.agenteye.security.PairOutcome
 import local.agenteye.security.PairingCodes
 import local.agenteye.security.SessionToken
 
@@ -146,10 +147,21 @@ class StillServer(
     private fun pair(socket: Socket, request: HttpRequest) {
         val handler = pairHandler ?: throw HttpFailure(404)
         val client = socket.inetAddress.hostAddress.orEmpty()
-        val result = handler.handle(client, request.body)
-        if (result.status != 200) throw HttpFailure(result.status)
-        respond(socket, 200, "application/json", result.body.toByteArray())
+        when (val outcome = handler.handle(client, request.body)) {
+            is PairOutcome.Token ->
+                respond(socket, 200, "application/json", tokenBody(outcome.secret))
+
+            PairOutcome.BadRequest -> throw HttpFailure(400)
+
+            PairOutcome.Rejected -> throw HttpFailure(403)
+
+            PairOutcome.RateLimited -> throw HttpFailure(429)
+
+            PairOutcome.Unavailable -> throw HttpFailure(503)
+        }
     }
+
+    private fun tokenBody(secret: String) = "{\"token\":\"$secret\"}".toByteArray()
 
     private fun freshShot(): CapturedFrame {
         synchronized(captureLock) {

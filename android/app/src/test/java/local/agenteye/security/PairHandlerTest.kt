@@ -11,18 +11,16 @@ class PairHandlerTest {
 
     @Test fun correctCodeReturnsTheSessionToken() {
         val r = handler.handle("c", """{"code":"123456"}""")
-        assertEquals(200, r.status)
-        assertEquals("""{"token":"${token.display()}"}""", r.body)
+        assertTrue(r is PairOutcome.Token)
+        assertEquals(token.display(), (r as PairOutcome.Token).secret)
     }
 
     @Test fun whitespaceAroundFieldsIsAccepted() {
-        assertEquals(200, handler.handle("c", """{ "code" : "123456" }""").status)
+        assertTrue(handler.handle("c", """{ "code" : "123456" }""") is PairOutcome.Token)
     }
 
-    @Test fun wrongCodeIsForbiddenAndLeaksNothing() {
-        val r = handler.handle("c", """{"code":"000000"}""")
-        assertEquals(403, r.status)
-        assertEquals("", r.body)
+    @Test fun wrongCodeIsRejected() {
+        assertEquals(PairOutcome.Rejected, handler.handle("c", """{"code":"000000"}"""))
     }
 
     @Test fun malformedBodiesAreBadRequests() {
@@ -37,24 +35,24 @@ class PairHandlerTest {
             "{\"code\":\"123456\"}\n",
             """{"code":"12345é"}"""
         )) {
-            assertEquals(body, 400, handler.handle("c", body).status)
+            assertEquals(body, PairOutcome.BadRequest, handler.handle("c", body))
         }
     }
 
     @Test fun malformedBodiesDoNotSpendAttempts() {
         repeat(10) { handler.handle("c", "{}") }
-        assertEquals(200, handler.handle("c", """{"code":"123456"}""").status)
+        assertTrue(handler.handle("c", """{"code":"123456"}""") is PairOutcome.Token)
     }
 
     @Test fun clientIsRateLimited() {
         repeat(3) { handler.handle("c", """{"code":"000000"}""") }
-        assertEquals(429, handler.handle("c", """{"code":"123456"}""").status)
-        assertEquals(200, handler.handle("other", """{"code":"123456"}""").status)
+        assertEquals(PairOutcome.RateLimited, handler.handle("c", """{"code":"123456"}"""))
+        assertTrue(handler.handle("other", """{"code":"123456"}""") is PairOutcome.Token)
     }
 
     @Test fun clearedTokenIsUnavailable() {
         token.clear()
-        assertEquals(503, handler.handle("c", """{"code":"123456"}""").status)
-        assertTrue(handler.handle("c", "{}").body.isEmpty())
+        assertEquals(PairOutcome.Unavailable, handler.handle("c", """{"code":"123456"}"""))
+        assertEquals(PairOutcome.BadRequest, handler.handle("c", "{}"))
     }
 }

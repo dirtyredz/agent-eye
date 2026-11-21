@@ -219,6 +219,17 @@ class StillServerTest {
         }
     }
 
+    @Test fun pairingIsUnavailableWhenTheTokenIsCleared() {
+        val token = SessionToken()
+        val pairing = PairingCodes()
+        StillServer(local, 0, { true }, token, { "{}" }, {
+            CompletableFuture.completedFuture(CapturedFrame(jpeg, 1, 1))
+        }, pairing = pairing).use { server ->
+            token.clear()
+            assertTrue(post(server, json(pairing.current().value)).startsWith("HTTP/1.1 503"))
+        }
+    }
+
     @Test fun pairingDisabledWithoutGateAndClientRateLimited() {
         StillServer(local, 0, { true }, SessionToken(), { "{}" }, {
             CompletableFuture.completedFuture(CapturedFrame(jpeg, 1, 1))
