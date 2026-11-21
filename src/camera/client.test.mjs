@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { createClient, destination, validateJpeg } from './client.mjs';
+import { createClient } from './client.mjs';
 
 // Structural JPEG fixture: SOI, baseline frame, scan, entropy byte, EOI.
 const jpeg = Buffer.from('ffd8ffc0000b080001000101011100ffda0008010100003f0000ffd9', 'hex');
@@ -23,16 +23,6 @@ function send(res, body = jpeg, extra = {}) {
     'Cache-Control': 'no-store', 'X-Capture-Timestamp': '1700000000000', 'X-Capture-Sequence': '1', ...extra });
   res.end(body);
 }
-
-test('only canonical literal RFC1918 HTTP destinations are accepted', () => {
-  for (const url of [base, 'http://10.0.0.1', 'http://172.16.0.1', 'http://172.31.255.254']) assert.ok(destination(url));
-  for (const url of ['https://192.168.1.1', 'http://localhost', 'http://127.0.0.1', 'http://169.254.1.1',
-    'http://172.15.1.1', 'http://172.32.0.1', 'http://8.8.8.8', 'http://192.168.1.1@evil.test',
-    'http://user:pass@192.168.1.1', 'http://192.168.1.1/shot.jpg', 'http://192.168.1.1?token=x',
-    'http://0xc0a80101', 'http://3232235777', 'http://192.168.01.1', 'http://[::ffff:192.168.1.1]', 'http://192.168.1.1:99999']) {
-    assert.throws(() => destination(url), undefined, url);
-  }
-});
 
 test('valid JPEG and status use bearer authentication and preserve metadata', async t => {
   const client = await fixture(t, (req, res) => {
@@ -99,11 +89,6 @@ test('rejects chunked responses and unsupported status protocol', async t => {
   });
   await assert.rejects(client.shot(base, token), /length/);
   await assert.rejects(client.status(base, token), /protocol/);
-});
-
-test('JPEG validation rejects incomplete frame and scan markers', () => {
-  assert.doesNotThrow(() => validateJpeg(jpeg));
-  for (let length = 0; length < jpeg.length; length++) assert.throws(() => validateJpeg(jpeg.subarray(0, length)));
 });
 
 function body(req) { return new Promise(resolve => { let text = ''; req.on('data', c => { text += c; }); req.on('end', () => resolve(text)); }); }

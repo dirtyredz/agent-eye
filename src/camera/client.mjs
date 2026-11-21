@@ -1,45 +1,6 @@
 import http from 'node:http';
-import net from 'node:net';
-
-export function destination(raw) {
-  // Validate the original authority before URL can normalize integers/hex/short IPv4.
-  if (typeof raw !== 'string' || !/^http:\/\/\d+\.\d+\.\d+\.\d+(?::[1-9]\d{0,4})?\/?$/.test(raw)) {
-    throw new Error('Use a literal private IPv4 HTTP base URL, without credentials or a path');
-  }
-  const url = new URL(raw);
-  const host = raw.slice(7).split(/[/:]/)[0];
-  if (net.isIP(host) !== 4 || host !== url.hostname) throw new Error('Invalid IPv4 address');
-  const [a, b] = host.split('.').map(Number);
-  if (!(a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168))) {
-    throw new Error('Destination must be RFC1918 IPv4');
-  }
-  return url;
-}
-
-// Check JPEG structure as well as magic: an HTML payload with a JPEG prefix is not a frame.
-export function validateJpeg(data) {
-  if (data.length < 12 || data.readUInt16BE(0) !== 0xffd8 || data.readUInt16BE(data.length - 2) !== 0xffd9) throw new Error('Invalid JPEG');
-  let offset = 2;
-  let frame = false;
-  while (offset < data.length - 2) {
-    if (data[offset++] !== 0xff) throw new Error('Invalid JPEG marker');
-    while (data[offset] === 0xff) offset++;
-    const marker = data[offset++];
-    if (offset + 2 > data.length) throw new Error('Truncated JPEG');
-    const length = data.readUInt16BE(offset);
-    if (length < 2 || offset + length > data.length - 2) throw new Error('Truncated JPEG segment');
-    if ([0xc0, 0xc1, 0xc2].includes(marker)) {
-      if (length < 8 || !data.readUInt16BE(offset + 3) || !data.readUInt16BE(offset + 5)) throw new Error('Invalid JPEG dimensions');
-      frame = true;
-    }
-    if (marker === 0xda) {
-      if (!frame || length < 6 || offset + length >= data.length - 2) throw new Error('Invalid JPEG scan');
-      return;
-    }
-    offset += length;
-  }
-  throw new Error('Missing JPEG scan');
-}
+import { destination } from './destination.mjs';
+import { validateJpeg } from './jpeg.mjs';
 
 export function createClient({ request = http.request, timeoutMs = 10000 } = {}) {
   // `post` (pairing only) sends a tiny JSON body and no bearer token; everything else is an authenticated GET.

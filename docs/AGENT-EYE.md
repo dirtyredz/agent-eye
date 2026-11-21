@@ -61,7 +61,7 @@ The gate tests policy/server/client behavior; it cannot establish CameraX hardwa
 - `.\android\gradlew.bat -p android assembleDebug testDebugUnitTest`:
   `BUILD SUCCESSFUL in 4m 49s`, `43 actionable tasks: 43 executed`.
   All 12 JVM tests passed with zero failures, errors or skips. Debug APK: 4,708,052 bytes.
-- `node --test src/camera/client.test.mjs src/camera/snapshot-store.test.mjs`:
+- `node --test src/camera/client.test.mjs src/camera/destination.test.mjs src/camera/jpeg.test.mjs src/camera/snapshot-store.test.mjs`:
   `# tests 17`, `# pass 17`, `# fail 0`, `# skipped 0`.
 - `.\android\gradlew.bat --stop`: `No Gradle daemons are running.`
 - `dk check`: `1 item file(s), 0 error(s), 0 warning(s)`; implementation item closed.

@@ -65,13 +65,13 @@ pure `InstallRecovery`, `InstallPrompter` (Activity-facing confirmation/permissi
 and `ui/update/`, with fakes in `selfupdate/UpdateFakes.kt`. The signer pin is not hand-written in
 Kotlin: Gradle task `generateUpdatePinAsset` packages `signing-certificate.json` as `update-signer.txt`.
 
-The PC CLI is `snapshot.mjs` (argument parsing and token resolution in `snapshot-args.mjs`); `client.mjs` owns direct HTTP validation and `pair`;
-`agent-eye-dir.mjs` owns private-directory validation and atomic replacement for both stores; `snapshot-store.mjs` keeps snapshot naming, durability and cleanup; `token-store.mjs` owns the owner-only paired-token file. Tests are adjacent `.test.mjs` files (`client`, `token-store`, `snapshot-args` incl. log redaction, `snapshot-store`, `agent-eye-dir`).
+The PC CLI is `snapshot.mjs` (argument parsing and token resolution in `snapshot-args.mjs`); `client.mjs` owns the bounded HTTP transport, protocol and `pair`, with `destination.mjs` (private-LAN IPv4 policy) and `jpeg.mjs` (structural JPEG check) split out;
+`agent-eye-dir.mjs` owns private-directory validation and atomic replacement for both stores; `snapshot-store.mjs` keeps snapshot naming, durability and cleanup; `token-store.mjs` owns the owner-only paired-token file. Tests are adjacent `.test.mjs` files (`client`, `destination`, `jpeg`, `token-store`, `snapshot-args` incl. log redaction, `snapshot-store`, `agent-eye-dir`).
 There is no device-control integration in this repository.
 
 ```text
 src/
-├── camera/          PC client, snapshot and token stores, agent-eye-dir (shared private dir + atomic write)
+├── camera/          PC client (+ destination, jpeg), snapshot and token stores, agent-eye-dir (shared private dir + atomic write)
 ├── script-run/      standard script wrapper (copied verbatim across repos)
 └── android/
     ├── icons/           canonical SVG, generator, play-store-512.png
