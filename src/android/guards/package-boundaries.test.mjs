@@ -8,6 +8,7 @@ const BOUNDARIES = [
   { from: 'service', forbidden: 'local.agenteye.ui' },
   { from: 'camera', forbidden: 'local.agenteye.http' },
   { from: 'selfupdate/install', forbidden: 'local.agenteye.selfupdate.release' },
+  { from: 'selfupdate', forbidden: 'local.agenteye.ui' },
 ];
 
 /** True when the source mentions the forbidden package: imports and fully qualified usages alike. */

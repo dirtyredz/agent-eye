@@ -29,7 +29,7 @@ class InstallResultReceiver : BroadcastReceiver() {
         } else {
             null
         }
-        (context.applicationContext as AgentEyeApplication).updates
+        (context.applicationContext as AgentEyeApplication).updates.prompter
             .installResult(sessionId, intent.getStringExtra(EXTRA_NONCE), status, confirmation)
     }
 

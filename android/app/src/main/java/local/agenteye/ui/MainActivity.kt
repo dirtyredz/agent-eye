@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         updates.coordinator.forget(updateListener)
-        updates.detach(isChangingConfigurations)
+        updates.prompter.detach(isChangingConfigurations)
         super.onPause()
     }
 

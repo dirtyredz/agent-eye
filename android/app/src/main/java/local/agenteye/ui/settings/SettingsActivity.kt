@@ -45,7 +45,7 @@ class SettingsActivity : ComponentActivity() {
 
     override fun onPause() {
         updates.coordinator.forget(listener)
-        updates.detach(isChangingConfigurations)
+        updates.prompter.detach(isChangingConfigurations)
         super.onPause()
     }
 
@@ -71,10 +71,10 @@ class SettingsActivity : ComponentActivity() {
             UpdateAction.Install -> coordinator.install()
 
             UpdateAction.GrantPermission -> runCatching {
-                startActivity(updates.permissionIntent())
+                startActivity(updates.prompter.permissionIntent())
             }
 
-            UpdateAction.Continue -> updates.continueInstall()
+            UpdateAction.Continue -> updates.prompter.continueInstall()
 
             UpdateAction.AbandonRetry -> coordinator.abandonAndRetry()
         }

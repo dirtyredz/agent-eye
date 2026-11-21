@@ -50,7 +50,7 @@ class CaptureServiceLink(
     }
 
     /** Call from onResume (not onStart: overlapping start/stop would clear the new launcher). */
-    fun attachUpdates(updates: UpdateRuntime) = updates.attach(activity) {
+    fun attachUpdates(updates: UpdateRuntime) = updates.prompter.attach(activity) {
         val capture = service
         capture?.stopSession()
         capture != null
