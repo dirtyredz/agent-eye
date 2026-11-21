@@ -86,10 +86,10 @@ src/
     ├── signing/
     │   ├── artifacts/   APK and AAB signing
     │   ├── vault/       DesktopAuth adapter, vault setup, config lookup and repair
-    │   └── keys/        key material, provisioning, provision flow
+    │   └── keys/        key material, inspection, provisioning, provision flow
     ├── shared/          leaf modules used by releases/ and signing/ (assert, release identity, signing policy, digest)
     ├── guards/          repo guard tests (workflows, window policy, package and import boundaries)
-    └── tooling/         Android tools and subprocess execution
+    └── tooling/         Android tools, Gradle releaseTools runner, subprocess execution
 scripts/release/        owner-run .ps1 pass-throughs, harness template, dry-run tests
 android/                Gradle project (Kotlin app, version.properties, signing.example.json)
 .github/workflows/      ci.yml (verification), android-release.yml (unsigned artifacts, draft)
@@ -138,9 +138,8 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352).
-- **Wide coordinators:** `CaptureService` (dk-e3c7da36), GitHub
-  provenance still in the `github()` adapter (dk-782342ab), the release CLI command spread (dk-0e25e219).
-- **Smaller seams (P2/P3):** dk-bed2beb9, dk-1a0ea30f, dk-7fe1491b, dk-de2486c6, dk-02d3e16c,
-  dk-25aafecb, dk-48064578, dk-8e8110f3.
+- **Wide coordinators:** `CaptureService` (dk-e3c7da36), the release CLI command spread (dk-0e25e219).
+- **Smaller seams (P2/P3):** dk-bed2beb9, dk-1a0ea30f, dk-7fe1491b, dk-de2486c6, dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
-  It gains files when dk-782342ab lands.
+- `tooling/android-tools.mjs` imports `signing/artifacts/*` while `signing/` imports `tooling/`: a cycle; move it to a composition layer and add a `tooling` boundary rule when nearby.
+
