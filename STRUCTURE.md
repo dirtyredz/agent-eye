@@ -124,7 +124,7 @@ or `cli/owner-commands.mjs` (setup, provisioning, recovery and signing).
 APK and AAB verification remain separate under `signing/artifacts/`; `tooling/android-tools.mjs`
 owns SDK discovery and the build-tools version used by both workflows and signing;
 `guards/workflows.test.mjs` guards both workflows against PATH-based `sdkmanager` calls; `guards/window-policy.test.mjs` guards the screenshot policy.
-`signing/vault/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` in the checkout only (`setup-vault`); `signing/vault/signing-config.mjs` owns `CONFIG_FILE` and `resolveSigningConfigPath`, which every read-only lookup (release-sign, inspect, cleanup, key commands) uses to find it in the checkout, else the main worktree; `signing/keys/provision-flow.mjs` runs `provision` = vault then key; the default 1Password account lives alone in `signing/vault/owner-account.mjs`. `cli/command-names.mjs` is the single owner/CI command set. Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
+`signing/vault/vault-setup.mjs` creates the dedicated signing vault and writes `android/signing.local.json` in the checkout only (`setup-vault`); `signing/vault/signing-config.mjs` owns `CONFIG_FILE` and `resolveSigningConfigPath`, which every read-only lookup (release-sign, inspect, cleanup, key commands) uses to find it in the checkout, else the main worktree; `signing/keys/provision-flow.mjs` runs `provision` = vault then key and owns the vault/pin report lines `owner-commands.mjs` reuses; `releases/pin-store.mjs` is the one reader/writer of `signing-certificate.json` (path, read, write; `signing/` cannot import `releases/`, so `key-provisioning.mjs` keeps its injected io); the default 1Password account lives alone in `signing/vault/owner-account.mjs`. `cli/command-names.mjs` is the single owner/CI command set. Every entry point (`cli.mjs`, `signing-smoke.mjs`, `snapshot.mjs`) runs inside `runScript`, so it works from any directory and logs to `.tmp/logs/` or, for owner commands, `.tmp/owner-runs/`.
 `releases/smoke/signing-smoke.mjs` is an explicitly invoked disposable-key integration check, not a unit test.
 `android/version.properties` is the version source; only the public certificate pin is tracked.
 
@@ -138,7 +138,7 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352).
-- **Wide coordinators:** the release CLI command spread (dk-0e25e219).
+- **Wide coordinators:** the release CLI command spread; the pin-store and shared provision reporters are done, the command table (name, kind, plan, flags, handler) is deferred-command-table until the next command is added (dk-0e25e219).
 - **Smaller seams (P2/P3):** dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
 - `tooling/android-tools.mjs` imports `signing/artifacts/*` while `signing/` imports `tooling/`: a cycle; move it to a composition layer and add a `tooling` boundary rule when nearby.

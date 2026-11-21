@@ -11,6 +11,7 @@ import { readVersion } from '../../shared/release-identity.mjs';
 import { PASS_ENV } from '../../shared/signing-policy.mjs';
 import { keyCertificate } from '../../signing/keys/key-inspection.mjs';
 import { main } from '../cli/cli.mjs';
+import { pinPathFor, readPin } from '../pin-store.mjs';
 
 async function smoke(log) {
   const { dryRun } = log;
@@ -48,7 +49,7 @@ async function smoke(log) {
       if (!bundled.equals(policy)) throw new Error(`Bundled privacy policy differs from source: ${entry}`);
     }
     // The updater's packaged signer pin must be the tracked public pin (not the disposable key).
-    const tracked = JSON.parse(await readFile(join(root, 'src/android/releases/signing-certificate.json'), 'utf8')).sha256;
+    const tracked = (await readPin(pinPathFor(root))).sha256;
     for (const [archive, entry] of [[signedApk, 'assets/update-signer.txt'], [signedAab, 'base/assets/update-signer.txt']]) {
       await run('jar', ['xf', archive, entry], { cwd: dir });
       if ((await readFile(join(dir, entry), 'utf8')).trim() !== tracked) throw new Error(`Bundled update pin differs from signing-certificate.json: ${entry}`);
