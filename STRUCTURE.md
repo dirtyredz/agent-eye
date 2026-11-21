@@ -145,4 +145,4 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 - **Smaller seams (P2/P3):** dk-bed2beb9, dk-1a0ea30f, dk-7fe1491b, dk-de2486c6, dk-02d3e16c,
   dk-25aafecb, dk-48064578, dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
-  They gain files when dk-7948b352 and dk-782342ab land.
+  It gains files when dk-782342ab lands.
