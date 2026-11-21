@@ -105,11 +105,11 @@ android/app/src/main/java/local/agenteye/
 ├── network/         LAN binding, subnet policy
 ├── security/        SessionToken, PairingCodes, PairHandler, PairOutcome
 ├── selfupdate/
-│   ├── contract/    ReleaseContract, Integrity (leaf)
+│   ├── contract/    ReleaseContract, Integrity, HttpPorts (leaf)
 │   ├── release/     ReleaseManifest, ReleasePolicy, GitHubReleaseSource
 │   ├── transport/   UpdateUrlPolicy, UpdateHttpClient, HttpsConnector
 │   ├── download/    ApkDownloader, ApkVerifier, AndroidApkInspector
-│   ├── storage/     UpdateStore, RecordCodec
+│   ├── storage/     UpdateStore, RecordFiles, BackoffStore, RecordCodec
 │   └── install/     PackageInstaller gateway, recovery, result receiver
 ├── service/         CaptureService, CaptureSnapshot (UI read model), SessionPower
 └── ui/              MainActivity, CaptureServiceLink; capture/, preview/, pairing/, settings/, update/, privacy/, theme/

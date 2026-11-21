@@ -1,7 +1,6 @@
 package local.agenteye.selfupdate.storage
 
 import java.io.File
-import local.agenteye.json.JsonObject
 import local.agenteye.selfupdate.Candidate
 
 /** The candidate being transferred, and whether its complete bytes were verified. */
@@ -52,16 +51,22 @@ class UpdateStore(
     /** Marks the completed partial as the verified APK. */
     @Synchronized fun promote(): Boolean = rename(partial, verified)
 
-    @Synchronized fun readTransfer(): TransferRecord? = read(transfer, RecordCodec::transfer)
+    @Synchronized fun readTransfer(): TransferRecord? = records.read(
+        transfer,
+        RecordCodec::transfer
+    )
 
-    @Synchronized fun saveTransfer(value: TransferRecord) = write(
+    @Synchronized fun saveTransfer(value: TransferRecord) = records.write(
         transfer,
         RecordCodec.encode(value)
     )
 
-    @Synchronized fun readInstall(): InstallRecord? = read(install, RecordCodec::install)
+    @Synchronized fun readInstall(): InstallRecord? = records.read(install, RecordCodec::install)
 
-    @Synchronized fun saveInstall(value: InstallRecord) = write(install, RecordCodec.encode(value))
+    @Synchronized fun saveInstall(value: InstallRecord) = records.write(
+        install,
+        RecordCodec.encode(value)
+    )
 
     @Synchronized fun clearInstall() {
         install.delete()
@@ -82,8 +87,4 @@ class UpdateStore(
             verified.delete()
         }
     }
-
-    private fun <T> read(file: File, decode: (JsonObject) -> T): T? = records.read(file, decode)
-
-    private fun write(file: File, fields: Map<String, Any?>) = records.write(file, fields)
 }
