@@ -7,4 +7,3 @@ export const pinPathFor = root => join(root, 'src/android/releases/signing-certi
 export async function readPin(pinPath, io = { readFile }) {
   return JSON.parse(await io.readFile(pinPath, 'utf8'));
 }
-
