@@ -9,6 +9,7 @@ import android.os.Looper
 import android.provider.Settings
 import java.security.SecureRandom
 import java.util.concurrent.Executors
+import local.agenteye.selfupdate.contract.Integrity
 import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.download.AndroidApkInspector
 import local.agenteye.selfupdate.download.ApkDownloader
@@ -17,7 +18,6 @@ import local.agenteye.selfupdate.install.AndroidInstallerPort
 import local.agenteye.selfupdate.install.InstallStatus
 import local.agenteye.selfupdate.install.PackageInstallerGateway
 import local.agenteye.selfupdate.release.GitHubReleaseSource
-import local.agenteye.selfupdate.release.ReleasePolicy
 import local.agenteye.selfupdate.storage.UpdateStore
 import local.agenteye.selfupdate.transport.HttpsConnector
 import local.agenteye.selfupdate.transport.UpdateHttpClient
@@ -48,7 +48,7 @@ class UpdateRuntime(context: Context) {
         downloader = ApkDownloader(store, http),
         verifier = ApkVerifier(inspector, pin) { Build.VERSION.SDK_INT },
         installer = PackageInstallerGateway(port, store) {
-            ByteArray(16).also(random::nextBytes).let(ReleasePolicy::hex)
+            ByteArray(16).also(random::nextBytes).let(Integrity::hex)
         },
         inspector = inspector,
         store = store,

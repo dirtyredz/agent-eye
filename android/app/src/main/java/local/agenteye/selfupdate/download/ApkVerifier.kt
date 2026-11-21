@@ -4,6 +4,7 @@ import java.io.File
 import local.agenteye.selfupdate.Candidate
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.Integrity
 import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.release.ReleasePolicy
 
@@ -45,7 +46,7 @@ class ApkVerifier(
 
     fun verify(file: File, candidate: Candidate) {
         if (!file.isFile || file.length() != candidate.apkSize ||
-            ApkDownloader.sha256(file) != candidate.apkSha256
+            Integrity.sha256(file) != candidate.apkSha256
         ) {
             throw UpdateFailure(UpdateProblem.Corrupt)
         }

@@ -6,8 +6,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import java.io.File
-import java.security.MessageDigest
-import local.agenteye.selfupdate.release.ReleasePolicy
+import local.agenteye.selfupdate.contract.Integrity
 
 /**
  * PackageManager adapter for [ApkInspector]: signing-info APIs on API 28+, legacy signatures
@@ -66,7 +65,7 @@ class AndroidApkInspector(private val context: Context) : ApkInspector {
             versionCode = code,
             minSdk = app.minSdkVersion,
             signers = certificates.map {
-                ReleasePolicy.hex(MessageDigest.getInstance("SHA-256").digest(it.toByteArray()))
+                Integrity.sha256(it.toByteArray())
             },
             debuggable = app.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         )

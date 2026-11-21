@@ -1,8 +1,8 @@
 package local.agenteye.selfupdate.release
 
-import java.security.MessageDigest
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.Integrity
 import local.agenteye.selfupdate.contract.ReleaseContract
 
 /**
@@ -22,10 +22,6 @@ object ReleasePolicy {
     private const val MAX_SDK = 1000L
 
     private val hex40 = Regex("[a-f0-9]{40}")
-
-    fun sha256(bytes: ByteArray): String = hex(MessageDigest.getInstance("SHA-256").digest(bytes))
-
-    fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it) }
 
     /** Identity, version, provenance shape, artifact set and signer. Throws [UpdateFailure]. */
     fun validate(m: ReleaseManifest, releaseTag: String, pin: String) {
@@ -60,7 +56,7 @@ object ReleasePolicy {
     fun validateChecksums(sums: Map<String, String>, manifestBytes: ByteArray, m: ReleaseManifest) {
         val consistent =
             sums.keys == ReleaseContract.FINAL + ReleaseContract.MANIFEST &&
-                sums[ReleaseContract.MANIFEST] == sha256(manifestBytes) &&
+                sums[ReleaseContract.MANIFEST] == Integrity.sha256(manifestBytes) &&
                 ReleaseContract.FINAL.all { sums[it] == m.artifacts[it]?.sha256 }
         if (!consistent) throw UpdateFailure(UpdateProblem.Malformed)
     }

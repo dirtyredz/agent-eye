@@ -5,6 +5,7 @@ import local.agenteye.json.StrictJson
 import local.agenteye.selfupdate.Candidate
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.Integrity
 import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.transport.UpdateHttpClient
 import local.agenteye.selfupdate.transport.UpdateUrlPolicy
@@ -72,7 +73,7 @@ class GitHubReleaseSource(private val http: UpdateHttpClient, private val pin: S
                     manifestAssetId = release.assets.getValue(ReleaseContract.MANIFEST).id,
                     sumsAssetId = release.assets.getValue(ReleaseContract.SUMS).id,
                     apkAssetId = release.assets.getValue(ReleaseContract.APK).id,
-                    manifestSha256 = ReleasePolicy.sha256(manifestBytes),
+                    manifestSha256 = Integrity.sha256(manifestBytes),
                     apkSize = apk.size,
                     apkSha256 = apk.sha256,
                     signerSha256 = manifest.signerSha256
@@ -111,7 +112,7 @@ class GitHubReleaseSource(private val http: UpdateHttpClient, private val pin: S
             UpdateUrlPolicy.asset(candidate.tag, ReleaseContract.MANIFEST),
             ReleasePolicy.MAX_MANIFEST_BYTES.toLong()
         )
-        if (ReleasePolicy.sha256(manifest) !=
+        if (Integrity.sha256(manifest) !=
             candidate.manifestSha256
         ) {
             throw UpdateFailure(UpdateProblem.Changed)

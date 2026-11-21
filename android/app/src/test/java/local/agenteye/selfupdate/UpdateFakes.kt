@@ -5,14 +5,13 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.net.URI
-import java.security.MessageDigest
 import local.agenteye.json.StrictJson
+import local.agenteye.selfupdate.contract.Integrity
 import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.download.ApkInspector
 import local.agenteye.selfupdate.download.PackageIdentity
 import local.agenteye.selfupdate.install.InstallerPort
 import local.agenteye.selfupdate.install.SessionState
-import local.agenteye.selfupdate.release.ReleasePolicy
 import local.agenteye.selfupdate.transport.Backoff
 import local.agenteye.selfupdate.transport.HttpConnector
 import local.agenteye.selfupdate.transport.HttpExchange
@@ -72,8 +71,7 @@ object UpdateFixtures {
 
     private const val DOWNLOAD = "https://github.com/dirtyredz/agent-eye/releases/download"
 
-    fun sha256(bytes: ByteArray) =
-        ReleasePolicy.hex(MessageDigest.getInstance("SHA-256").digest(bytes))
+    fun sha256(bytes: ByteArray) = Integrity.sha256(bytes)
 
     fun candidate(code: Long = 3) = Candidate(
         releaseId = 77, tag = TAG, versionName = "1.1.1", versionCode = code, minSdk = 24,

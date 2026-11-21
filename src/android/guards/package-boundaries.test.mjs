@@ -7,6 +7,7 @@ const sourceRoot = new URL('../../../android/app/src/main/java/local/agenteye/',
 const BOUNDARIES = [
   { from: 'service', forbidden: 'local.agenteye.ui' },
   { from: 'camera', forbidden: 'local.agenteye.http' },
+  { from: 'selfupdate/install', forbidden: 'local.agenteye.selfupdate.release' },
 ];
 
 /** True when the source mentions the forbidden package: imports and fully qualified usages alike. */

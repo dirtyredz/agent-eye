@@ -55,7 +55,7 @@ Local JVM tests mirror these packages under `app/src/test/java/`.
 
 Self-update (user-initiated, outbound) lives under `selfupdate/`: `UpdateRuntime` (wiring, lazily
 owned by `AgentEyeApplication`), `UpdateCoordinator` (state machine) and `UpdateState`;
-`contract/` (`ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; imports nothing. The shared updater vocabulary (`Candidate`, `UpdateProblem`, `UpdateFailure`, `UpdateCancelled`) still lives in the root `UpdateState.kt`, so the subpackages import the root package and form a cycle; tracked as debt in dk-7948b352);
+`contract/` (`ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; `Integrity`: the one SHA-256 and hex implementation used by release, download and install; imports nothing but the JDK. The shared updater vocabulary (`Candidate`, `UpdateProblem`, `UpdateFailure`, `UpdateCancelled`) still lives in the root `UpdateState.kt`, so the subpackages import the root package and form a cycle; tracked as debt in dk-7948b352);
 `release/` (`ReleaseManifest` decode and SHA256SUMS parse via `JsonObject`,
 `ReleasePolicy`, `GitHubReleaseSource`); `transport/` (`UpdateUrlPolicy`, `UpdateHttpClient`,
 `HttpsConnector`); `download/` (`ApkDownloader`, pure `ApkVerifier`, `AndroidApkInspector`);
@@ -103,7 +103,7 @@ android/app/src/main/java/local/agenteye/
 ├── network/         LAN binding, subnet policy
 ├── security/        SessionToken, PairingCodes, PairHandler
 ├── selfupdate/
-│   ├── contract/    ReleaseContract (leaf)
+│   ├── contract/    ReleaseContract, Integrity (leaf)
 │   ├── release/     ReleaseManifest, ReleasePolicy, GitHubReleaseSource
 │   ├── transport/   UpdateUrlPolicy, UpdateHttpClient, HttpsConnector
 │   ├── download/    ApkDownloader, ApkVerifier, AndroidApkInspector
@@ -137,7 +137,7 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352); `signing/` <-> `releases/` through `requireThat` in
   `contract.mjs` (dk-28656ae1).
-- **Duplicated mechanics (P1):** SHA-256/hex four times in self-update (dk-09deb5ab); the SHA256SUMS format and
+- **Duplicated mechanics (P1):** the SHA256SUMS format and
   `release.json` literals in release tooling (dk-d31136f0).
 - **Wide coordinators:** `CaptureService` (dk-e3c7da36), GitHub
   knowledge leaking out of the `github()` adapter (dk-67c7a246, dk-782342ab), `retry-cache.mjs`

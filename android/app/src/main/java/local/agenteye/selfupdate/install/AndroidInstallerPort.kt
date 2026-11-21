@@ -7,8 +7,7 @@ import android.content.pm.PackageInstaller
 import android.os.Build
 import android.provider.Settings
 import java.io.File
-import java.security.MessageDigest
-import local.agenteye.selfupdate.release.ReleasePolicy
+import local.agenteye.selfupdate.contract.Integrity
 
 /** PackageInstaller adapter: MODE_FULL_INSTALL sessions for this package only. */
 class AndroidInstallerPort(private val context: Context) : InstallerPort {
@@ -42,7 +41,7 @@ class AndroidInstallerPort(private val context: Context) : InstallerPort {
     }
 
     override fun write(sessionId: Int, file: File): Pair<Long, String> {
-        val digest = MessageDigest.getInstance("SHA-256")
+        val digest = Integrity.sha256Digest()
         var written = 0L
         installer.openSession(sessionId).use { session ->
             session.openWrite("base.apk", 0, file.length()).use { output ->
@@ -59,7 +58,7 @@ class AndroidInstallerPort(private val context: Context) : InstallerPort {
                 session.fsync(output)
             }
         }
-        return written to ReleasePolicy.hex(digest.digest())
+        return written to Integrity.hex(digest.digest())
     }
 
     override fun commit(sessionId: Int, nonce: String) {

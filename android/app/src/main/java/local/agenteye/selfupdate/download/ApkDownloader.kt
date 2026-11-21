@@ -7,6 +7,7 @@ import java.io.OutputStream
 import local.agenteye.selfupdate.Candidate
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
+import local.agenteye.selfupdate.contract.Integrity
 import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.release.ReleasePolicy
 import local.agenteye.selfupdate.storage.TransferRecord
@@ -75,7 +76,7 @@ class ApkDownloader(
                 }
             }
             if (store.partial.length() != candidate.apkSize ||
-                sha256(store.partial) != candidate.apkSha256
+                Integrity.sha256(store.partial) != candidate.apkSha256
             ) {
                 throw UpdateFailure(UpdateProblem.Corrupt)
             }
@@ -92,18 +93,5 @@ class ApkDownloader(
         const val RETAIN_MS = 7L * 24 * 60 * 60 * 1000
         const val MARGIN = 16L shl 20
         const val DEADLINE_MS = 10L * 60 * 1000
-
-        fun sha256(file: File): String {
-            val digest = java.security.MessageDigest.getInstance("SHA-256")
-            file.inputStream().use { input ->
-                val buffer = ByteArray(64 * 1024)
-                while (true) {
-                    val n = input.read(buffer)
-                    if (n < 0) break
-                    digest.update(buffer, 0, n)
-                }
-            }
-            return ReleasePolicy.hex(digest.digest())
-        }
     }
 }
