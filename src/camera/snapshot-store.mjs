@@ -11,7 +11,7 @@ export function createStore(root = repository) {
   const latest = path.join(directory, 'latest.jpg');
   return {
     async save(bytes) {
-      await atomicWrite({ target: latest, prefix: '.agent-eye-', suffix: '.partial' }, async file => {
+      await atomicWrite({ name: 'latest.jpg', prefix: '.agent-eye-', suffix: '.partial' }, async file => {
         await file.writeFile(bytes);
         await file.sync();
       });

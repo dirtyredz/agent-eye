@@ -17,15 +17,21 @@ export function createAgentEyeDir(root, label) {
     }
   }
 
-  // Creates `<prefix><uuid><suffix>` owner-only (0600), lets `fill(handle, temporaryPath)` write it,
-  // then renames it over `target`. The temporary file never survives a failure.
-  async function atomicWrite({ target, prefix, suffix }, fill) {
+  // Creates `<prefix><uuid><suffix>` owner-only (0600) inside the directory, runs `harden(temporaryPath)`
+  // (if given) before any content exists, lets `fill(handle)` write it, then renames it over `name`.
+  // `name` is a plain file name: no separators or '..'. The temporary file never survives a failure.
+  async function atomicWrite({ name, prefix, suffix, harden }, fill) {
+    if (path.basename(name) !== name || name === '..' || name === '.' || /[\/]/.test(name)) {
+      throw new Error(`${label} file name must not contain a path`);
+    }
+    const target = path.join(directory, name);
     await ensureRealDir();
     const temporary = path.join(directory, `${prefix}${randomUUID()}${suffix}`);
     let handle;
     try {
       handle = await open(temporary, 'wx', 0o600);
-      await fill(handle, temporary);
+      await harden?.(temporary);
+      await fill(handle);
       await handle.close();
       handle = undefined;
       await rename(temporary, target);

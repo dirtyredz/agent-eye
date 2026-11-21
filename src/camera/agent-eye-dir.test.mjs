@@ -19,15 +19,24 @@ test('redirected directory is rejected with the caller label', async t => {
   await symlink(outside, path.join(root, '.tmp'), process.platform === 'win32' ? 'junction' : 'dir');
   const dir = createAgentEyeDir(root, 'Thing');
   await assert.rejects(dir.ensureRealDir(), /Thing directory must be a real directory/);
-  await assert.rejects(dir.atomicWrite({ target: path.join(outside, 'x'), prefix: 'p', suffix: '.t' }, async () => {}), /real directory/);
+  await assert.rejects(dir.atomicWrite({ name: 'x', prefix: 'p', suffix: '.t' }, async () => {}), /real directory/);
 });
 
 test('atomic write replaces the target and leaves no temporary file, also on failure', async t => {
   const root = await sandbox(t);
   const { directory, atomicWrite } = createAgentEyeDir(root, 'Thing');
   const target = path.join(directory, 'out.txt');
-  await atomicWrite({ target, prefix: '.p-', suffix: '.tmp' }, h => h.writeFile('one'));
-  await assert.rejects(atomicWrite({ target, prefix: '.p-', suffix: '.tmp' }, async () => { throw new Error('boom'); }), /boom/);
+  const name = 'out.txt';
+  await atomicWrite({ name, prefix: '.p-', suffix: '.tmp' }, h => h.writeFile('one'));
+  await assert.rejects(atomicWrite({ name, prefix: '.p-', suffix: '.tmp' }, async () => { throw new Error('boom'); }), /boom/);
   assert.equal(await readFile(target, 'utf8'), 'one');
   assert.deepEqual(await readdir(directory), ['out.txt']);
+});
+
+test('file name with a path separator or dot segment is rejected', async t => {
+  const root = await sandbox(t);
+  const { atomicWrite } = createAgentEyeDir(root, 'Thing');
+  for (const name of ['../x', 'a/b', 'a\b', '..', '.']) {
+    await assert.rejects(atomicWrite({ name, prefix: 'p', suffix: '.t' }, async () => {}), /must not contain a path/);
+  }
 });

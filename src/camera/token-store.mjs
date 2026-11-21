@@ -1,4 +1,4 @@
-import { readFile, unlink, writeFile } from 'node:fs/promises';
+import { readFile, unlink } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
@@ -29,11 +29,10 @@ export function createTokenStore(root = repository, { restrict = restrictToOwner
     async save({ token, url }) {
       if (!TOKEN_PATTERN.test(token)) throw new Error('Refusing to store a malformed token');
       let restricted;
-      await atomicWrite({ target: file, prefix: '.agent-eye-token-', suffix: '.tmp' }, async (handle, temporary) => {
-        await handle.close();
-        restricted = await restrict(temporary); // tighten before the secret is written
-        await writeFile(temporary, JSON.stringify({ token, url })); // keeps the restricted ACL/mode
-      });
+      await atomicWrite(
+        { name: 'token.json', prefix: '.agent-eye-token-', suffix: '.tmp', harden: async temporary => { restricted = await restrict(temporary); } },
+        handle => handle.writeFile(JSON.stringify({ token, url }))
+      );
       return { restricted };
     },
     async load() {
