@@ -19,7 +19,8 @@ async function transactionFixture() {
   const gh = {
     release: async () => ({ id: 1, draft: true, prerelease: false, tag_name: tag }),
     assets: async () => [...files.keys()].map((name, i) => ({ name, id: i + 1 })),
-    api: async route => route.startsWith('git/ref') ? { object: { type: 'commit', sha: commit } } : { status: 'identical' },
+    tagCommit: async () => commit,
+    isOnMain: async () => true,
     download: async (_tag, name, dir) => { const bytes = files.get(name); await writeFile(join(dir, name), bytes); return bytes; },
     provenance: async (manifest, dir) => {
       if (manifest.runId !== 12) throw new Error('Changed run');

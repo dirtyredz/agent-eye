@@ -1,6 +1,6 @@
 import { mkdir, readFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, manifest } from '../artifacts/contract.mjs';
+import { UNSIGNED, UNSIGNED_MANIFEST, REPOSITORY, WORKFLOW, manifest } from '../artifacts/contract.mjs';
 import { requireThat } from '../../shared/assert.mjs';
 import { verifyFiles } from '../artifacts/artifacts.mjs';
 import { digest } from '../../shared/digest.mjs';
@@ -43,8 +43,28 @@ export function github(run) {
     requireThat(Number.isSafeInteger(info.id) && info.id > 0, 'Invalid draft release ID');
     return String(info.id);
   }
+  // Creates the draft, then waits for the list endpoint to show it (GitHub is briefly eventually consistent).
+  const lookupDelays = [0, 1_000, 2_000, 4_000, 8_000];
+  async function createDraft(tag, { commit, title, notes, sleep = delay => new Promise(resolve => setTimeout(resolve, delay)) }) {
+    await run('gh', ['release', 'create', tag, '--repo', REPOSITORY, '--draft', '--verify-tag', '--target', commit, '--title', title, '--notes', notes]);
+    for (const delay of lookupDelays) {
+      if (delay) await sleep(delay);
+      const rel = await releaseByTag(tag);
+      if (rel) return rel;
+    }
+    return undefined;
+  }
+  // Peels a lightweight or annotated tag ref to the commit it points at.
+  async function tagCommit(tag) {
+    let { object } = await api(`git/ref/tags/${tag}`);
+    if (object.type === 'tag') ({ object } = await api(`git/tags/${object.sha}`));
+    return object.type === 'commit' ? object.sha : undefined;
+  }
+  async function isOnMain(commit) {
+    return ['ahead', 'identical'].includes((await api(`compare/${commit}...main`)).status);
+  }
   return {
-    api, release, listReleases, releaseByTag, assets, download, draftId,
+    api, release, listReleases, releaseByTag, assets, download, draftId, createDraft, tagCommit, isOnMain,
     async history(current) {
       for (const rel of await listReleases()) {
         if (rel.draft) continue;
@@ -82,7 +102,7 @@ export function github(run) {
     async removeUnsigned(id, tag) {
       assertDraft(await release(id), tag, id);
       for (const asset of await assets(id)) {
-        if (['agent-eye-unsigned.apk', 'agent-eye-unsigned.aab', UNSIGNED_MANIFEST].includes(asset.name)) await api(`releases/assets/${asset.id}`, ['--method', 'DELETE']);
+        if ([...UNSIGNED.slice(0, 2), UNSIGNED_MANIFEST].includes(asset.name)) await api(`releases/assets/${asset.id}`, ['--method', 'DELETE']);
       }
     },
     async publish(id, tag) {

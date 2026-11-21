@@ -5,7 +5,7 @@ import { requireThat } from '../../shared/assert.mjs';
 import { version } from '../../shared/release-identity.mjs';
 import { certificate } from '../../shared/signing-policy.mjs';
 import { digest } from '../../shared/digest.mjs';
-import { assertDraft } from '../github/github.mjs';
+import { assertDraft, ACTION_ARTIFACT } from '../github/github.mjs';
 import { checkout } from './checkout.mjs';
 
 export function draftVerification({ root, run, gh, apk, bundle, localVersion, pin, tempRoot, fresh }) {
@@ -14,12 +14,8 @@ export function draftVerification({ root, run, gh, apk, bundle, localVersion, pi
     assertDraft(await gh.release(state.id), state.tag, state.id);
     const assets = await gh.assets(state.id);
     assertAssetSet(assets, state.cleaned ? 'final' : 'draft');
-    const tag = await gh.api(`git/ref/tags/${state.tag}`);
-    let object = tag.object;
-    if (object.type === 'tag') object = (await gh.api(`git/tags/${object.sha}`)).object;
-    requireThat(object.type === 'commit' && object.sha === state.manifest.commit, 'Remote tag moved');
-    const comparison = await gh.api(`compare/${state.manifest.commit}...main`);
-    requireThat(['ahead', 'identical'].includes(comparison.status), 'Tagged commit is not on remote main');
+    requireThat(await gh.tagCommit(state.tag) === state.manifest.commit, 'Remote tag moved');
+    requireThat(await gh.isOnMain(state.manifest.commit), 'Tagged commit is not on remote main');
   }
   return {
     check,
@@ -42,7 +38,7 @@ export function draftVerification({ root, run, gh, apk, bundle, localVersion, pi
       let original = unsigned;
       if (!hasUnsignedManifest) {
         const probe = await fresh('manifest-');
-        await run('gh', ['run', 'download', String(m.runId), '--repo', REPOSITORY, '--name', `unsigned-${m.commit}-${m.runAttempt}`, '--dir', probe]);
+        await run('gh', ['run', 'download', String(m.runId), '--repo', REPOSITORY, '--name', ACTION_ARTIFACT(m), '--dir', probe]);
         original = manifest(JSON.parse(await readFile(join(probe, UNSIGNED_MANIFEST), 'utf8')));
         requireThat(original.commit === commit && original.tag === options.tag && original.runId === m.runId && original.runAttempt === m.runAttempt, 'Recovery provenance mismatch');
         for (const name of UNSIGNED) requireThat(original.artifacts[name].sha256 === m.unsignedHashes[name], 'Recovery unsigned hash mismatch');

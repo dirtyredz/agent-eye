@@ -67,3 +67,47 @@ test('draftId resolves the numeric ID of a draft by tag and refuses published, m
   await assert.rejects(listed([{ id: 'x', tag_name: 'v1.0.0', draft: true }]).draftId('v1.0.0'), /Invalid draft release ID/);
   await assert.rejects(listed([]).draftId('v9.9.9'), /not found/);
 });
+const gh40 = 'b'.repeat(40);
+function createRun(releases, calls, visibleAfter) {
+  let lists = 0;
+  return async (file, args) => {
+    calls.push([file, ...args]);
+    if (args[0] === 'release') return { stdout: '', code: 0 };
+    if (args[1].includes('/releases?')) return { stdout: JSON.stringify(args[1].includes('page=1') && ++lists >= visibleAfter ? releases : []) };
+    throw new Error('unexpected ' + args.join(' '));
+  };
+}
+test('createDraft creates a verified-tag draft at the commit and retries the lookup with backoff', async () => {
+  const draft = { id: 9, tag_name: 'v1.0.0', draft: true };
+  const calls = [], delays = [];
+  const rel = await github(createRun([draft], calls, 3)).createDraft('v1.0.0', { commit: gh40, title: 'T', notes: 'N', sleep: async d => { delays.push(d); } });
+  assert.deepEqual(rel, draft);
+  assert.deepEqual(delays, [1_000, 2_000]);
+  const create = calls[0];
+  assert.deepEqual(create.slice(1, 4), ['release', 'create', 'v1.0.0']);
+  for (const flag of ['--draft', '--verify-tag']) assert.ok(create.includes(flag));
+  assert.equal(create[create.indexOf('--target') + 1], gh40);
+  assert.equal(create[create.indexOf('--title') + 1], 'T');
+  assert.equal(create[create.indexOf('--notes') + 1], 'N');
+});
+test('createDraft returns undefined after the lookup retries are exhausted', async () => {
+  const delays = [];
+  assert.equal(await github(createRun([], [], 1)).createDraft('v1.0.0', { commit: gh40, title: 'T', notes: 'N', sleep: async d => { delays.push(d); } }), undefined);
+  assert.deepEqual(delays, [1_000, 2_000, 4_000, 8_000]);
+});
+test('tagCommit peels lightweight and annotated tags; non-commit objects yield undefined', async () => {
+  const refs = { light: { object: { type: 'commit', sha: gh40 } }, ann: { object: { type: 'tag', sha: 't1' } }, tree: { object: { type: 'tree', sha: 'x' } } };
+  const gh = github(async (_f, args) => {
+    const route = args[1].split('/').slice(3).join('/');
+    if (route.startsWith('git/tags/')) return { stdout: JSON.stringify({ object: { type: 'commit', sha: gh40 } }) };
+    return { stdout: JSON.stringify(refs[route.split('/').pop()]) };
+  });
+  assert.equal(await gh.tagCommit('light'), gh40);
+  assert.equal(await gh.tagCommit('ann'), gh40);
+  assert.equal(await gh.tagCommit('tree'), undefined);
+});
+test('isOnMain accepts ahead/identical and refuses diverged or behind', async () => {
+  for (const [status, expected] of [['ahead', true], ['identical', true], ['diverged', false], ['behind', false]]) {
+    assert.equal(await github(async () => ({ stdout: JSON.stringify({ status }) })).isOnMain(gh40), expected, status);
+  }
+});

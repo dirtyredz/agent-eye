@@ -1,6 +1,6 @@
 import { readFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { REPOSITORY, UNSIGNED, UNSIGNED_MANIFEST, manifest, assertAssetSet } from '../artifacts/contract.mjs';
+import { UNSIGNED, UNSIGNED_MANIFEST, manifest, assertAssetSet } from '../artifacts/contract.mjs';
 import { requireThat } from '../../shared/assert.mjs';
 import { version } from '../../shared/release-identity.mjs';
 import { stage, verifyFiles } from '../artifacts/artifacts.mjs';
@@ -17,19 +17,14 @@ export async function stageRelease({ root, dir, localVersion, tag, commit, runId
     await bundle.unsigned(join(directory, UNSIGNED[1]), expected);
   } });
 }
-export async function draftRelease({ root, dir, run, gh, localVersion, tag, commit, runId, runAttempt,
-  sleep = delay => new Promise(resolve => setTimeout(resolve, delay)) }) {
+export async function draftRelease({ root, dir, gh, localVersion, tag, commit, runId, runAttempt, sleep }) {
   const m = manifest(JSON.parse(await readFile(join(dir, UNSIGNED_MANIFEST), 'utf8')));
   requireThat(m.tag === tag && m.commit === commit && m.runId === runId && m.runAttempt <= runAttempt, 'Draft staging identity mismatch');
   await verifyFiles(dir, m);
   let rel = await gh.releaseByTag(tag);
   if (!rel) {
-    await run('gh', ['release', 'create', tag, '--repo', REPOSITORY, '--draft', '--verify-tag', '--target', commit, '--title', `Agent Eye ${localVersion.versionName}`, '--notes', `Unsigned build of ${commit}. Owner-attended local signing required.`]);
-    for (const delay of [0, 1_000, 2_000, 4_000, 8_000]) {
-      if (delay) await sleep(delay);
-      rel = await gh.releaseByTag(tag);
-      if (rel) break;
-    }
+    rel = await gh.createDraft(tag, { commit, sleep, title: `Agent Eye ${localVersion.versionName}`,
+      notes: `Unsigned build of ${commit}. Owner-attended local signing required.` });
   }
   requireThat(rel, `Draft ${tag} not found after creation`);
   assertDraft(rel, tag, rel.id);

@@ -23,13 +23,12 @@ async function fixture(t) {
   const state = { exists: false };
   const release = { id: 7, tag_name: m.tag, target_commitish: m.commit, draft: true, prerelease: false };
   const deps = { root, dir, localVersion: m, tag: m.tag, commit: m.commit, runId: m.runId, runAttempt: 2,
-    run: async (_file, args) => {
-      events.push('create'); state.exists = true;
-      assert.ok(args.includes('--draft')); assert.ok(args.includes('--verify-tag'));
-      assert.equal(args[args.indexOf('--target') + 1], m.commit);
-      return { code: 0 };
-    },
     gh: {
+      createDraft: async (tag, opts) => {
+        events.push('create'); state.exists = true;
+        assert.equal(tag, m.tag); assert.equal(opts.commit, m.commit);
+        return release;
+      },
       releaseByTag: async () => { events.push(state.exists ? 'release' : 'lookup'); return state.exists ? release : null; },
       assets: async () => { events.push('assets'); return []; },
       upload: async (id, tag, path, name, scratch) => {
@@ -45,7 +44,7 @@ async function fixture(t) {
 test('draftRelease creates only after 404 and uploads the unsigned set, then cleans scratch', async t => {
   const { deps, events } = await fixture(t);
   await draftRelease(deps);
-  assert.deepEqual(events, ['lookup', 'create', 'release', 'assets', ...UNSIGNED, UNSIGNED_MANIFEST]);
+  assert.deepEqual(events, ['lookup', 'create', 'assets', ...UNSIGNED, UNSIGNED_MANIFEST]);
   assert.deepEqual(await readdir(join(deps.root, '.tmp')), []);
 });
 
@@ -100,31 +99,10 @@ test('draftRelease creates a missing draft then finds it via the list endpoint',
   assert.equal(calls.filter(c => c[1] === 'release' && c[2] === 'create').length, 1);
 });
 
-test('draftRelease retries a missing post-create lookup and then succeeds', async t => {
-  const { deps, events, release } = await fixture(t);
-  let lookups = 0;
-  const delays = [];
-  deps.gh.releaseByTag = async () => {
-    events.push('lookup');
-    lookups++;
-    return lookups === 3 ? release : null;
-  };
-  deps.sleep = async delay => { delays.push(delay); };
-  await draftRelease(deps);
-  assert.equal(lookups, 3);
-  assert.deepEqual(delays, [1_000]);
-  assert.deepEqual(events, ['lookup', 'create', 'lookup', 'lookup', 'assets', ...UNSIGNED, UNSIGNED_MANIFEST]);
-});
-
-test('draftRelease keeps the existing failure after post-create retries are exhausted', async t => {
+test('draftRelease keeps the existing failure when createDraft finds no release', async t => {
   const { deps } = await fixture(t);
-  let lookups = 0;
-  const delays = [];
-  deps.gh.releaseByTag = async () => { lookups++; return null; };
-  deps.sleep = async delay => { delays.push(delay); };
-  await assert.rejects(draftRelease(deps), /Draft v1\.0\.0 not found after creation/);
-  assert.equal(lookups, 6);
-  assert.deepEqual(delays, [1_000, 2_000, 4_000, 8_000]);
+  deps.gh.createDraft = async () => undefined;
+  await assert.rejects(draftRelease(deps), /Draft v1.0.0 not found after creation/);
 });
 
 for (const field of ['tag', 'commit', 'runId', 'runAttempt']) test(`draftRelease rejects staged ${field} mismatch before GitHub`, async t => {
