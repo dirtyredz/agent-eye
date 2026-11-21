@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import local.agenteye.R
 import local.agenteye.camera.CameraSession
+import local.agenteye.camera.CaptureLimits
 import local.agenteye.camera.Lens
 import local.agenteye.camera.LensSelection
 import local.agenteye.camera.availableLenses
@@ -166,7 +167,7 @@ class CaptureService : LifecycleService() {
             try {
                 val currentToken = token ?: return
                 val currentCamera = camera ?: return
-                val url = "http://${binding.address.hostAddress}:8765"
+                val url = "http://${binding.address.hostAddress}:${CaptureLimits.PORT}"
                 server = StillServer(
                     binding.address,
                     admit = { SubnetPolicy.allows(binding.address, binding.prefix, it) },

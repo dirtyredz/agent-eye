@@ -9,6 +9,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import local.agenteye.camera.CaptureLimits
 import local.agenteye.camera.CapturedFrame
 import local.agenteye.security.PairHandler
 import local.agenteye.security.PairOutcome
@@ -21,14 +22,14 @@ import local.agenteye.security.SessionToken
  */
 class StillServer(
     address: InetAddress,
-    port: Int = 8765,
+    port: Int = CaptureLimits.PORT,
     private val admit: (InetAddress) -> Boolean,
     private val token: SessionToken,
     private val status: () -> String,
     private val capture: () -> CompletableFuture<CapturedFrame>,
-    private val captureTimeoutMs: Long = 5000,
-    private val connectionTimeoutMs: Long = 10000,
-    private val intervalMs: Long = 1000,
+    private val captureTimeoutMs: Long = CaptureLimits.CAPTURE_TIMEOUT_MS,
+    private val connectionTimeoutMs: Long = CaptureLimits.CONNECTION_TIMEOUT_MS,
+    private val intervalMs: Long = CaptureLimits.INTERVAL_MS,
     private val pairing: PairingCodes? = null
 ) : AutoCloseable {
     private val pairHandler = pairing?.let { PairHandler(it, token) }

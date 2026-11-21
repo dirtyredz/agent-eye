@@ -20,7 +20,7 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `src/android/guards/` — repo guard tests: `workflows.test.mjs` (no bare `sdkmanager` in `.github/workflows/`), `window-policy.test.mjs` (Kotlin sources never re-add FLAG_SECURE/SecureOn) and `package-boundaries.test.mjs` (table-driven Kotlin package-dependency rules; add a rule per boundary in its table).
 - `android/app/src/main/java/local/agenteye/selfupdate/` — user-initiated GitHub self-update: `contract/` (leaf release vocabulary), `release/` (policy, discovery), `transport/` (URL policy, bounded HTTPS), `download/` (transfer, verification), `storage/` (private files and records), `install/` (PackageInstaller sessions and recovery); details below.
 - `android/app/src/main/java/local/agenteye/json/` — neutral strict JSON: `StrictJson` parser/writer and the typed `JsonObject` view (one decode error, `StrictJson.Invalid`).
-- `android/app/src/main/java/local/agenteye/security/` — session token, `PairingCodes` state machine and `PairHandler` (the `POST /pair` body checks and code-for-token exchange).
+- `android/app/src/main/java/local/agenteye/security/` — session token, `PairingCodes` state machine and `PairHandler` (the `POST /pair` body checks and code-for-token exchange, returning a sealed `PairOutcome` that `StillServer` maps to HTTP).
 - `android/app/src/main/java/local/agenteye/ui/` — `MainActivity` (lifecycle, service link, preview wiring) and `CaptureServiceLink` (binding and updater install preflight); the rest lives in the responsibility folders below.
 - `android/app/src/main/java/local/agenteye/ui/capture/` — capture screen: `CameraScreen` shell, `CameraBody` content-measured preview/panel placement, unified `CameraPanel` and `CameraControls` (Compose), pure `CameraLayout` geometry (JVM-tested by `CameraLayoutTest`), `CaptureScreenModel` (the one owner of `CameraState`/`PairingState` and the 1 s countdown), `SessionStarter` (permission and Start flow), pure `CameraStateHolder` (snapshot to display state) and `CameraStatus` (status enum resolved from string resources).
 - `android/app/src/main/java/local/agenteye/ui/preview/` — `CameraPreview` (stable AndroidView), `RoundedPreviewFrame` (fail-safe clipping to CameraX's transformed FIT implementation bounds) and `PreviewFeed`, a non-Compose geometry feed (display and layout listeners pushing rotation and ViewPort to the service while started).
@@ -28,7 +28,7 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 - `android/app/src/main/java/local/agenteye/ui/privacy/` — local privacy-policy dialog.
 - `android/app/src/main/java/local/agenteye/ui/theme/` — `Theme` provides the static amber Material 3 light/dark theme (no dynamic color); `DesignTokens` owns the shared 16dp corner-radius, shape, spacing and elevation tokens, and `SettingsTypography` owns the Settings card text roles.
 - `android/app/src/main/java/local/agenteye/ui/settings/` — `SettingsActivity` (updater lifecycle and install handoff) and `SettingsScreen` (update panel, usage guidance and privacy-policy entry).
-- `android/app/src/main/java/local/agenteye/ui/update/` — `UpdatePanel` view and its pure `UpdatePresenter`.
+- `android/app/src/main/java/local/agenteye/ui/update/` — `UpdatePanel` view, its pure `UpdatePresenter`, `UpdateController` and `UpdateLifecycle` (the Activities' resume/pause attach and detach; `Context.updates` is the single runtime accessor).
 - `android/app/src/main/java/local/agenteye/camera/` — CameraX session, capture geometry (crop maths), JPEG encoding; `CapturedFrame` (the captured JPEG value, consumed by `http`); `CaptureError` (camera failures only: camera_unavailable, capture_failed); `LensSelection` (pure, JVM-tested lens policy), `LensPreferences` (`camera`/`lens` SharedPreferences factory) and `LensCameraSelector` (CameraX adapter and provider discovery; the experimental external-lens opt-in lives only here).
 - `android/app/src/main/java/local/agenteye/http/` — bounded request parser and `StillServer` routes.
 - `android/app/src/main/java/local/agenteye/network/` — Wi-Fi/LAN binding and pure subnet admission.
@@ -99,11 +99,11 @@ docs/                   living docs, runbooks, plans/, items/
 ```text
 android/app/src/main/java/local/agenteye/
 ├── AgentEyeApplication.kt   owns the lazy UpdateRuntime
-├── camera/          CameraX session, capture geometry, JPEG encoding, CapturedFrame (captured JPEG value), CaptureError (camera failures), LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
+├── camera/          CameraX session, CaptureLimits (port, still spacing and timeouts shared with http and service), capture geometry, JPEG encoding, CapturedFrame (captured JPEG value), CaptureError (camera failures), LensSelection (policy), LensPreferences, LensCameraSelector (CameraX adapter, experimental opt-in)
 ├── http/            HttpRequest (bounded parser), StillServer (routes, POST /pair)
 ├── json/            StrictJson, JsonObject
 ├── network/         LAN binding, subnet policy
-├── security/        SessionToken, PairingCodes, PairHandler
+├── security/        SessionToken, PairingCodes, PairHandler, PairOutcome
 ├── selfupdate/
 │   ├── contract/    ReleaseContract, Integrity (leaf)
 │   ├── release/     ReleaseManifest, ReleasePolicy, GitHubReleaseSource
@@ -139,6 +139,6 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352).
 - **Wide coordinators:** `CaptureService` (dk-e3c7da36), the release CLI command spread (dk-0e25e219).
-- **Smaller seams (P2/P3):** dk-bed2beb9, dk-1a0ea30f, dk-7fe1491b, dk-de2486c6, dk-8e8110f3.
+- **Smaller seams (P2/P3):** dk-de2486c6, dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
 - `tooling/android-tools.mjs` imports `signing/artifacts/*` while `signing/` imports `tooling/`: a cycle; move it to a composition layer and add a `tooling` boundary rule when nearby.

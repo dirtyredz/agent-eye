@@ -22,7 +22,7 @@ Pairing: the service owns a `PairingCodes` state machine (security package) next
 token. It holds one six-digit SecureRandom code valid two minutes and usable once; five wrong
 guesses burn it, a per-client sliding window (10 requests/minute) throttles guessing, and the
 comparison is constant-time. `POST /pair` is the only unauthenticated route and sits behind the
-same subnet admission and connection limits; `StillServer` routes it to `PairHandler` (body checks, code-for-token exchange) and it returns the token. Main polls the live code once per second while started; `PairingState.from` (pure companion mapping in `ui/pairing/PairingState.kt`) calculates the display countdown. Stop discards the gate with the token. The PC
+same subnet admission and connection limits; `StillServer` routes it to `PairHandler` (body checks, code-for-token exchange; returns a `PairOutcome` that the server maps to 200/400/403/429/503) and it returns the token. Main polls the live code once per second while started; `PairingState.from` (pure companion mapping in `ui/pairing/PairingState.kt`) calculates the display countdown. Stop discards the gate with the token. The PC
 `pair` command stores the token in an owner-only `.tmp/agent-eye/token.json`.
 
 The HTTP server has four connection slots, an 8 KiB strict header parser and a scheduled socket
@@ -52,7 +52,7 @@ The Compose main screen has a `RoundedPreviewFrame` wrapper around the PreviewVi
 PairingClipboard resolves Copy at tap time, rejects inactive/expired codes, and marks ClipData
 sensitive. Only API <33 gets an app toast; Android 13+ provides its own clipboard confirmation.
 SettingsActivity under ui/settings owns a scrollable update/privacy/guidance screen and has
-a Material Scaffold applying insets once and its existing configChanges declaration. Both ComponentActivities forward configuration to Compose and refresh system-bar styling; Main also refreshes settled preview geometry. Static amber light/dark schemes follow the system. Both activities attach the updater on resume
+a Material Scaffold applying insets once and its existing configChanges declaration. Both ComponentActivities forward configuration to Compose and refresh system-bar styling; Main also refreshes settled preview geometry. Static amber light/dark schemes follow the system. Both activities attach the updater on resume (via `UpdateLifecycle`)
 and detach on pause, avoiding overlapping owners during navigation. Settings binds the service
 only to stop capture before install. Rotation does not recreate either activity; leaving the
 camera screen detaches preview while the service keeps still capture and its last geometry.

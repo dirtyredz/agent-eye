@@ -158,7 +158,7 @@ class CameraSession(
         val result = CompletableFuture<CapturedFrame>()
         val now = System.nanoTime()
         if (closed.get() || !ready ||
-            (lastStart != Long.MIN_VALUE && now - lastStart < 1_000_000_000L) ||
+            (lastStart != Long.MIN_VALUE && now - lastStart < CaptureLimits.INTERVAL_NS) ||
             !busy.compareAndSet(false, true)
         ) {
             result.completeExceptionally(IllegalStateException(CaptureError.CameraUnavailable.code))
