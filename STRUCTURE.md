@@ -70,7 +70,7 @@ There is no device-control integration in this repository.
 
 ```text
 src/
-├── camera/          PC client and snapshot store
+├── camera/          PC client, snapshot and token stores, agent-eye-dir (shared private dir + atomic write)
 ├── script-run/      standard script wrapper (copied verbatim across repos)
 └── android/
     ├── icons/           canonical SVG, generator, play-store-512.png
@@ -137,8 +137,7 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352); `signing/` <-> `releases/` through `requireThat` in
   `contract.mjs` (dk-28656ae1).
-- **Duplicated mechanics (P1):** SHA-256/hex four times in self-update (dk-09deb5ab); the camera
-  client's private-dir and atomic-write helper (dk-6eb63a65); the SHA256SUMS format and
+- **Duplicated mechanics (P1):** SHA-256/hex four times in self-update (dk-09deb5ab); the SHA256SUMS format and
   `release.json` literals in release tooling (dk-d31136f0).
 - **Wide coordinators:** `CaptureService` (dk-e3c7da36), GitHub
   knowledge leaking out of the `github()` adapter (dk-67c7a246, dk-782342ab), `retry-cache.mjs`

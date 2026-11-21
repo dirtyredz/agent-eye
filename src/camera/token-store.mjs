@@ -1,9 +1,9 @@
-import { mkdir, lstat, open, readFile, rename, unlink, writeFile } from 'node:fs/promises';
+import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { createAgentEyeDir } from './agent-eye-dir.mjs';
 
 const repository = fileURLToPath(new URL('../../', import.meta.url));
 const exec = promisify(execFile);
@@ -21,36 +21,20 @@ export async function restrictToOwner(file, { platform = process.platform, env =
 
 // The paired session token (and the phone URL it came from) lives in git-ignored .tmp/agent-eye/token.json.
 export function createTokenStore(root = repository, { restrict = restrictToOwner } = {}) {
-  const base = path.resolve(root);
-  const directory = path.join(base, '.tmp', 'agent-eye');
+  const { directory, atomicWrite } = createAgentEyeDir(root, 'Token');
   const file = path.join(directory, 'token.json');
-  async function prepare() {
-    for (const dir of [base, path.join(base, '.tmp'), directory]) {
-      try { await mkdir(dir); } catch (e) { if (e.code !== 'EEXIST') throw e; }
-      const stat = await lstat(dir);
-      if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('Token directory must be a real directory');
-    }
-  }
   return {
     file,
     // Returns { restricted } so the caller can tell the owner when the ACL could not be tightened.
     async save({ token, url }) {
       if (!TOKEN_PATTERN.test(token)) throw new Error('Refusing to store a malformed token');
-      await prepare();
-      const temporary = path.join(directory, `.agent-eye-token-${randomUUID()}.tmp`);
-      let handle;
-      try {
-        handle = await open(temporary, 'wx', 0o600);
+      let restricted;
+      await atomicWrite({ target: file, prefix: '.agent-eye-token-', suffix: '.tmp' }, async (handle, temporary) => {
         await handle.close();
-        handle = undefined;
-        const restricted = await restrict(temporary); // tighten before the secret is written
+        restricted = await restrict(temporary); // tighten before the secret is written
         await writeFile(temporary, JSON.stringify({ token, url })); // keeps the restricted ACL/mode
-        await rename(temporary, file);
-        return { restricted };
-      } finally {
-        await handle?.close();
-        await unlink(temporary).catch(e => { if (e.code !== 'ENOENT') throw e; });
-      }
+      });
+      return { restricted };
     },
     async load() {
       try {
