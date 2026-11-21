@@ -113,3 +113,5 @@ uses the non-retrying lookup. Never reintroduce `releases/tags/` for release-pip
   and offsets. A CameraX upgrade or implementation-mode change can alter that child structure or
   transform contract. The lookup then fails safe by drawing without the rounded clip; verify the
   live preview's corners and letterboxing whenever CameraX or `PreviewView.implementationMode` changes.
+
+- **Fresh worktree has no `node_modules`.** The first `node --test` there fails 3 tests with `ERR_MODULE_NOT_FOUND: 'sharp'` (icon-assets and the os.tmpdir() entry-point tests). Run `.\scripts\dev\setup-worktree.ps1` (`-DryRun` to preview; runs `npm ci` only when `node_modules` is missing) before the fast gate (dk-4258d0f3).

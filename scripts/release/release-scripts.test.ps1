@@ -34,6 +34,7 @@ function Invoke-Case([string]$Title, [string]$Script, [string[]]$Arguments, [int
 }
 
 Invoke-Case 'provision -DryRun' 'provision.ps1' @('-DryRun') 0 'OK' 'verify-key-*'
+Invoke-Case 'setup-worktree -DryRun' '../dev/setup-worktree.ps1' @('-DryRun') 0 'OK' 'setup-worktree-*'
 Invoke-Case 'vault-repair -Inspect -DryRun' 'vault-repair.ps1' @('-Inspect', '-DryRun') 0 'OK' 'inspect-vault-*'
 Invoke-Case 'vault-repair -CleanupOrphans (no -Execute) is a dry run' 'vault-repair.ps1' @('-CleanupOrphans') 0 'OK' 'cleanup-orphans-*'
 Invoke-Case 'vault-repair requires exactly one action' 'vault-repair.ps1' @() 1 'FAILED'

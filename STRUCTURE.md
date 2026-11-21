@@ -6,6 +6,7 @@ Android dependency pins live in `android/gradle/libs.versions.toml`; Compose too
 
 - `android/` — native Android camera app and its official Gradle wrapper.
 - `src/camera/` — Node PC client for fetching and managing transient photographs.
+- `scripts/dev/setup-worktree.ps1` — `npm ci` for a fresh worktree (owner-run harness from `scripts/release/`).
 - `src/android/releases/` — public signing certificate pin and release responsibilities below.
 - `src/android/releases/artifacts/` — release contract, manifests, hashes and artifact staging.
 - `src/android/releases/cli/` — side-effect-free argument parsing and CI/owner command dispatch.
