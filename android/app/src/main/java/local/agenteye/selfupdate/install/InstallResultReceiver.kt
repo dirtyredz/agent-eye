@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.os.Build
-import local.agenteye.AgentEyeApplication
+import local.agenteye.updates
 
 /**
  * Explicit, non-exported receiver for PackageInstaller callbacks. It forwards only the
@@ -29,7 +29,7 @@ class InstallResultReceiver : BroadcastReceiver() {
         } else {
             null
         }
-        (context.applicationContext as AgentEyeApplication).updates.prompter
+        context.updates.prompter
             .installResult(sessionId, intent.getStringExtra(EXTRA_NONCE), status, confirmation)
     }
 
