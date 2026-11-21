@@ -17,6 +17,25 @@ export function draftVerification({ root, run, gh, apk, bundle, localVersion, pi
     requireThat(await gh.tagCommit(state.tag) === state.manifest.commit, 'Remote tag moved');
     requireThat(await gh.isOnMain(state.manifest.commit), 'Tagged commit is not on remote main');
   }
+  // When deletion was interrupted, obtain the original manifest from the trusted run.
+  async function recoverOriginalManifest(m, tag, commit) {
+    const probe = await fresh('manifest-');
+    await run('gh', ['run', 'download', String(m.runId), '--repo', REPOSITORY, '--name', ACTION_ARTIFACT(m), '--dir', probe]);
+    const original = manifest(JSON.parse(await readFile(join(probe, UNSIGNED_MANIFEST), 'utf8')));
+    requireThat(original.commit === commit && original.tag === tag && original.runId === m.runId && original.runAttempt === m.runAttempt, 'Recovery provenance mismatch');
+    for (const name of UNSIGNED) requireThat(original.artifacts[name].sha256 === m.unsignedHashes[name], 'Recovery unsigned hash mismatch');
+    return original;
+  }
+  async function verifyUnsignedAssets({ list, original, tag, downloaded }) {
+    for (const name of UNSIGNED) {
+      if (!list.some(a => a.name === name)) {
+        requireThat(finalNames.every(n => list.some(a => a.name === n)), `Missing unsigned asset: ${name}`);
+        continue;
+      }
+      const bytes = await gh.download(tag, name, downloaded);
+      requireThat(JSON.stringify(digest(bytes)) === JSON.stringify(original.artifacts[name]), `Draft hash mismatch: ${name}`);
+    }
+  }
   return {
     check,
     async preflight(options) {
@@ -33,25 +52,10 @@ export function draftVerification({ root, run, gh, apk, bundle, localVersion, pi
         : manifest(JSON.parse(await gh.download(options.tag, SIGNED_MANIFEST, downloaded)), true);
       requireThat(m.commit === commit && m.versionCode === localVersion.versionCode && m.versionName === localVersion.versionName && m.tag === options.tag, 'Draft version/commit mismatch');
       const unsigned = hasUnsignedManifest ? m : { ...m, artifacts: Object.fromEntries(UNSIGNED.map(name => [name, { size: 1, sha256: m.unsignedHashes[name] }])) };
-      // When deletion was interrupted, obtain the original manifest from the trusted run.
       const actions = await fresh('actions-');
-      let original = unsigned;
-      if (!hasUnsignedManifest) {
-        const probe = await fresh('manifest-');
-        await run('gh', ['run', 'download', String(m.runId), '--repo', REPOSITORY, '--name', ACTION_ARTIFACT(m), '--dir', probe]);
-        original = manifest(JSON.parse(await readFile(join(probe, UNSIGNED_MANIFEST), 'utf8')));
-        requireThat(original.commit === commit && original.tag === options.tag && original.runId === m.runId && original.runAttempt === m.runAttempt, 'Recovery provenance mismatch');
-        for (const name of UNSIGNED) requireThat(original.artifacts[name].sha256 === m.unsignedHashes[name], 'Recovery unsigned hash mismatch');
-      }
+      const original = hasUnsignedManifest ? unsigned : await recoverOriginalManifest(m, options.tag, commit);
       await gh.provenance(original, actions);
-      for (const name of UNSIGNED) {
-        if (!list.some(a => a.name === name)) {
-          requireThat(finalNames.every(n => list.some(a => a.name === n)), `Missing unsigned asset: ${name}`);
-          continue;
-        }
-        const bytes = await gh.download(options.tag, name, downloaded);
-        requireThat(JSON.stringify(digest(bytes)) === JSON.stringify(original.artifacts[name]), `Draft hash mismatch: ${name}`);
-      }
+      await verifyUnsignedAssets({ list, original, tag: options.tag, downloaded });
       await apk.unsigned(join(actions, UNSIGNED[0]), localVersion);
       await bundle.unsigned(join(actions, UNSIGNED[1]), localVersion);
       const state = { id: rel.id, tag: options.tag, manifest: original, pin, input: actions, cache: join(tempRoot, `${options.tag}-${commit}`), list };
