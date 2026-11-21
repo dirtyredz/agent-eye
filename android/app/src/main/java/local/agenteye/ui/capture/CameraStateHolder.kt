@@ -1,7 +1,6 @@
 package local.agenteye.ui.capture
 
 import local.agenteye.camera.Lens
-import local.agenteye.selfupdate.UpdatePhase
 import local.agenteye.service.CaptureSnapshot
 import local.agenteye.service.SessionError
 
@@ -22,24 +21,22 @@ object CameraStateHolder {
     fun present(
         snapshot: CaptureSnapshot?,
         visible: Boolean,
-        phase: UpdatePhase,
+        startBlocked: Boolean,
         notice: CameraStatus? = null
     ): CameraState {
         if (snapshot == null) return CameraState(status = notice ?: CameraStatus.Connecting)
-        val installing =
-            phase == UpdatePhase.Installing || phase == UpdatePhase.AwaitingConfirmation
         return CameraState(
             running = snapshot.running,
-            status = notice ?: status(snapshot, installing),
+            status = notice ?: status(snapshot, startBlocked),
             address = snapshot.address,
-            canRequestStart = visible && !snapshot.running && !installing,
+            canRequestStart = visible && !snapshot.running && !startBlocked,
             canSwitch = visible && snapshot.availableLenses.size > 1,
             lens = snapshot.selectedLens
         )
     }
 
-    private fun status(snapshot: CaptureSnapshot, installing: Boolean): CameraStatus = when {
-        !snapshot.running && installing -> CameraStatus.Installing
+    private fun status(snapshot: CaptureSnapshot, startBlocked: Boolean): CameraStatus = when {
+        !snapshot.running && startBlocked -> CameraStatus.Installing
 
         !snapshot.running ->
             if (snapshot.error == SessionError.SessionStartFailed) {

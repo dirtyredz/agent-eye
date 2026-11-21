@@ -1,7 +1,6 @@
 package local.agenteye.ui.capture
 
 import local.agenteye.camera.Lens
-import local.agenteye.selfupdate.UpdatePhase
 import local.agenteye.service.CaptureSnapshot
 import local.agenteye.service.SessionError
 import org.junit.Assert.assertEquals
@@ -13,22 +12,22 @@ class CameraStateHolderTest {
     private val stopped = CaptureSnapshot(false, false, null, null, listOf(Lens.BACK), Lens.BACK)
 
     private fun status(snapshot: CaptureSnapshot, notice: CameraStatus? = null) =
-        CameraStateHolder.present(snapshot, true, UpdatePhase.Idle, notice).status
+        CameraStateHolder.present(snapshot, true, false, notice).status
 
     @Test fun bindingIsNotStopped() {
-        assertFalse(CameraStateHolder.present(null, true, UpdatePhase.Idle).canRequestStart)
+        assertFalse(CameraStateHolder.present(null, true, false).canRequestStart)
         assertEquals(
             CameraStatus.Connecting,
-            CameraStateHolder.present(null, true, UpdatePhase.Idle).status
+            CameraStateHolder.present(null, true, false).status
         )
-        assertTrue(CameraStateHolder.present(stopped, true, UpdatePhase.Idle).canRequestStart)
+        assertTrue(CameraStateHolder.present(stopped, true, false).canRequestStart)
     }
 
     @Test fun runningWithoutCameraOrWifiStillHasStop() {
         val state = CameraStateHolder.present(
             stopped.copy(running = true),
             true,
-            UpdatePhase.Installing
+            true
         )
         assertTrue(state.running)
         assertFalse(state.canRequestStart)
@@ -70,7 +69,7 @@ class CameraStateHolderTest {
         )
         assertEquals(
             CameraStatus.Installing,
-            CameraStateHolder.present(stopped, true, UpdatePhase.Installing).status
+            CameraStateHolder.present(stopped, true, true).status
         )
     }
 
@@ -81,28 +80,24 @@ class CameraStateHolderTest {
         )
         assertEquals(
             CameraStatus.StartFailed,
-            CameraStateHolder.present(null, true, UpdatePhase.Idle, CameraStatus.StartFailed).status
+            CameraStateHolder.present(null, true, false, CameraStatus.StartFailed).status
         )
     }
 
     @Test fun switchesOnlyWhenMultipleLensesExist() {
-        assertFalse(CameraStateHolder.present(stopped, true, UpdatePhase.Idle).canSwitch)
+        assertFalse(CameraStateHolder.present(stopped, true, false).canSwitch)
         assertTrue(
             CameraStateHolder.present(
                 stopped.copy(availableLenses = listOf(Lens.BACK, Lens.FRONT)),
                 true,
-                UpdatePhase.Idle
+                false
             ).canSwitch
         )
     }
 
-    @Test fun startIsOfferedOnlyWhenVisibleStoppedAndNotInstalling() {
-        assertTrue(CameraStateHolder.present(stopped, true, UpdatePhase.Idle).canRequestStart)
-        assertFalse(CameraStateHolder.present(stopped, false, UpdatePhase.Idle).canRequestStart)
-        for (phase in listOf(UpdatePhase.Installing, UpdatePhase.AwaitingConfirmation)) {
-            assertFalse(CameraStateHolder.present(stopped, true, phase).canRequestStart)
-        }
-        // Notification permission is deliberately not a Start prerequisite.
-        assertTrue(CameraStateHolder.present(stopped, true, UpdatePhase.Permission).canRequestStart)
+    @Test fun startIsOfferedOnlyWhenVisibleStoppedAndNotBlocked() {
+        assertTrue(CameraStateHolder.present(stopped, true, false).canRequestStart)
+        assertFalse(CameraStateHolder.present(stopped, false, false).canRequestStart)
+        assertFalse(CameraStateHolder.present(stopped, true, true).canRequestStart)
     }
 }

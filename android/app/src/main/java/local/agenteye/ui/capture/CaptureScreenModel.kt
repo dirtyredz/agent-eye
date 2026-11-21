@@ -5,7 +5,6 @@ import android.os.Looper
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import local.agenteye.selfupdate.UpdatePhase
 import local.agenteye.service.CaptureService
 import local.agenteye.ui.pairing.PairingState
 
@@ -16,7 +15,7 @@ import local.agenteye.ui.pairing.PairingState
  */
 class CaptureScreenModel(
     private val service: () -> CaptureService?,
-    private val phase: () -> UpdatePhase,
+    private val startBlocked: () -> Boolean,
     private val now: () -> Long = System::currentTimeMillis
 ) {
     var camera by mutableStateOf(CameraState())
@@ -55,7 +54,7 @@ class CaptureScreenModel(
     /** Rebuild both display states from the live service; returns the camera state. */
     fun refresh(): CameraState {
         val capture = service()
-        camera = CameraStateHolder.present(capture?.snapshot(), visible, phase(), notice)
+        camera = CameraStateHolder.present(capture?.snapshot(), visible, startBlocked(), notice)
         pairing = PairingState.from(
             if (visible) capture?.pairingCode() else null,
             now(),

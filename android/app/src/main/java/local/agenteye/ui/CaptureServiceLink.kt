@@ -6,14 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
-import local.agenteye.selfupdate.UpdateRuntime
 import local.agenteye.service.CaptureService
 
-/**
- * An Activity's binding to [CaptureService] (bind in onStart, unbind in onStop) plus the
- * updater hook-up that needs it: an install must stop capture first, and may not proceed while
- * the service is unbound.
- */
+/** An Activity's binding to [CaptureService]: bind in onStart, unbind in onStop. */
 class CaptureServiceLink(
     private val activity: Activity,
     private val onConnected: (CaptureService) -> Unit = {},
@@ -47,12 +42,5 @@ class CaptureServiceLink(
         if (bound) activity.unbindService(connection)
         bound = false
         service = null
-    }
-
-    /** Call from onResume (not onStart: overlapping start/stop would clear the new launcher). */
-    fun attachUpdates(updates: UpdateRuntime) = updates.prompter.attach(activity) {
-        val capture = service
-        capture?.stopSession()
-        capture != null
     }
 }

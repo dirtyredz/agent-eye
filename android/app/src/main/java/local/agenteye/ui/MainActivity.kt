@@ -18,6 +18,7 @@ import local.agenteye.ui.preview.CameraPreview
 import local.agenteye.ui.preview.PreviewFeed
 import local.agenteye.ui.settings.SettingsActivity
 import local.agenteye.ui.theme.AgentEyeTheme
+import local.agenteye.ui.update.UpdateController
 
 /** Lifecycle, the service link and preview wiring; screen state and Start live in ui/capture. */
 class MainActivity : ComponentActivity() {
@@ -34,7 +35,8 @@ class MainActivity : ComponentActivity() {
         onDisconnected = { model.refresh() }
     )
     private val service: CaptureService? get() = link.service
-    private val model = CaptureScreenModel({ service }, { updates.coordinator.state.phase })
+    private val controller by lazy { UpdateController.forActivity(this, updates, link) }
+    private val model = CaptureScreenModel({ service }, { controller.startBlocked() })
     private val starter = SessionStarter(this, model)
     private val feed by lazy { PreviewFeed(this) { service } }
     private val clipboard by lazy {
@@ -77,7 +79,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        link.attachUpdates(updates)
+        updates.prompter.attach(this, controller::stopForInstall)
         updates.coordinator.observe(updateListener)
     }
 

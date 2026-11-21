@@ -12,7 +12,7 @@ import local.agenteye.AgentEyeApplication
 import local.agenteye.selfupdate.UpdateState
 import local.agenteye.ui.CaptureServiceLink
 import local.agenteye.ui.theme.AgentEyeTheme
-import local.agenteye.ui.update.UpdateAction
+import local.agenteye.ui.update.UpdateController
 import local.agenteye.ui.update.UpdatePresenter
 import local.agenteye.ui.update.UpdateView
 
@@ -21,6 +21,7 @@ class SettingsActivity : ComponentActivity() {
     private var view by mutableStateOf(UpdateView("", "", null, null, null))
     private val updates get() = (application as AgentEyeApplication).updates
     private val link = CaptureServiceLink(this)
+    private val controller by lazy { UpdateController.forActivity(this, updates, link) }
     private val listener: (UpdateState) -> Unit = {
         view = UpdatePresenter.present(it, System.currentTimeMillis())
     }
@@ -29,7 +30,7 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         view = UpdatePresenter.present(updates.coordinator.state, System.currentTimeMillis())
-        setContent { AgentEyeTheme { SettingsScreen(view, { finish() }, ::act) } }
+        setContent { AgentEyeTheme { SettingsScreen(view, { finish() }, controller::act) } }
     }
 
     override fun onStart() {
@@ -39,7 +40,7 @@ class SettingsActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        link.attachUpdates(updates)
+        updates.prompter.attach(this, controller::stopForInstall)
         updates.coordinator.observe(listener)
     }
 
@@ -57,26 +58,5 @@ class SettingsActivity : ComponentActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         enableEdgeToEdge()
-    }
-
-    private fun act(action: UpdateAction) {
-        val coordinator = updates.coordinator
-        when (action) {
-            UpdateAction.Check -> coordinator.check()
-
-            UpdateAction.Update -> coordinator.update()
-
-            UpdateAction.Cancel -> coordinator.cancel()
-
-            UpdateAction.Install -> coordinator.install()
-
-            UpdateAction.GrantPermission -> runCatching {
-                startActivity(updates.prompter.permissionIntent())
-            }
-
-            UpdateAction.Continue -> updates.prompter.continueInstall()
-
-            UpdateAction.AbandonRetry -> coordinator.abandonAndRetry()
-        }
     }
 }
