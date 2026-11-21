@@ -16,7 +16,9 @@ class UpdateLifecycle(
     private val listener: (UpdateState) -> Unit
 ) {
     val updates: UpdateRuntime by lazy { activity.updates }
-    val controller: UpdateController by lazy { UpdateController.forActivity(activity, updates, link) }
+    val controller: UpdateController by lazy {
+        UpdateController.forActivity(activity, updates, link)
+    }
 
     fun onResume() {
         updates.prompter.attach(activity, controller::stopForInstall)

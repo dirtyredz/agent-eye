@@ -32,8 +32,11 @@ class MainActivity : ComponentActivity() {
         onDisconnected = { model.refresh() }
     )
     private val service: CaptureService? get() = link.service
-    private val updateLifecycle = UpdateLifecycle(this, link) { model.refresh() }
-    private val model = CaptureScreenModel({ service }, { updateLifecycle.controller.startBlocked() })
+    private val updateLifecycle: UpdateLifecycle = UpdateLifecycle(this, link) { model.refresh() }
+    private val model = CaptureScreenModel(
+        { service },
+        { updateLifecycle.controller.startBlocked() }
+    )
     private val starter = SessionStarter(this, model)
     private val feed by lazy { PreviewFeed(this) { service } }
     private val clipboard by lazy {
