@@ -29,8 +29,6 @@ class UpdateStoreTest {
             )
         store.saveInstall(install)
         assertEquals(install, store.readInstall())
-        store.until = 99
-        assertEquals(99L, store.until)
         assertFalse(dir.listFiles()!!.any { it.name.endsWith(".tmp") })
     }
 
@@ -53,8 +51,9 @@ class UpdateStoreTest {
         File(dir, "transfer.json.tmp").writeText("x")
         File(dir, "stray.bin").writeText("x")
         store.partial.writeText("x")
+        BackoffStore(dir, replacingRename).until = 7
         store.removeOrphans()
-        assertEquals(emptyList<String>(), dir.listFiles()!!.map { it.name })
+        assertEquals(listOf("backoff.json"), dir.listFiles()!!.map { it.name })
         assertTrue(outside.exists())
     }
 

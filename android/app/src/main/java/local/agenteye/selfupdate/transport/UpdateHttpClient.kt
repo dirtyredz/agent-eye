@@ -2,35 +2,15 @@ package local.agenteye.selfupdate.transport
 
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.io.OutputStream
 import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
 import local.agenteye.selfupdate.UpdateCancelled
 import local.agenteye.selfupdate.UpdateFailure
 import local.agenteye.selfupdate.UpdateProblem
-
-/** One HTTP exchange; the production implementation wraps HttpsURLConnection. */
-interface HttpExchange : AutoCloseable {
-    val code: Int
-
-    fun header(name: String): String?
-
-    fun body(): InputStream
-}
-
-/**
- * Opens a GET with the fixed updater headers only (Accept, User-Agent). Implementations must
- * not follow redirects, send cookies, cache, or add authentication of any kind.
- */
-fun interface HttpConnector {
-    fun open(uri: URI, timeoutMs: Int): HttpExchange
-}
-
-/** Persisted manual-check backoff after GitHub 403/429 responses. */
-interface Backoff {
-    var until: Long
-}
+import local.agenteye.selfupdate.contract.Backoff
+import local.agenteye.selfupdate.contract.HttpConnector
+import local.agenteye.selfupdate.contract.HttpExchange
 
 /**
  * Bounded HTTPS transport for update metadata and the APK. Separate from LAN networking: it

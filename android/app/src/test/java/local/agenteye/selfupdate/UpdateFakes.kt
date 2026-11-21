@@ -6,15 +6,15 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 import local.agenteye.json.StrictJson
+import local.agenteye.selfupdate.contract.Backoff
+import local.agenteye.selfupdate.contract.HttpConnector
+import local.agenteye.selfupdate.contract.HttpExchange
 import local.agenteye.selfupdate.contract.Integrity
 import local.agenteye.selfupdate.contract.ReleaseContract
 import local.agenteye.selfupdate.download.ApkInspector
 import local.agenteye.selfupdate.download.PackageIdentity
 import local.agenteye.selfupdate.install.InstallerPort
 import local.agenteye.selfupdate.install.SessionState
-import local.agenteye.selfupdate.transport.Backoff
-import local.agenteye.selfupdate.transport.HttpConnector
-import local.agenteye.selfupdate.transport.HttpExchange
 
 /** Shared fixtures (written by the Node publisher) and fakes for updater tests. */
 object UpdateFixtures {

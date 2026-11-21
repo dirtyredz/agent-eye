@@ -1,11 +1,8 @@
 package local.agenteye.selfupdate.storage
 
 import java.io.File
-import java.io.FileOutputStream
 import local.agenteye.json.JsonObject
-import local.agenteye.json.StrictJson
 import local.agenteye.selfupdate.Candidate
-import local.agenteye.selfupdate.transport.Backoff
 
 /** The candidate being transferred, and whether its complete bytes were verified. */
 data class TransferRecord(val candidate: Candidate, val verifiedAt: Long? = null)
@@ -32,15 +29,19 @@ class UpdateStore(
     /** Atomic same-directory replace (POSIX rename on Android); Windows-hosted tests inject one. */
     private val rename: (File, File) -> Boolean = { from, to -> from.renameTo(to) },
     private val freeSpace: (File) -> Long = { it.usableSpace }
-) : Backoff {
+) {
     val partial = File(directory, "update.apk.part")
     val verified = File(directory, "update.apk")
     private val transfer = File(directory, "transfer.json")
     private val install = File(directory, "install.json")
-    private val backoff = File(directory, "backoff.json")
-    private val known get() = setOf(partial, verified, transfer, install, backoff).map {
-        it.name
-    }.toSet()
+    private val records = RecordFiles(directory, rename)
+    private val known get() = setOf(
+        partial.name,
+        verified.name,
+        transfer.name,
+        install.name,
+        BackoffStore.FILE_NAME
+    )
 
     init {
         directory.mkdirs()
@@ -66,11 +67,6 @@ class UpdateStore(
         install.delete()
     }
 
-    override var until: Long
-        @Synchronized get() = read(backoff) { it.long("until") } ?: 0
-
-        @Synchronized set(value) = write(backoff, mapOf("until" to value))
-
     /** Removes transfer files and record (not the install record or backoff). */
     @Synchronized fun clearTransfer() {
         partial.delete()
@@ -87,38 +83,7 @@ class UpdateStore(
         }
     }
 
-    private fun <T> read(file: File, decode: (JsonObject) -> T): T? {
-        if (!file.isFile) return null
-        val value = try {
-            if (file.length() > MAX_RECORD) throw StrictJson.Invalid("record too large")
-            val record = JsonObject.parse(file.readBytes())
-            require(record.long("schema") == SCHEMA)
-            decode(record)
-        } catch (_: StrictJson.Invalid) {
-            null
-        } catch (_: IllegalArgumentException) {
-            null
-        } catch (_: java.io.IOException) {
-            null
-        }
-        if (value == null) file.delete()
-        return value
-    }
+    private fun <T> read(file: File, decode: (JsonObject) -> T): T? = records.read(file, decode)
 
-    private fun write(file: File, fields: Map<String, Any?>) {
-        val temporary = File(directory, "${file.name}.tmp")
-        FileOutputStream(temporary).use {
-            it.write(StrictJson.write(mapOf("schema" to SCHEMA) + fields).toByteArray())
-            it.fd.sync()
-        }
-        if (!rename(temporary, file)) {
-            temporary.delete()
-            throw java.io.IOException("record write failed")
-        }
-    }
-
-    companion object {
-        const val SCHEMA = 1L
-        private const val MAX_RECORD = 16 * 1024L
-    }
+    private fun write(file: File, fields: Map<String, Any?>) = records.write(file, fields)
 }

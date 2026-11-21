@@ -6,6 +6,7 @@ import local.agenteye.selfupdate.download.ApkVerifier
 import local.agenteye.selfupdate.install.InstallStatus
 import local.agenteye.selfupdate.install.PackageInstallerGateway
 import local.agenteye.selfupdate.release.GitHubReleaseSource
+import local.agenteye.selfupdate.storage.BackoffStore
 import local.agenteye.selfupdate.storage.UpdateStore
 import local.agenteye.selfupdate.transport.UpdateHttpClient
 import org.junit.Assert.assertEquals
@@ -27,7 +28,8 @@ class UpdateCoordinatorTest {
 
     private fun coordinator(): UpdateCoordinator {
         val store = UpdateStore(dir, replacingRename)
-        val http = UpdateHttpClient(connector, store, now = { clock })
+        val backoff = BackoffStore(dir, replacingRename)
+        val http = UpdateHttpClient(connector, backoff, now = { clock })
         return UpdateCoordinator(
             source = GitHubReleaseSource(http, UpdateFixtures.PIN),
             http = http,
@@ -36,6 +38,7 @@ class UpdateCoordinatorTest {
             installer = PackageInstallerGateway(port, store) { "d".repeat(32) },
             inspector = inspector,
             store = store,
+            backoff = backoff,
             worker = Executor { if (immediate) it.run() else queue.addLast(it) },
             deliver = { it.run() },
             sdk = 34,

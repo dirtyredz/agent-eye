@@ -3,6 +3,8 @@ package local.agenteye.selfupdate.transport
 import java.io.InputStream
 import java.net.URI
 import javax.net.ssl.HttpsURLConnection
+import local.agenteye.selfupdate.contract.HttpConnector
+import local.agenteye.selfupdate.contract.HttpExchange
 
 /**
  * Production [HttpConnector]: system trust anchors (see `network_security_config.xml`), no

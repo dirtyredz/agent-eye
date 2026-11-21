@@ -15,6 +15,7 @@ import local.agenteye.selfupdate.install.AndroidInstallerPort
 import local.agenteye.selfupdate.install.InstallPrompter
 import local.agenteye.selfupdate.install.PackageInstallerGateway
 import local.agenteye.selfupdate.release.GitHubReleaseSource
+import local.agenteye.selfupdate.storage.BackoffStore
 import local.agenteye.selfupdate.storage.UpdateStore
 import local.agenteye.selfupdate.transport.HttpsConnector
 import local.agenteye.selfupdate.transport.UpdateHttpClient
@@ -26,10 +27,12 @@ import local.agenteye.selfupdate.transport.UpdateHttpClient
 class UpdateRuntime(context: Context) {
     private val app = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
-    private val store = UpdateStore(java.io.File(app.noBackupFilesDir, "self-update"))
+    private val directory = java.io.File(app.noBackupFilesDir, "self-update")
+    private val store = UpdateStore(directory)
+    private val backoff = BackoffStore(directory)
     private val pin = readPin(app)
     private val inspector = AndroidApkInspector(app)
-    private val http = UpdateHttpClient(HttpsConnector(), store)
+    private val http = UpdateHttpClient(HttpsConnector(), backoff)
     private val port = AndroidInstallerPort(app)
     private val random = SecureRandom()
 
@@ -43,6 +46,7 @@ class UpdateRuntime(context: Context) {
         },
         inspector = inspector,
         store = store,
+        backoff = backoff,
         worker = Executors.newSingleThreadExecutor { r ->
             Thread(r, "agent-eye-update").apply {
                 isDaemon =

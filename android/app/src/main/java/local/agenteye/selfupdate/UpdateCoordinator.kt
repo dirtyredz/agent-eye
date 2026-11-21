@@ -1,6 +1,7 @@
 package local.agenteye.selfupdate
 
 import java.util.concurrent.Executor
+import local.agenteye.selfupdate.contract.Backoff
 import local.agenteye.selfupdate.download.ApkDownloader
 import local.agenteye.selfupdate.download.ApkInspector
 import local.agenteye.selfupdate.download.ApkVerifier
@@ -25,6 +26,7 @@ class UpdateCoordinator(
     private val installer: PackageInstallerGateway,
     private val inspector: ApkInspector,
     private val store: UpdateStore,
+    private val backoff: Backoff,
     private val worker: Executor,
     private val deliver: (Runnable) -> Unit,
     private val sdk: Int,
@@ -104,7 +106,7 @@ class UpdateCoordinator(
             return
         }
         if (!verifier.eligible()) return publish(failed(state, UpdateProblem.Channel))
-        val until = store.until
+        val until = backoff.until
         if (now() <
             until
         ) {

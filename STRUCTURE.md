@@ -56,11 +56,11 @@ Local JVM tests mirror these packages under `app/src/test/java/`.
 
 Self-update (user-initiated, outbound) lives under `selfupdate/`: `UpdateRuntime` (wiring, lazily
 owned by `AgentEyeApplication`), `UpdateCoordinator` (state machine), `UpdateState.kt` (`UpdatePhase`, `UpdateState`), `Candidate.kt` (frozen release candidate) and `UpdateFailure.kt` (`UpdateProblem`, `UpdateFailure`, `UpdateCancelled`);
-`contract/` (`ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; `Integrity`: the one SHA-256 and hex implementation used by release, download and install; imports nothing but the JDK. The shared updater vocabulary (`Candidate.kt`, `UpdateFailure.kt`, `UpdateState.kt`) is now split by file but still in the root package, so the subpackages import the root package and the cycle remains; package migration is tracked as debt in dk-7948b352);
+`contract/` (`HttpPorts.kt`: the `HttpExchange`, `HttpConnector` and `Backoff` ports shared by transport and storage; `ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; `Integrity`: the one SHA-256 and hex implementation used by release, download and install; imports nothing but the JDK. The shared updater vocabulary (`Candidate.kt`, `UpdateFailure.kt`, `UpdateState.kt`) is now split by file but still in the root package, so the subpackages import the root package and the cycle remains; package migration is tracked as debt in dk-7948b352);
 `release/` (`ReleaseManifest` decode and SHA256SUMS parse via `JsonObject`,
 `ReleasePolicy`, `GitHubReleaseSource`); `transport/` (`UpdateUrlPolicy`, `UpdateHttpClient`,
 `HttpsConnector`); `download/` (`ApkDownloader`, pure `ApkVerifier`, `AndroidApkInspector`);
-`storage/` (`UpdateStore`: paths, atomic write, cleanup, and the persisted `Backoff`; `RecordCodec`: record <-> map); `install/` (`PackageInstallerGateway` policy, `AndroidInstallerPort`,
+`storage/` (`UpdateStore`: paths and cleanup; `RecordFiles`: atomic schema-tagged record read/write; `BackoffStore`: the persisted `Backoff` in `backoff.json`; `RecordCodec`: record <-> map); `install/` (`PackageInstallerGateway` policy, `AndroidInstallerPort`,
 pure `InstallRecovery`, `InstallPrompter` (Activity-facing confirmation/permission intents and launcher attach/detach), `InstallResultReceiver`). `ui/settings/` and `ui/update/` (Compose panel, pure presenter, `UpdateController`: action dispatch, stop-for-install, live Start-blocked guard) present updates. Tests mirror under `app/src/test/java/local/agenteye/selfupdate/**`
 and `ui/update/`, with fakes in `selfupdate/UpdateFakes.kt`. The signer pin is not hand-written in
 Kotlin: Gradle task `generateUpdatePinAsset` packages `signing-certificate.json` as `update-signer.txt`.
@@ -139,6 +139,6 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 - **Dependency cycles (P1):** `selfupdate` root <-> subpackages through the
   shared vocabulary (dk-7948b352).
 - **Wide coordinators:** `CaptureService` (dk-e3c7da36), the release CLI command spread (dk-0e25e219).
-- **Smaller seams (P2/P3):** dk-de2486c6, dk-8e8110f3.
+- **Smaller seams (P2/P3):** dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
 - `tooling/android-tools.mjs` imports `signing/artifacts/*` while `signing/` imports `tooling/`: a cycle; move it to a composition layer and add a `tooling` boundary rule when nearby.
