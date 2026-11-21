@@ -98,7 +98,7 @@ uses the non-retrying lookup. Never reintroduce `releases/tags/` for release-pip
   rebind can briefly return camera unavailable. Retry after Camera ready. Switches preserve the
   pairing code/token and HTTP listener. Front stills are unmirrored even though the default front
   preview is mirrored. Check readable text, portrait/landscape and 180-degree flips on hardware.
-- **Settings lifecycle.** Updater attachment uses resume/pause on both Activities: start/stop
+- **Settings lifecycle.** Installer prompter attachment (`InstallPrompter.attach/detach`) uses resume/pause on both Activities: start/stop
   overlap during navigation and can otherwise let the outgoing screen clear the new launcher.
   Navigating away cancels an active check/download; simply opening Settings never uses the network.
 - CameraX 1.5.3 marks external lens facing experimental. The opt-in is confined to

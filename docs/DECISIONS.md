@@ -1,5 +1,6 @@
 # Decisions
 
+- **2026-11-21 — Updater vocabulary split by file, package unchanged (dk-7948b352).** `Candidate`, `UpdateProblem`/`UpdateFailure`/`UpdateCancelled` and `UpdatePhase`/`UpdateState` now live in `Candidate.kt`, `UpdateFailure.kt` and `UpdateState.kt`, all still `local.agenteye.selfupdate`, so no imports changed. Moving them into a leaf package (and breaking the root <-> subpackage cycle) is deferred: `release/` would violate the installer boundary and a broader migration is out of scope for this refactor.
 - **2026-10-27 — Allow screenshots and recents thumbnails (1.3.2 / 7).** Owner decision:
   screenshots are needed to capture and communicate UI problems, so neither Activity nor the
   privacy dialog sets a secure-window policy. The active pairing code can therefore appear in a

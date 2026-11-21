@@ -55,13 +55,13 @@ pure subnet admission; `http` owns bounded parsing and serving; `security` owns 
 Local JVM tests mirror these packages under `app/src/test/java/`.
 
 Self-update (user-initiated, outbound) lives under `selfupdate/`: `UpdateRuntime` (wiring, lazily
-owned by `AgentEyeApplication`), `UpdateCoordinator` (state machine) and `UpdateState`;
-`contract/` (`ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; `Integrity`: the one SHA-256 and hex implementation used by release, download and install; imports nothing but the JDK. The shared updater vocabulary (`Candidate`, `UpdateProblem`, `UpdateFailure`, `UpdateCancelled`) still lives in the root `UpdateState.kt`, so the subpackages import the root package and form a cycle; tracked as debt in dk-7948b352);
+owned by `AgentEyeApplication`), `UpdateCoordinator` (state machine), `UpdateState.kt` (`UpdatePhase`, `UpdateState`), `Candidate.kt` (frozen release candidate) and `UpdateFailure.kt` (`UpdateProblem`, `UpdateFailure`, `UpdateCancelled`);
+`contract/` (`ReleaseContract`: repository, asset names, tag/version/SHA-256 shapes; `Integrity`: the one SHA-256 and hex implementation used by release, download and install; imports nothing but the JDK. The shared updater vocabulary (`Candidate.kt`, `UpdateFailure.kt`, `UpdateState.kt`) is now split by file but still in the root package, so the subpackages import the root package and the cycle remains; package migration is tracked as debt in dk-7948b352);
 `release/` (`ReleaseManifest` decode and SHA256SUMS parse via `JsonObject`,
 `ReleasePolicy`, `GitHubReleaseSource`); `transport/` (`UpdateUrlPolicy`, `UpdateHttpClient`,
 `HttpsConnector`); `download/` (`ApkDownloader`, pure `ApkVerifier`, `AndroidApkInspector`);
 `storage/` (`UpdateStore`: paths, atomic write, cleanup, and the persisted `Backoff`; `RecordCodec`: record <-> map); `install/` (`PackageInstallerGateway` policy, `AndroidInstallerPort`,
-pure `InstallRecovery`, `InstallResultReceiver`). `ui/settings/` and `ui/update/` (Compose panel, pure presenter) present updates. Tests mirror under `app/src/test/java/local/agenteye/selfupdate/**`
+pure `InstallRecovery`, `InstallPrompter` (Activity-facing confirmation/permission intents and launcher attach/detach), `InstallResultReceiver`). `ui/settings/` and `ui/update/` (Compose panel, pure presenter, `UpdateController`: action dispatch, stop-for-install, live Start-blocked guard) present updates. Tests mirror under `app/src/test/java/local/agenteye/selfupdate/**`
 and `ui/update/`, with fakes in `selfupdate/UpdateFakes.kt`. The signer pin is not hand-written in
 Kotlin: Gradle task `generateUpdatePinAsset` packages `signing-certificate.json` as `update-signer.txt`.
 
