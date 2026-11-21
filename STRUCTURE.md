@@ -142,4 +142,3 @@ topology lens, and a Sol cross-model pass. Verdict PASS, no P0. The Docket items
 - **Smaller seams (P2/P3):** dk-bed2beb9, dk-1a0ea30f, dk-7fe1491b, dk-de2486c6, dk-8e8110f3.
 - `src/android/releases/github/` is a single-module folder on purpose.
 - `tooling/android-tools.mjs` imports `signing/artifacts/*` while `signing/` imports `tooling/`: a cycle; move it to a composition layer and add a `tooling` boundary rule when nearby.
-
