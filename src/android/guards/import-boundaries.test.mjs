@@ -27,8 +27,22 @@ function outwardImports(source, dir, file) {
   });
 }
 
+/** Re-exports of shared/ names: direct export-from, or an export of a binding imported from shared/. */
 function sharedReexports(source) {
-  return [...source.matchAll(/export\s*(?:\{[^}]*\}|\*)\s*from\s*['"]([^'"]*shared\/[^'"]*)['"]/g)].map(m => m[1]);
+  const direct = [...source.matchAll(/export\s*(?:\{[^}]*\}|\*)\s*from\s*['"]([^'"]*shared\/[^'"]*)['"]/g)].map(m => m[1]);
+  const bound = new Set();
+  for (const [, clause] of source.matchAll(/import\s+([^;'"]+?)\s+from\s*['"][^'"]*shared\/[^'"]*['"]/g)) {
+    const named = /\{([^}]*)\}/.exec(clause)?.[1] ?? '';
+    for (const part of named.split(',')) { const name = part.trim().split(/\s+as\s+/).pop(); if (name) bound.add(name); }
+    const rest = clause.replace(/\{[^}]*\}/, '');
+    for (const part of rest.split(',')) { const name = part.trim().replace(/^\*\s*as\s+/, ''); if (name) bound.add(name); }
+  }
+  const exported = [];
+  for (const [, list] of source.matchAll(/export\s*\{([^}]*)\}(?!\s*from)/g)) {
+    for (const part of list.split(',')) { const local = part.trim().split(/\s+as\s+/)[0]; if (bound.has(local)) exported.push(local); }
+  }
+  for (const [, name] of source.matchAll(/export\s+default\s+([A-Za-z_$][\w$]*)\s*;?/g)) if (bound.has(name)) exported.push(name);
+  return [...direct, ...exported];
 }
 
 async function mjsFiles(dir) {
@@ -55,9 +69,16 @@ test('outwardImports accepts built-ins and files inside the directory', () => {
   assert.deepEqual(outwardImports("import { createHash } from 'node:crypto';\nimport { a } from './assert.mjs';", 'shared', 'x.mjs'), []);
 });
 
-test('sharedReexports flags a re-export from shared and accepts a plain import', () => {
+test('sharedReexports flags every way of re-exporting a shared binding', () => {
   assert.deepEqual(sharedReexports("export { digest } from '../../shared/digest.mjs';"), ['../../shared/digest.mjs']);
-  assert.deepEqual(sharedReexports("import { digest } from '../../shared/digest.mjs';"), []);
+  assert.deepEqual(sharedReexports("import { digest } from '../../shared/digest.mjs';\nexport { digest };"), ['digest']);
+  assert.deepEqual(sharedReexports("import { digest as d } from '../../shared/digest.mjs';\nexport { d as digest };"), ['d']);
+  assert.deepEqual(sharedReexports("import {\n  a,\n  b as c,\n} from '../../shared/assert.mjs';\nexport { c };"), ['c']);
+  assert.deepEqual(sharedReexports("import * as ns from '../../shared/assert.mjs';\nexport default ns;"), ['ns']);
+});
+
+test('sharedReexports accepts a shared import used only locally', () => {
+  assert.deepEqual(sharedReexports("import { digest } from '../../shared/digest.mjs';\nexport const x = digest(1);\nexport { other };"), []);
 });
 
 for (const { from, forbidden } of FORBIDDEN) {
