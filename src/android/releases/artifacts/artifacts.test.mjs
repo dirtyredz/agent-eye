@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fixture } from './contract.test.mjs';
+import { pinPathFor, readPin } from '../pin-store.mjs';
 import { hashes, verifyFiles } from './artifacts.mjs';
 test('artifact hashes cover lengths, missing files and changed bytes', async () => {
   await mkdir('.tmp', { recursive: true }); const dir = await mkdtemp('.tmp/artifact-test-');
@@ -32,7 +33,7 @@ test('shared updater fixtures are exactly what the publisher writes', async () =
       assert.deepEqual(await readFile(join(dir, name)), await readFile(new URL(name, committed)), `${name} drifted from the publisher`);
     }
     // The fixture signer is the tracked pin the Android build packages.
-    const pin = certificate(JSON.parse(await readFile(new URL('../signing-certificate.json', import.meta.url), 'utf8')));
+    const pin = certificate(await readPin(pinPathFor(process.cwd())));
     assert.equal(m.signerSha256, pin.sha256);
     assert.equal(FIXTURE_PIN, pin.sha256);
     for (const bad of [{ ...pin, sha256: 'F'.repeat(64) }, { ...pin, applicationId: 'other' }, { ...pin, alias: 'x' }, { ...pin, firstVersionCode: 0 }]) {
